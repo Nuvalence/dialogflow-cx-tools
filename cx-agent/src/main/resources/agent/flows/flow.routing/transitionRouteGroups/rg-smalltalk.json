@@ -1,0 +1,85 @@
+{
+  "name": "22f189ec-3cdc-44a5-b2b3-dc1e621dcd23",
+  "displayName": "rg-smalltalk",
+  "transitionRoutes": [ {
+    "intent": "generic.smalltalk.help",
+    "condition": "true",
+    "triggerFulfillment": {
+      "setParameterActions": [ {
+        "parameter": "user-request",
+        "value": "generic.smalltalk.help"
+      }, {
+        "parameter": "web-site",
+        "value": null
+      }, {
+        "parameter": "question-type",
+        "value": "faq-question"
+      } ]
+    },
+    "targetFlow": "flow.help",
+    "name": "4b88d5cd-369f-49b9-a1b0-00ddf54b8f4c"
+  }, {
+    "intent": "generic.smalltalk.more-help",
+    "condition": "true",
+    "triggerFulfillment": {
+      "setParameterActions": [ {
+        "parameter": "user-request",
+        "value": "generic.smalltalk.more-help"
+      }, {
+        "parameter": "web-site",
+        "value": null
+      }, {
+        "parameter": "question-type",
+        "value": "faq-question"
+      } ]
+    },
+    "targetFlow": "flow.help",
+    "name": "1fe07dc3-e7f1-4da3-8d4c-f3c10f8e20ba"
+  }, {
+    "intent": "generic.smalltalk.website",
+    "condition": "true",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.website",
+    "name": "cfdf53b5-bf68-4c96-b78e-e6c65f079365"
+  }, {
+    "intent": "generic.smalltalk.end",
+    "condition": "true",
+    "triggerFulfillment": {
+      "setParameterActions": [ {
+        "parameter": "user-request",
+        "value": "generic.smalltalk.end"
+      }, {
+        "parameter": "web-site",
+        "value": null
+      }, {
+        "parameter": "question-type",
+        "value": "faq-question"
+      } ]
+    },
+    "targetFlow": "flow.end",
+    "name": "7bb4d86e-323b-47c6-a3b3-8bee2dfff655"
+  }, {
+    "intent": "generic.smalltalk.redirect-agent",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.redirect-agent",
+    "name": "abced7f5-0b1d-40cc-a54d-16a6ab9161f6"
+  }, {
+    "intent": "generic.smalltalk.redirect-main-menu",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.redirect-main-menu",
+    "name": "7f807cac-9ddb-4d43-b4f2-f5db89179aeb"
+  }, {
+    "intent": "generic.smalltalk.repeat",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.repeat",
+    "name": "e50b5f83-e1af-4d7d-8b8a-19cd7a4c8cec"
+  } ]
+}

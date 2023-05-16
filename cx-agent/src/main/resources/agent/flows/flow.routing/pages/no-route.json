@@ -1,0 +1,42 @@
+{
+  "name": "747d916e-23ce-435d-b8e4-2772ab8677b1",
+  "displayName": "no-route",
+  "form": {
+  
+  },
+  "entryFulfillment": {
+  
+  },
+  "transitionRoutes": [ {
+    "condition": "$session.params.question-type = \"confirmation\"",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.unable-to-help",
+    "name": "3ee92d5b-cce4-4f13-82dc-e0306a446df9"
+  }, {
+    "condition": "$session.params.question-type = \"follow-up\"",
+    "triggerFulfillment": {
+      "setParameterActions": [ {
+        "parameter": "question-type",
+        "value": "faq-question"
+      } ]
+    },
+    "targetFlow": "flow.what-else",
+    "name": "b885eddd-4826-4088-b59c-34f32aa3e29c"
+  }, {
+    "condition": "$session.params.question-type = \"redirect-agent\"",
+    "triggerFulfillment": {
+
+    },
+    "targetFlow": "flow.what-else",
+    "name": "97b630be-e2dc-11ed-b5ea-0242ac120002"
+  }, {
+    "condition": "$session.params.question-type = \"redirect-main-menu\"",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.what-else",
+    "name": "3ab595db-cfe4-469c-a4b1-d0820eadcecb"
+  } ]
+}

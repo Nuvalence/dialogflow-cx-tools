@@ -1,0 +1,32 @@
+{
+  "name": "079284c6-a84d-43b8-b225-f886debd111b",
+  "displayName": "faq-routing",
+  "form": {
+  
+  },
+  "entryFulfillment": {
+  
+  },
+  "transitionRoutes": [ {
+    "intent": "generic.smalltalk.yes",
+    "triggerFulfillment": {
+      "setParameterActions": [ {
+        "parameter": "user-request",
+        "value": "generic.smalltalk.help"
+      } ]
+    },
+    "targetFlow": "flow.help",
+    "name": "e1a2426a-3793-4c16-8b26-cc984bd06c17"
+  }, {
+    "intent": "generic.smalltalk.no",
+    "triggerFulfillment": {
+      "setParameterActions": [ {
+        "parameter": "user-request",
+        "value": "generic.smalltalk.help"
+      } ]
+    },
+    "targetFlow": "flow.help",
+    "name": "ec69b577-1b67-41f3-85ee-180c10ce80f4"
+  } ],
+  "transitionRouteGroups": [ "rg-faq", "rg-smalltalk" ]
+}

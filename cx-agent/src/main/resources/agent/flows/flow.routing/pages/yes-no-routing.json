@@ -1,0 +1,23 @@
+{
+  "name": "ac5f6cda-6842-485e-9773-35854d24558c",
+  "displayName": "yes-no-routing",
+  "form": {
+  
+  },
+  "transitionRoutes": [ {
+    "intent": "generic.smalltalk.yes",
+    "triggerFulfillment": {
+    
+    },
+    "targetPage": "yes-route",
+    "name": "67b09fb1-44e3-466f-bf09-5adda9b5599e"
+  }, {
+    "intent": "generic.smalltalk.no",
+    "triggerFulfillment": {
+    
+    },
+    "targetPage": "no-route",
+    "name": "140bf630-f948-4ffc-ae15-81a298a1bcd6"
+  } ],
+  "transitionRouteGroups": [ "rg-faq", "rg-smalltalk" ]
+}

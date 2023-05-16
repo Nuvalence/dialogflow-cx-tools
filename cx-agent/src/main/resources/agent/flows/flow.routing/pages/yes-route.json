@@ -1,0 +1,48 @@
+{
+  "name": "db2b092e-03fc-4223-b71b-447c38f80981",
+  "displayName": "yes-route",
+  "form": {
+  
+  },
+  "entryFulfillment": {
+  
+  },
+  "transitionRoutes": [ {
+    "condition": "$session.params.question-type = \"confirmation\"",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.what-else",
+    "name": "f6ec36cc-75a9-403e-b4c6-b5794c805afe"
+  }, {
+    "condition": "$session.params.question-type = \"follow-up\"",
+    "triggerFulfillment": {
+      "setParameterActions": [ {
+        "parameter": "user-request",
+        "value": "$session.params.user-request-fwd"
+      }, {
+        "parameter": "web-site",
+        "value": "$session.params.web-site-fwd"
+      }, {
+        "parameter": "question-type",
+        "value": "faq-question"
+      } ]
+    },
+    "targetFlow": "flow.repeat",
+    "name": "9813e917-b2be-491b-b23d-49ea501aacaf"
+  }, {
+    "condition": "$session.params.question-type = \"redirect-agent\"",
+    "triggerFulfillment": {
+
+    },
+    "targetFlow": "flow.redirect-agent",
+    "name": "82f5de86-e2dc-11ed-b5ea-0242ac120002"
+  }, {
+    "condition": "$session.params.question-type = \"redirect-main-menu\"",
+    "triggerFulfillment": {
+    
+    },
+    "targetFlow": "flow.redirect-main-menu",
+    "name": "696373c2-7f38-42f3-a23f-b99ae24fc9dd"
+  } ]
+}
