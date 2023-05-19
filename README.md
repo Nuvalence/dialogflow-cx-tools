@@ -1,6 +1,6 @@
 # Documentation
 
-You can find it [here.](https://docs.google.com/document/d/1nCaHwozTwkgax9N5siI7DvcW7FRELL-InAxOYApc4Dw/edit#heading=h.cf31udh89iqe)
+You can find it under the `documentation` folder.
 
 # Building
 Please run the build command without executing tests, as cx-tests will try to run a test suite.
