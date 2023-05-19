@@ -8,7 +8,13 @@ repositories {
     mavenCentral()
     google()
 }
+
 dependencies {
     implementation(project(mapOf("path" to ":cx-shared")))
     implementation("com.google.code.gson:gson:2.10.1")
+}
+
+
+application {
+    mainClass.set("io.nuvalence.cx.tools.phrases.MainKt")
 }
