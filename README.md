@@ -17,8 +17,16 @@ Please run the build command without executing tests, as cx-tests will try to ru
 `./gradlew build -x test`
 
 # How to create the `credentials.json` file
+To programmatically access Google Sheets, a credentials.json file is required to authenticate and authorize the 
+application. This file contains information and credentials that allow the application to access the Google Sheets API
+on behalf of the user or the service account.
 
-This is required to access spreadsheets used in the creation/translation process.
+For the Generator, you need read-only access; for the translator, since we create a Google Sheet with the
+agent's phrases, you need read/write access.
+
+> Please note that this file is a gateway that enables access to Google Sheets, so be sure to **not** commit
+it to source control!
+
 Instructions [here.](https://developers.google.com/workspace/guides/configure-oauth-consent)
 
 # Running the Agent Generator
