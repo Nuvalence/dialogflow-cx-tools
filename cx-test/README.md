@@ -9,9 +9,55 @@ Run the following command:
 ```
 ./gradlew build --info \
     -DcredentialsUrl="<credentials URL>" \
-    -DagentPath="<agent path, e.g. projects/prospect-dol-ccai/locations/global/agents/8c8b3d82-3b05-4726-8991-06f7b2fd4204>" \
-    -DspreadsheetId="<spreadsheet ID, e.g. 14880YAMX8JQ3DP0rdiZfbt3oBbYVKL5Bl_244zwDPVM>"
+    -DagentPath="<agent path, e.g. projects/projectName/locations/global/agents/agentUUID>" \
+    -DspreadsheetId="<Google Docs spreadsheet ID>"
 ```
+
+### Required Arguments
+
+#### Credentials URL
+
+URL referencing the desired credentials file for access to the Google Sheets API.
+
+To obtain the necessary credentials:
+
+1. Go to the Google Cloud Console.
+
+2. Navigate to the APIs & Services Dashboard by clicking on the menu icon in the top-left corner and selecting "Cloud Overview" -> "Dashboard" -> "Explore and enable APIs"
+
+3. Navigate to the Google Sheets API details page by clicking on "Google Sheets API"
+
+4. Click on "Credentials" on the navigation bar to reveal the credentials menu.
+
+5. If you do not already have an OAuth client ID available, click on the "+ Create Credentials" button and select "OAuth Client ID" from the dropdown menu.
+
+  - Fill in the required information for the OAuth client, such as application type and client name.
+
+  - Click the "Create" button. This will generate a new service account and download a JSON file containing the credentials.
+
+6. If you already have an OAuth client ID available, you can click the download button under the "Actions" column, corresponding to your desired client ID.
+
+Usage: `-DcredentialsUrl="<credentials URL>"`
+
+#### Agent Path
+
+A portion of the URL specifying the path to the desired agent under test. The agent path format is as follows:
+
+```
+projects/<project name>/locations/<location>/agents/<agent UUID>
+```
+
+Usage: `-DagentPath="<agent path>"`, e.g. `-DagentPath="projects/project/locations/global/agents/00000000-0000-0000-0000-000000000000"`
+
+#### Spreadsheet ID
+
+The ID for your desired spreadsheet on Google Sheets. This can be derived from the URL as follows:
+
+```
+https://docs.google.com/spreadsheets/d/<spreadsheetId>
+```
+
+Usage: `-DspreadsheetId="<spreadsheet ID>"`
 
 ### Optional Arguments
 
