@@ -73,17 +73,26 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             val jsonObject = JsonParser.parseString(File("$flowPath/$flowName.json").readText()).asJsonObject
             processEventHandlers(jsonObject, listOf(flowName, "event"), translationAgent::getFlow)
             jsonObject["transitionRoutes"].asJsonArray.forEach { route ->
-                val condition = route.asJsonObject["condition"].asString
-                val flow = translationAgent.getFlow(PhrasePath(listOf(flowName, "condition", condition)))
-                if (flow != null) {
-                    val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
-                    val messages = languagePhrasesToJson(singleString = true, flow.phraseByLanguage)
-                    entryFulfillment.remove("messages")
-                    entryFulfillment.add("messages", messages)
-                    processWebSiteParameter(entryFulfillment.asJsonObject["setParameterActions"])
-                }
+                processTransitionRoute(flowName, route, "condition")
+                processTransitionRoute(flowName, route, "intent")
             }
             prettySave(jsonObject, "$flowPath/$flowName.json")
+        }
+    }
+
+    /**
+     * Process transition by intent or by condition.
+     */
+    private fun processTransitionRoute(flowName: String, route: JsonElement, transitionTrigger: String) {
+        route.asJsonObject[transitionTrigger]?.asString?.let { entry ->
+            val flow = translationAgent.getFlow(PhrasePath(listOf(flowName, transitionTrigger, entry)))
+            if (flow != null) {
+                val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
+                val messages = languagePhrasesToJson(singleString = true, flow.phraseByLanguage)
+                entryFulfillment.remove("messages")
+                entryFulfillment.add("messages", messages)
+                processWebSiteParameter(entryFulfillment.asJsonObject["setParameterActions"])
+            }
         }
     }
 

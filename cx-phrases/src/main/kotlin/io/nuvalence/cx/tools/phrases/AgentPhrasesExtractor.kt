@@ -27,7 +27,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         val jsonObject = JsonParser.parseString(File("$rootPath/agent.json").readText()).asJsonObject
         // Both are at the top level.
         val defaultLanguageCode = jsonObject["defaultLanguageCode"].asString
-        val supportedLanguageCodes = jsonObject["supportedLanguageCodes"].asJsonArray.map { it.asString }
+        val supportedLanguageCodes = jsonObject["supportedLanguageCodes"]?.asJsonArray?.map { it.asString } ?: listOf()
         return TranslationAgent(defaultLanguageCode, supportedLanguageCodes)
     }
 
@@ -76,10 +76,17 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             }
             // Get all transition routes and their associated condition
             jsonObject["transitionRoutes"].asJsonArray.forEach { route ->
-                val condition = route.asJsonObject["condition"].asString
-                // If there are trigger fulfillment messages, capture them
-                processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                    translationAgent.putFlow(PhrasePath(listOf(flowName, "condition", condition)), LanguagePhrases(messages))
+                route.asJsonObject["condition"]?.asString?.let { condition ->
+                    // If there are trigger fulfillment messages, capture them
+                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "condition", condition)), LanguagePhrases(messages))
+                    }
+                }
+                route.asJsonObject["intent"]?.asString?.let { intent ->
+                    // If there are trigger fulfillment messages, capture them
+                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "intent", intent)), LanguagePhrases(messages))
+                    }
                 }
             }
         }
