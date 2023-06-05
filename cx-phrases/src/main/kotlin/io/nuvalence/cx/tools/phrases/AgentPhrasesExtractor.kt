@@ -111,6 +111,23 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                     if (messages != null)
                         translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "message")), LanguagePhrases(messages))
                 }
+                jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
+                    val parameter = parameterElement.asJsonObject
+                    val displayName = parameter["displayName"].asString
+                    parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
+                        fillBehavior["initialPromptFulfillment"]?.let { initialPrompt ->
+                            val messages = processMessages(initialPrompt)
+                            if (messages != null)
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguagePhrases(messages))
+                        }
+                        fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { event ->
+                            val messages = processMessages(event.asJsonObject["triggerFulfillment"])
+                            val eventName = event.asJsonObject["event"].asString
+                            if (messages != null)
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguagePhrases(messages))
+                        }
+                    }
+                }
                 // If the page has event handlers with fulfillment messages, capture them
                 processEventHandlers(jsonObject, flowName).forEach { (event, messages) ->
                     translationAgent.putPage(PhrasePath(listOf(flowName, pageName, event)), messages)
