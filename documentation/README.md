@@ -1,5 +1,5 @@
-Nuvalence Agent Generator and Translator
-========================================
+Agent Essentials for CCAI
+=========================
 
 ### Introduction ###
 
@@ -37,27 +37,27 @@ This tab has a predefined format:
 
 * An **Intent** column, with the following entries, which **cannot** be modified:
 
-Intent             | Description
----------          | ------------
-**Welcome Message**    | This is what the Agent says the first time a user accessed the system.
-**no-input-default**   | The default Agent response when the user does not say anything for a period of time.
-**no-input-1**, **no-input-2**, **no-input-3** | These override the default above, and provide different prompts when there is no input from the user. This adds more color to the conversation.
-**no-match-default**   | The default Agent response when it does not understand what the user said.
-**no-match-1**, **no-match-2**, **no-match-3** | Similar to no-input 1, 2 and 3, these provide different prompts when there is no match to what the user said.
-**confirmation**       | What the Agent asks when it wants to know if the question was answered.
-**unable-to-help**     | What the Agent says when the user answers “no” to the confirmation question.
-**what-else**          | What the Agent says when asking the user what else it can help with.
-**how-can-I-help**     | Pretty straightforward, the question the Agent asks when it wants to know how it can help the user.
-**help**               | Explanation of what kinds of questions the Agent can answer.
-**more-help**          | Additional explanation, to add more color to the conversation.
-**website**            | The training phrases to request the URL/website associated with the previous question, and the response from the Agent. Note that the URL is in the $session.params.web-site session parameter, so it should be included in the response.
-**website-missing**    | What the Agent says when there is no URL/website associated with the last question asked by the user.
-**repeat**             | Training phrases for the repeat intent, i.e. when the user wants the Agent to repeat the answer to the last question.
-**redirect-agent**     | Training phrases and Agent reply to redirect the user to a human agent.
-**redirect-main-menu** | Same, for the main menu.
-**end**                | Training phrases and response to end the conversation.
-**no**                 | Training phrases for the “no” intent.
-**yes**                | Training phrases for the “yes” intent.
+| Intent                                         | Description                                                                                                                                                                                                                               |
+|------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Welcome Message**                            | This is what the Agent says the first time a user accessed the system.                                                                                                                                                                    |
+| **no-input-default**                           | The default Agent response when the user does not say anything for a period of time.                                                                                                                                                      |
+| **no-input-1**, **no-input-2**, **no-input-3** | These override the default above, and provide different prompts when there is no input from the user. This adds more color to the conversation.                                                                                           |
+| **no-match-default**                           | The default Agent response when it does not understand what the user said.                                                                                                                                                                |
+| **no-match-1**, **no-match-2**, **no-match-3** | Similar to no-input 1, 2 and 3, these provide different prompts when there is no match to what the user said.                                                                                                                             |
+| **confirmation**                               | What the Agent asks when it wants to know if the question was answered.                                                                                                                                                                   |
+| **unable-to-help**                             | What the Agent says when the user answers “no” to the confirmation question.                                                                                                                                                              |
+| **what-else**                                  | What the Agent says when asking the user what else it can help with.                                                                                                                                                                      |
+| **how-can-I-help**                             | Pretty straightforward, the question the Agent asks when it wants to know how it can help the user.                                                                                                                                       |
+| **help**                                       | Explanation of what kinds of questions the Agent can answer.                                                                                                                                                                              |
+| **more-help**                                  | Additional explanation, to add more color to the conversation.                                                                                                                                                                            |
+| **website**                                    | The training phrases to request the URL/website associated with the previous question, and the response from the Agent. Note that the URL is in the $session.params.web-site session parameter, so it should be included in the response. |
+| **website-missing**                            | What the Agent says when there is no URL/website associated with the last question asked by the user.                                                                                                                                     |
+| **repeat**                                     | Training phrases for the repeat intent, i.e. when the user wants the Agent to repeat the answer to the last question.                                                                                                                     |
+| **redirect-agent**                             | Training phrases and Agent reply to redirect the user to a human agent.                                                                                                                                                                   |
+| **redirect-main-menu**                         | Same, for the main menu.                                                                                                                                                                                                                  |
+| **end**                                        | Training phrases and response to end the conversation.                                                                                                                                                                                    |
+| **no**                                         | Training phrases for the “no” intent.                                                                                                                                                                                                     |
+| **yes**                                        | Training phrases for the “yes” intent.                                                                                                                                                                                                    |
 
 * A **Training Phrases** column, where the training phrases associated with the intents go.
 * A **Response** column, with the responses.
@@ -147,7 +147,7 @@ Besides the ability to handle questions/responses, the generated Agent also can 
 *   Repeat its last response.
 *   Understand a request to go back to the main menu.
 *   Understand a request to talk to a live agent.
-*   Process follow up questions, where the user is prompted to indicate whether they want additional information.
+*   Process follow-up questions, where the user is prompted to indicate whether they want additional information.
 *   Ability to answer any question, even when expecting yes/no answer from a follow up question.
 *   Finally, process no-input and no-match from the user, with different follow up questions and a three-strikes-you-are-out closing of the conversation.
 
@@ -360,9 +360,8 @@ Proper number enunciation requires:
 2.  A break of 300ms before saying the number.
 3.  Separating the number into its individual digits, so 0 is pronounced as “zero” instead of “oh”.
 4.  Except for:
-
-1.  800, which is pronounced “eight hundred”.
-2.  Time, which is not changed (e.g. 5:25pm is pronounced five twenty five p m, not 5 2 5 pm).
+   1.  800, which is pronounced “eight hundred”.
+   2.  Time, which is not changed (e.g. 5:25pm is pronounced five twenty five p m, not 5 2 5 pm).
 
 ##### Language Specific Prosody #####
 

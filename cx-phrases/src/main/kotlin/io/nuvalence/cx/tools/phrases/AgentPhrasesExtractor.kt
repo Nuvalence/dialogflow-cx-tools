@@ -27,7 +27,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         val jsonObject = JsonParser.parseString(File("$rootPath/agent.json").readText()).asJsonObject
         // Both are at the top level.
         val defaultLanguageCode = jsonObject["defaultLanguageCode"].asString
-        val supportedLanguageCodes = jsonObject["supportedLanguageCodes"].asJsonArray.map { it.asString }
+        val supportedLanguageCodes = jsonObject["supportedLanguageCodes"]?.asJsonArray?.map { it.asString } ?: listOf()
         return TranslationAgent(defaultLanguageCode, supportedLanguageCodes)
     }
 
@@ -76,10 +76,17 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             }
             // Get all transition routes and their associated condition
             jsonObject["transitionRoutes"].asJsonArray.forEach { route ->
-                val condition = route.asJsonObject["condition"].asString
-                // If there are trigger fulfillment messages, capture them
-                processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                    translationAgent.putFlow(PhrasePath(listOf(flowName, "condition", condition)), LanguagePhrases(messages))
+                route.asJsonObject["condition"]?.asString?.let { condition ->
+                    // If there are trigger fulfillment messages, capture them
+                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "condition", condition)), LanguagePhrases(messages))
+                    }
+                }
+                route.asJsonObject["intent"]?.asString?.let { intent ->
+                    // If there are trigger fulfillment messages, capture them
+                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "intent", intent)), LanguagePhrases(messages))
+                    }
                 }
             }
         }
@@ -103,6 +110,23 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                     val messages = processMessages(entryFulfillment)
                     if (messages != null)
                         translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "message")), LanguagePhrases(messages))
+                }
+                jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
+                    val parameter = parameterElement.asJsonObject
+                    val displayName = parameter["displayName"].asString
+                    parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
+                        fillBehavior["initialPromptFulfillment"]?.let { initialPrompt ->
+                            val messages = processMessages(initialPrompt)
+                            if (messages != null)
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguagePhrases(messages))
+                        }
+                        fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { event ->
+                            val messages = processMessages(event.asJsonObject["triggerFulfillment"])
+                            val eventName = event.asJsonObject["event"].asString
+                            if (messages != null)
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguagePhrases(messages))
+                        }
+                    }
                 }
                 // If the page has event handlers with fulfillment messages, capture them
                 processEventHandlers(jsonObject, flowName).forEach { (event, messages) ->
