@@ -1,5 +1,5 @@
-# Dialogflow CX Tools
-The Nuvalence Dialogflow CX Tools are accelerators that automate mundane, 
+# Agent Essentials for CCAI
+The Nuvalence Agent Essentials for CCAI are accelerators that automate mundane, 
 manual tasks related to creating and maintaining CCAI/Dialogflow agents:
 
 1. Generating an initial cut of an Agent capable of answering questions.
