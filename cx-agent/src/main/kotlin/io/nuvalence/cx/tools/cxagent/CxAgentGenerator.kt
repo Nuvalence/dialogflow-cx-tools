@@ -3,13 +3,10 @@ package io.nuvalence.cx.tools.cxagent
 import freemarker.template.Configuration
 import freemarker.template.TemplateExceptionHandler
 import io.nuvalence.cx.tools.cxagent.model.CxAgentModel
-import java.io.BufferedOutputStream
+import io.nuvalence.cx.tools.shared.zipDirectory
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.Paths
 import java.util.*
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 /**
  * This class generates the different pieces of an agent based on the model. This class is bigger than I
@@ -43,7 +40,7 @@ class CxAgentGenerator(private val path: String, private val model: CxAgentModel
         generateTransitionRouteGroups()
         generateFaqFlows()
         generateSupportFlows()
-        zipAgent()
+        zipDirectory("$path/agent", "$path/agent.zip")
     }
 
     /**
@@ -210,24 +207,6 @@ class CxAgentGenerator(private val path: String, private val model: CxAgentModel
         "unable-to-help" to mapOf("targetFlow" to "flow.what-else"),
         "what-else" to mapOf("targetFlow" to "flow.routing")
     )
-
-    /**
-     * Zips the agent directory into an agent.zip file
-     */
-    private fun zipAgent() {
-        val inputDirectory = File("$path/agent")
-        val outputZipFile = File("$path/agent.zip")
-        ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile))).use { zos ->
-            inputDirectory.walkTopDown().forEach { file ->
-                val zipFileName = file.absolutePath.removePrefix(inputDirectory.absolutePath).removePrefix("/")
-                val entry = ZipEntry( "$zipFileName${(if (file.isDirectory) "/" else "" )}")
-                zos.putNextEntry(entry)
-                if (file.isFile) {
-                    file.inputStream().use { fis -> fis.copyTo(zos) }
-                }
-            }
-        }
-    }
 
     /**
      * Helper function to generate a file based on a template
