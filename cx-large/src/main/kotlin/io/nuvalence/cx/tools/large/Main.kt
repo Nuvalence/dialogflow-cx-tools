@@ -13,19 +13,19 @@ suspend fun main(args: Array<String>) {
     val spreadsheetId = args[0]
     val url = URL(args[1])
     val apiKey = args[2]
-    val client = OpenAI(token = apiKey)
+    OpenAI(token = apiKey).use { client ->
+        val questionList = generateQuestions(client)
+        val sheetWriter = SheetWriter(url, spreadsheetId)
+        sheetWriter.deleteTab("Questions")
+        sheetWriter.addTab("Questions")
+        sheetWriter.addDataToTab(
+            "Questions",
+            questionList,
+            listOf("Topic", "Intent", "Training Phrases", "Response", "Website", "Follow-up"),
+            listOf(150, 150, 400, 400, 150, 150)
+        )
+    }
 
-    val questionList = generateQuestions(client)
-
-    val sheetWriter = SheetWriter(url, spreadsheetId)
-    sheetWriter.deleteTab("Questions")
-    sheetWriter.addTab("Questions")
-    sheetWriter.addDataToTab(
-        "Questions",
-        questionList,
-        listOf("Topic", "Intent", "Training Phrases", "Response", "Website", "Follow-up"),
-        listOf(150, 150, 400, 400, 150, 150)
-    )
     println("Done")
 }
 
