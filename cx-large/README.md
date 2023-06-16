@@ -19,7 +19,3 @@ cd cx-large
 **Arguments**:
 * Google Sheet ID - the string between `/d/` and `/edit#` from your Sheet URL: docs.google.com/spreadsheets/d/<mark>1vxyvOCGqh_382_ZpEWcI1rGLjzjJa4pRRXM64KjcTxU</mark>/edit#gid=1799424559
 * URL where to find the `credentials.json` file granting access to the Google Sheet above
-* A ChatGPT API Key - the generator will call ChatGPT to generate training phrases
-variations - total of 5.
-
-Note that calls to ChatGPT slow down the generation process.

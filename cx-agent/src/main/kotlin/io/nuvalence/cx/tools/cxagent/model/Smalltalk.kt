@@ -35,16 +35,16 @@ data class Smalltalk(
 data class Smalltalks(
     val smalltalks: List<Smalltalk>
 ) {
-    val smalltalkMap = smalltalks.associate { smalltalk ->
+    private val smalltalkMap = smalltalks.associate { smalltalk ->
         fromKey(smalltalk.smalltalkName) to smalltalk
     }
 
-    val defaultEventHandlers = mapOf(
+    private val defaultEventHandlers = mapOf(
         "sys.no-input-default" to formatEventFulfillment(NO_INPUT_DEFAULT),
         "sys.no-match-default" to formatEventFulfillment(NO_MATCH_DEFAULT)
     )
 
-    val allEventHandlers = mapOf(
+    private val allEventHandlers = mapOf(
         "sys.no-input-1" to formatEventFulfillment(NO_INPUT_1),
         "sys.no-input-2" to formatEventFulfillment(NO_INPUT_2),
         "sys.no-input-3" to formatEventFulfillment(NO_INPUT_3),

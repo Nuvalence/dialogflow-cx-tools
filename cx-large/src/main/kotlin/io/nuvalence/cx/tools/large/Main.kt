@@ -1,52 +1,34 @@
 package io.nuvalence.cx.tools.large
 
-import com.aallam.openai.api.completion.CompletionRequest
-import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.OpenAI
 import io.nuvalence.cx.tools.shared.SheetWriter
 import java.net.URL
 
-suspend fun main(args: Array<String>) {
-    if (args.size < 3)
-        error("Must supply <spreadsheet id> <URL to credentials.json file> <Chat GPT API key>")
+fun main(args: Array<String>) {
+    if (args.size < 2)
+        error("Must supply <spreadsheet id> <URL to credentials.json file>")
 
     val spreadsheetId = args[0]
     val url = URL(args[1])
-    val apiKey = args[2]
-    OpenAI(token = apiKey).use { client ->
-        val questionList = generateQuestions(client)
-        val sheetWriter = SheetWriter(url, spreadsheetId)
-        sheetWriter.deleteTab("Questions")
-        sheetWriter.addTab("Questions")
-        sheetWriter.addDataToTab(
-            "Questions",
-            questionList,
-            listOf("Topic", "Intent", "Training Phrases", "Response", "Website", "Follow-up"),
-            listOf(150, 150, 400, 400, 150, 150)
-        )
-    }
-
-    println("Done")
+    val questionList = generateQuestions()
+    val sheetWriter = SheetWriter(url, spreadsheetId)
+    sheetWriter.deleteTab("Questions")
+    sheetWriter.addTab("Questions")
+    sheetWriter.addDataToTab(
+        "Questions",
+        questionList,
+        listOf("Topic", "Intent", "Training Phrases", "Response", "Website", "Follow-up"),
+        listOf(150, 150, 400, 400, 150, 150)
+    )
 }
 
-suspend fun generateQuestions(client: OpenAI) =
+fun generateQuestions() =
     categories.flatMap { category ->
         questions.mapIndexed { index, question ->
-            println("##### Category: $category - $index")
             val intent = "$category-$index"
             val withSubject = question.replace("[subject]", category)
-            val finalQuestion = variations(client, withSubject)
-            listOf(category, intent, finalQuestion, "The not overly creative answer to $withSubject is $category")
+            listOf(category, intent, withSubject, "The not overly creative answer to $withSubject is $category")
         }
     }
-
-suspend fun variations(client: OpenAI, base: String) =
-    client.completion(CompletionRequest(
-        model = ModelId("text-davinci-003"),
-        prompt = "Create five ways to ask this question: $base",
-        maxTokens = 200,
-        echo = false
-    )).choices.first().text
 
 val questions = """
     What are common symptoms of [subject]?

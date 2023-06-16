@@ -12,8 +12,6 @@ repositories {
 dependencies {
     implementation(project(mapOf("path" to ":cx-shared")))
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation("com.aallam.openai:openai-client:3.2.5")
-    implementation("io.ktor:ktor-client-cio:2.3.1")
 }
 
 
