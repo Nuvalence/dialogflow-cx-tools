@@ -14,10 +14,10 @@ import kotlinx.coroutines.*
  * @param client the ChatGPT client
  */
 fun parallelVariations(sources: List<String>, gptQuestion: String, client: OpenAI) =
-    Throttler(poolSize = 4, periodMs = 1000L).use { throttler ->
+    Throttler(poolSize = 4, periodMs = 200L).use { throttler ->
         throttler.throttle(sources) { source ->
             val questions = source.split("\n")
-            val variations = questions.flatMap { question ->
+            val variations = questions.filter { it.isNotBlank() }.flatMap { question ->
                 variation(question, gptQuestion, client)
             }
             "$source\n\n${variations.joinToString("\n")}"
@@ -34,10 +34,13 @@ fun parallelVariations(sources: List<String>, gptQuestion: String, client: OpenA
 fun variations(sources: List<String>, gptQuestion: String, client: OpenAI) =
     sources.map { source ->
         val questions = source.split("\n")
-        val variations = questions.flatMap { question ->
+        println("##### $questions")
+        val variations = questions.filter { it.isNotBlank() }.flatMap { question ->
             variation(question, gptQuestion, client)
         }
-        "$source\n\n${variations.joinToString("\n")}"
+        val result = "$source\n\n${variations.joinToString("\n")}"
+        println("##### $result")
+        result
     }
 
 /**
@@ -70,14 +73,14 @@ fun variation(source: String, gptQuestion: String, client: OpenAI) =
  * Calls in parallel, but it throttles the calls. Pool size and periodMs should be adjusted
  * according to your account.
  *
- * @param sources List of answers we want questions for
+ * @param responses List of answers we want questions for
  * @param gptQuestion What to ask ChatGPT to generate questions
  * @param client the ChatGPT client
  */
-fun parallelSuggestions(sources: List<String>, gptQuestion: String, client: OpenAI): List<String> =
+fun parallelSuggestions(responses: List<String>, questions: List<String>, gptQuestion: String, client: OpenAI): List<String> =
     Throttler(poolSize = 4, periodMs = 1000L).use { throttler ->
-        throttler.throttle(sources) { source ->
-            suggestion(source, gptQuestion, client)
+        throttler.throttle(responses.zip(questions)) { (response, question) ->
+            suggestion(response, question, gptQuestion, client)
         }
     }
 
@@ -85,29 +88,32 @@ fun parallelSuggestions(sources: List<String>, gptQuestion: String, client: Open
 * Calls ChatGPT passing the responses as parameter, and asking it to generate the questions.
 * Calls sequentially, so this takes some time...
 *
-* @param sources List of answers we want questions for
+* @param responses List of answers we want questions for
 * @param gptQuestion What to ask ChatGPT to generate questions
 * @param client the ChatGPT client
 */
-fun suggestions(sources: List<String>, gptQuestion: String, client: OpenAI) =
-    sources.map { source ->
-        suggestion(source, gptQuestion, client)
+fun suggestions(responses: List<String>, questions: List<String>, gptQuestion: String, client: OpenAI) =
+    responses.zip(questions).map { (response, question) ->
+        println("##### Response: $response\n##### Question: $question\n")
+        val result = suggestion(response, question, gptQuestion, client)
+        println("##### Generated questions:\n${result}")
+        result
     }
 
 /**
  * Calls ChatGPT  to generate questions for a single response.
  *
- * @param source Answer we want questions for
+ * @param response Answer we want questions for
  * @param gptQuestion What to ask ChatGPT to generate questions
  * @param client the ChatGPT client
  */
-fun suggestion(source: String, gptQuestion: String, client: OpenAI) =
+fun suggestion(response: String, question: String, gptQuestion: String, client: OpenAI) =
     runBlocking {
         try {
             client.completion(
                 CompletionRequest(
                     model = ModelId("text-davinci-003"),
-                    prompt = "$gptQuestion: \n$source",
+                    prompt = "${gptQuestion.replace("[question]", question)}: \n$response",
                     maxTokens = 1000,
                     echo = false
                 )

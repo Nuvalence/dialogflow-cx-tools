@@ -16,7 +16,11 @@ fun main(args: Array<String>) {
     val gptQuestion = args[3]
     OpenAI(token = apiKey).use { client ->
         val questionsTab = SheetReader(credentialsUrl, spreadsheetId, "Questions").read()
-        val newQuestions = suggestions(questionsTab.drop(1).map { it[3] }, gptQuestion, client)
+        val newQuestions = suggestions(
+            questionsTab.drop(1).map { it[3] },
+            questionsTab.drop(1).map { it[2] },
+            gptQuestion,
+            client)
         val newQuestionsTab = newQuestions.zip(questionsTab.drop(1)) { newCell, row ->
             row.toMutableList().apply {
                 this[2] = newCell
