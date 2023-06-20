@@ -49,15 +49,19 @@ fun variations(sources: List<String>, gptQuestion: String, client: OpenAI) =
  */
 fun variation(source: String, gptQuestion: String, client: OpenAI) =
     source.split("\n").map { question ->
-        runBlocking {
-            client.completion(
-                CompletionRequest(
-                    model = ModelId("text-davinci-003"),
-                    prompt = gptQuestion.replace("[question]", question),
-                    maxTokens = 200,
-                    echo = false
-                )
-            ).choices.first().text
+        try {
+            runBlocking {
+                client.completion(
+                    CompletionRequest(
+                        model = ModelId("text-davinci-003"),
+                        prompt = gptQuestion.replace("[question]", question),
+                        maxTokens = 500,
+                        echo = false
+                    )
+                ).choices.first().text
+            }
+        } catch (ex: Exception) {
+            "ChatGPT returned an error: ${ex.message}"
         }
     }
 
@@ -99,12 +103,16 @@ fun suggestions(sources: List<String>, gptQuestion: String, client: OpenAI) =
  */
 fun suggestion(source: String, gptQuestion: String, client: OpenAI) =
     runBlocking {
-        client.completion(
-            CompletionRequest(
-                model = ModelId("text-davinci-003"),
-                prompt = "$gptQuestion: \n$source",
-                maxTokens = 500,
-                echo = false
-            )
-        ).choices.first().text
+        try {
+            client.completion(
+                CompletionRequest(
+                    model = ModelId("text-davinci-003"),
+                    prompt = "$gptQuestion: \n$source",
+                    maxTokens = 1000,
+                    echo = false
+                )
+            ).choices.first().text
+        } catch (ex: Exception) {
+            "ChatGPT returned an error: ${ex.message}"
+        }
     }
