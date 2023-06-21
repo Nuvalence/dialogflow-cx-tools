@@ -41,7 +41,7 @@ val SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov")
  * Consonant sequences that sound weird in English, so we revert to spelling out the word instead
  * of saying it as-is.
  */
-val INVALID_CONSONANT_SEQUENCE = Regex("\\b.*([^aeiouy]{3,}|[hjmnqvwxz]r|[cdfghjqvwxz]s|[dhjmnqrtvxwz]l|kpy|ww|hh|jj|kk|qq|xx).*\\b")
+val INVALID_CONSONANT_SEQUENCE = Regex("\\b.*([^aeiouy]{5,}|[^aeiou][^aeiouy]{4,}[^aeiou]|[hjmnqvwxz]r|[cdfghjqvwxz]s|[dhjmnqrtvxwz]l|sth|kpy|ww|hh|jj|kk|qq|vv|xx).*\\b")
 
 /**
  * Generates the outputAudioText element
@@ -124,8 +124,10 @@ fun processNumber(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
     (if (number == "800")  // Special case for phone numbers
         " eight hundred "
-    else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
-        number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
+    else if (number.length < 4)
+            number
+         else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
+            number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
 
 /**
  * Splits a URL in its basic components, including the separators (e.g. . or /)

@@ -79,7 +79,7 @@ Those are used by the Generator to create the flows and pages that handle the FA
 
 ##### Sample Input Spreadsheet #####
 
-This is a reference input spreadsheet => [CCAI Generator v2 proposal](https://www.google.com/url?q=https://docs.google.com/spreadsheets/d/1vxyvOCGqh_382_ZpEWcI1rGLjzjJa4pRRXM64KjcTxU/edit?usp%3Dsharing&sa=D&source=editors&ust=1684512764453047&usg=AOvVaw19y6qY2L1vJC7gn8Lx8qoc)
+This is a reference input spreadsheet => [Google Workspace FAQs](https://docs.google.com/spreadsheets/d/1TlB8O0ZhQlenJ5T7-WtNu-0rqFhGBEPM4Ld0MOzOQgY/edit?usp=sharing)
 
 ### Generation Process ###
 
@@ -167,7 +167,7 @@ The generated Agent follows a strict naming convention; please refer to the [Inp
 
 FAQ flows have the same structure:
 
-![](images/image5.png)
+![](images/faq-flow-structure.png)
 
 The Start page checks a user-request session parameter and uses it to direct the flow to the appropriate page. The session parameter contents match the page name. For example, faq.ford-pro.software routes to the faq.ford-pro.software page.
 
@@ -215,7 +215,7 @@ One of the capabilities of the generated Agent is the ability to repeat its last
 
 Therefore, all we need to do is a “starts with” type of match to find out the flow name. The Generator creates a Start page for this flow with routes that simply direct the Agent to the appropriate flow based on the user-request parameter:
 
-![](images/image2.png)
+![](images/repeat-flow-structure.png)
 
 For follow up questions, we leverage flow.repeat: instead of directing the Agent to flow.confirmation, we set two session parameters:
 

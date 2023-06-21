@@ -29,7 +29,7 @@ class SheetParser(
         const val QUESTION_WEBSITE = 4
         const val QUESTION_FOLLOWUP = 5
         const val FAQ_PREFIX = "faq"
-        val leadingDigitsRegex = Regex("^[\\d\\. ]+")
+        val leadingDigitsRegex = Regex("^\\d[.)]\\s")
     }
 
     /**

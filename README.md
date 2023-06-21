@@ -72,6 +72,9 @@ we make no assumption whether we can go ahead and delete things...)
 # Running Tests
 Please see cx-test README.md for instructions.
 
+# Other Tools
+Please refer to the README.md files under `cx-large` and `cx-variations` for additional tools.
+
 # Contributors
 * https://github.com/aantenangeli
 * https://github.com/gteng-nuvalence

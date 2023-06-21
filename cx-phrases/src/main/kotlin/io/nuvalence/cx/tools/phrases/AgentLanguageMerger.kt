@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.internal.Streams
 import com.google.gson.stream.JsonWriter
+import io.nuvalence.cx.tools.shared.zipDirectory
 import java.io.File
 import java.io.StringWriter
 
@@ -30,6 +31,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         processFlows()
         processPages()
         processTransitionRouteGroups()
+        zipDirectory(rootPath, "$rootPath.zip")
     }
 
     /**
