@@ -42,8 +42,8 @@ fun export(args: Array<String>) {
     sheetWriter.addDataToTab(
         PhraseType.Flows.title,
         translationAgent.flattenFlows(),
-        listOf("Flow Name", "Type", "Event Name") + translationAgent.allLanguages,
-        listOf(200, 100, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
+        listOf("Flow Name", "Type/Page", "Event Name") + translationAgent.allLanguages,
+        listOf(200, 100, 200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
     sheetWriter.deleteTab(PhraseType.Pages.title)
