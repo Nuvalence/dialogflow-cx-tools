@@ -73,7 +73,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             val flowPath = directory.absolutePath
             val flowName = directory.name
             val jsonObject = JsonParser.parseString(File("$flowPath/$flowName.json").readText()).asJsonObject
-            processEventHandlers(jsonObject, listOf(flowName, "event"), translationAgent::getFlow)
+            processEventHandlers(jsonObject, listOf(flowName, "", "event"), translationAgent::getFlow)
             jsonObject["transitionRoutes"].asJsonArray.forEach { route ->
                 processTransitionRoute(flowName, route, "condition")
                 processTransitionRoute(flowName, route, "intent")
@@ -87,7 +87,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      */
     private fun processTransitionRoute(flowName: String, route: JsonElement, transitionTrigger: String) {
         route.asJsonObject[transitionTrigger]?.asString?.let { entry ->
-            translationAgent.getFlow(PhrasePath(listOf(flowName, transitionTrigger, entry)))?.let { flow ->
+            translationAgent.getFlow(PhrasePath(listOf(flowName, "", transitionTrigger, entry)))?.let { flow ->
                 val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
                 replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = true, flow.phraseByLanguage))
                 processWebSiteParameter(entryFulfillment.asJsonObject["setParameterActions"])
@@ -111,6 +111,13 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "message")))?.let { page ->
                     replaceMessages(jsonObject["entryFulfillment"].asJsonObject, languagePhrasesToJson(singleString = true, page.phraseByLanguage))
                     processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
+                }
+                jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
+                    route.asJsonObject["condition"]?.asString?.let { condition ->
+                        translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
+                            replaceMessages(route.asJsonObject["triggerFulfillment"].asJsonObject , languagePhrasesToJson(singleString = true, phrases.phraseByLanguage))
+                        }
+                    }
                 }
                 jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
                     val parameter = parameterElement.asJsonObject
@@ -172,8 +179,8 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         val eventsJson = jsonObject["eventHandlers"]?.asJsonArray
         eventsJson?.forEach { event ->
             val phrases = when (val eventName = event.asJsonObject["event"].asString) {
-                "sys.no-match-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "event", "sys.no-match-default")))
-                "sys.no-input-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "event", "sys.no-input-default")))
+                "sys.no-match-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-match-default")))
+                "sys.no-input-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-input-default")))
                 else -> getPhrases(PhrasePath(pathPrefix + eventName))
             }
             if (phrases != null) {

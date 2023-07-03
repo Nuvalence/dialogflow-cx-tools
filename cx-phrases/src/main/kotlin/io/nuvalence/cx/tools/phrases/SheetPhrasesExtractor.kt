@@ -41,7 +41,7 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
      */
     private fun processFlows(translationAgent: TranslationAgent) {
         val flows = SheetReader(credentialsURL, spreadsheetId, Flows.title).read()
-        processRows(translationAgent, flows, 3, translationAgent::putFlow)
+        processRows(translationAgent, flows, 4, translationAgent::putFlow)
     }
 
     /**

@@ -113,7 +113,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
-                        // If there are trigger fulfillment messages, capture them
+                        // If there are transition route fulfillment messages, capture them
                         processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
                             translationAgent.putFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)), LanguagePhrases(messages))
                         }
