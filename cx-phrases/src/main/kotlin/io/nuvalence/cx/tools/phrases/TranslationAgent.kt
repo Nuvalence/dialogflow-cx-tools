@@ -6,6 +6,7 @@ package io.nuvalence.cx.tools.phrases
  */
 enum class PhraseType(val title: String) {
     Intents("Training Phrases"),
+    Entities("Entities"),
     Flows("Transitions"),
     Pages("Fulfillments");
 }
@@ -35,7 +36,7 @@ class TranslationPhrases {
 
     operator fun get(phrasePath: PhrasePath) = phrases[phrasePath]
 
-    fun put(path: PhrasePath, languagePhrases: LanguagePhrases) {
+    operator fun set(path: PhrasePath, languagePhrases: LanguagePhrases) {
         phrases[path] = languagePhrases
     }
 
@@ -50,23 +51,51 @@ class TranslationPhrases {
         }
 }
 
+class TranslationEntities {
+    private  val entities = mutableMapOf<String, MutableMap<String, LanguagePhrases>>()
+
+    operator fun get(displayName: String) = entities[displayName]
+
+    operator fun set(displayName: String, value: String, language: String, synonyms: List<String>) {
+        val entityType = entities.getOrPut(displayName) { mutableMapOf() }
+        val phrases = entityType[value]
+        if (phrases == null)
+            entityType[value] = LanguagePhrases(mapOf(language to synonyms))
+        else
+            entityType[value] = LanguagePhrases(mapOf(language to synonyms) + phrases.phraseByLanguage)
+    }
+
+    fun flatten(order: List<String>) =
+        entities.flatMap { (displayName, entityMap) ->
+            entityMap.map { (entity, languagePhrases) ->
+                listOf(entity) + languagePhrases.flatten(order)
+            }.map { list ->
+                listOf(displayName) + list
+            }
+        }
+}
+
 /**
  * This class holds all the phrases, broken down by intent/flow/pages/path/language.
  */
 class TranslationAgent(val defaultLanguageCode: String, val supportedLanguageCodes: List<String>) {
+    private val entities = TranslationEntities()
     private val intents = TranslationPhrases()
     private val flows = TranslationPhrases()
     private val pages = TranslationPhrases()
     val allLanguages = listOf(defaultLanguageCode) + supportedLanguageCodes
 
+    fun getEntity(displayName: String) = entities[displayName]
     fun getIntent(path: PhrasePath) = intents[path]
     fun getFlow(path: PhrasePath) = flows[path]
     fun getPages(path: PhrasePath) = pages[path]
 
-    fun putIntent(path: PhrasePath, languagePhrases: LanguagePhrases) = intents.put(path, languagePhrases)
-    fun putFlow(path: PhrasePath, languagePhrases: LanguagePhrases) = flows.put(path, languagePhrases)
-    fun putPage(path: PhrasePath, languagePhrases: LanguagePhrases) = pages.put(path, languagePhrases)
+    fun putEntity(displayName: String, value: String, language: String, synonyms: List<String>) = entities.set(displayName, value, language, synonyms)
+    fun putIntent(path: PhrasePath, languagePhrases: LanguagePhrases) = intents.set(path, languagePhrases)
+    fun putFlow(path: PhrasePath, languagePhrases: LanguagePhrases) = flows.set(path, languagePhrases)
+    fun putPage(path: PhrasePath, languagePhrases: LanguagePhrases) = pages.set(path, languagePhrases)
 
+    fun flattenEntities() = entities.flatten(allLanguages)
     fun flattenIntents() = intents.flatten(allLanguages)
     fun flattenFlows() = flows.flatten(allLanguages)
     fun flattenPages() = pages.flatten(allLanguages)

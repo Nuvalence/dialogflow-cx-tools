@@ -37,6 +37,15 @@ fun export(args: Array<String>) {
         listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
+    sheetWriter.deleteTab(PhraseType.Entities.title)
+    sheetWriter.addTab(PhraseType.Entities.title)
+    sheetWriter.addDataToTab(
+        PhraseType.Entities.title,
+        translationAgent.flattenEntities(),
+        listOf("Entity Type", "Value") + translationAgent.allLanguages,
+        listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
+    )
+
     sheetWriter.deleteTab(PhraseType.Flows.title)
     sheetWriter.addTab(PhraseType.Flows.title)
     sheetWriter.addDataToTab(

@@ -13,6 +13,7 @@ import java.io.File
 class AgentPhrasesExtractor(private val rootPath: String) {
     fun process(): TranslationAgent {
         val translationAgent = processAgent()
+        processEntityTypes(translationAgent)
         processIntents(translationAgent)
         processFlows(translationAgent)
         processPages(translationAgent)
@@ -29,6 +30,22 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         val defaultLanguageCode = jsonObject["defaultLanguageCode"].asString
         val supportedLanguageCodes = jsonObject["supportedLanguageCodes"]?.asJsonArray?.map { it.asString } ?: listOf()
         return TranslationAgent(defaultLanguageCode, supportedLanguageCodes)
+    }
+
+    private fun processEntityTypes(translationAgent: TranslationAgent) {
+        File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
+            val entityPath = directory.absolutePath
+            val entityName = directory.name // the directory name is the entity name
+            File("$entityPath/entities").listFiles()?.forEach { file ->
+                val language = file.nameWithoutExtension // as in en.json minus .json
+                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                jsonObject["entities"]?.asJsonArray?.forEach { entity ->
+                    val value = entity.asJsonObject["value"].asString
+                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.toList().map { it.asString }
+                    translationAgent.putEntity(entityName, value, language, synonyms)
+                }
+            }
+        }
     }
 
     /**
