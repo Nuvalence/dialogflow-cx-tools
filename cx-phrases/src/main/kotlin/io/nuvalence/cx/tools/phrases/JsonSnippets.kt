@@ -94,8 +94,9 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Strin
         textBlob.addProperty("languageCode", languageCode)
         textBlob.add("text", outerText)
         messages.add(textBlob)
-        val audio = audioMessage(languageCode, texts.joinToString("\n"))
-        messages.add(audio)
+        texts.forEach { text ->
+            messages.add(audioMessage(languageCode, text))
+        }
     }
     return messages
 }

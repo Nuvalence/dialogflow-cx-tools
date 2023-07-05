@@ -110,7 +110,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         route.asJsonObject[transitionTrigger]?.asString?.let { entry ->
             translationAgent.getFlow(PhrasePath(listOf(flowName, "", transitionTrigger, entry)))?.let { flow ->
                 val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
-                replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = true, flow.phraseByLanguage))
+                replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = false, flow.phraseByLanguage))
                 processWebSiteParameter(entryFulfillment.asJsonObject["setParameterActions"])
             }
         }
