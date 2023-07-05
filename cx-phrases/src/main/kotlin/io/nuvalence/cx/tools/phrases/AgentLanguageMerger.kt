@@ -28,6 +28,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
     fun process() {
         processAgent()
         processIntents()
+        processEntityTypes()
         processFlows()
         processPages()
         processTransitionRouteGroups()
@@ -58,6 +59,26 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 val phrases = languagePhrases[languageCode] ?: listOf()
                 val jsonElement = intentLanguage(languageCode, phrases)
                 prettySave(jsonElement, "$intentPath/trainingPhrases/$languageCode.json")
+            }
+        }
+    }
+
+    private fun  processEntityTypes() {
+        File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
+            val entityPath = directory.absolutePath
+            val entityName = directory.name // the directory name is the entity name
+            File("$entityPath/entities").listFiles()?.forEach { file ->
+                val languageCode = file.nameWithoutExtension // as in en.json minus .json
+                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                jsonObject["entities"]?.asJsonArray?.forEach { entity ->
+                    val value = entity.asJsonObject["value"].asString
+                    val synonyms = translationAgent.getEntity(entityName, value, languageCode)
+                    val synonymArray = JsonArray()
+                    synonyms.forEach { synonym -> synonymArray.add(synonym) }
+                    entity.asJsonObject.remove("synonyms")
+                    entity.asJsonObject.add("synonyms", synonymArray)
+                }
+                prettySave(jsonObject, "$entityPath/entities/$languageCode.json")
             }
         }
     }

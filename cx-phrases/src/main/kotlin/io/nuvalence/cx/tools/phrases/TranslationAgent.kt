@@ -54,7 +54,8 @@ class TranslationPhrases {
 class TranslationEntities {
     private  val entities = mutableMapOf<String, MutableMap<String, LanguagePhrases>>()
 
-    operator fun get(displayName: String) = entities[displayName]
+    operator fun get(displayName: String, value: String, language: String) =
+        entities[displayName]?.get(value)?.get(language) ?: error("Agent structure changed: displayName = $displayName value = $value language = $language")
 
     operator fun set(displayName: String, value: String, language: String, synonyms: List<String>) {
         val entityType = entities.getOrPut(displayName) { mutableMapOf() }
@@ -85,7 +86,7 @@ class TranslationAgent(val defaultLanguageCode: String, val supportedLanguageCod
     private val pages = TranslationPhrases()
     val allLanguages = listOf(defaultLanguageCode) + supportedLanguageCodes
 
-    fun getEntity(displayName: String) = entities[displayName]
+    fun getEntity(displayName: String, value: String, language: String) = entities.get(displayName, value, language)
     fun getIntent(path: PhrasePath) = intents[path]
     fun getFlow(path: PhrasePath) = flows[path]
     fun getPages(path: PhrasePath) = pages[path]
