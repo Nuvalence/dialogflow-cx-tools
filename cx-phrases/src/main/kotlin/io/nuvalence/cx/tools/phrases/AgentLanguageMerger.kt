@@ -136,7 +136,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
                         translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
-                            replaceMessages(route.asJsonObject["triggerFulfillment"].asJsonObject , languagePhrasesToJson(singleString = true, phrases.phraseByLanguage))
+                            replaceMessages(route.asJsonObject["triggerFulfillment"].asJsonObject , languagePhrasesToJson(singleString = false, phrases.phraseByLanguage))
                         }
                     }
                 }
@@ -153,7 +153,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                             eventElement. asJsonObject.let { event ->
                                 val eventName = event["event"].asString
                                 translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")))?.let { phrases ->
-                                    replaceMessages(event["triggerFulfillment"].asJsonObject, languagePhrasesToJson(singleString = true, phrases.phraseByLanguage))
+                                    replaceMessages(event["triggerFulfillment"].asJsonObject, languagePhrasesToJson(singleString = false, phrases.phraseByLanguage))
                                 }
                             }
                         }
