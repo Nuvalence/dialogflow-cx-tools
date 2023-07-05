@@ -261,9 +261,10 @@ Note that the Translator assumes that the Agent structure has not changed betwee
 
 The export process creates three tabs on a given Google Sheet:
 
-1.  Training Phrases: contains the intents and their training phrases.
-2.  Transitions: messages associated with transitions.
-3.  Fulfillments: messages associated with page fulfilments.
+1. Training Phrases: contains the intents and their training phrases.
+2. Entities: entity types and their synonuyms
+3. Transitions: messages associated with transitions.
+4. Fulfillments: messages associated with page fulfilments.
 
 Let’s look at them in detail. For reference, this is a link to an exported agent: [Export Test](https://www.google.com/url?q=https://docs.google.com/spreadsheets/d/16xjZ4tnVlRLlwd0jiKX6Q7d3TV08jtGWF_SxoCS-DHc/edit%23gid%3D489605739&sa=D&source=editors&ust=1684512764472988&usg=AOvVaw3GuIRsVkU3c-xdN9GQXmOd)
 
@@ -273,9 +274,16 @@ This tab contains:
 
 *   An **Intent Name** column, with the different intent names.
 *   A column for each language:
+    *   The top cell contains the language code (e.g. en or es) for that column.
+    *   The remaining cells contain the training phrases for a given intent/language, one per line.
 
-*   The top cell contains the language code (e.g. en or es) for that column.
-*   The remaining cells contain the training phrases for a given intent/language, one per line.
+##### Entities #####
+
+This tab contains:
+
+* An Entity Name column, with the different entities
+* The entity value
+* A column for each language, with the synonyms for the entity, one per line
 
 ##### Transitions #####
 
