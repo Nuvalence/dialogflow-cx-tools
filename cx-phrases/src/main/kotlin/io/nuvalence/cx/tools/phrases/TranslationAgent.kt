@@ -51,6 +51,9 @@ class TranslationPhrases {
         }
 }
 
+/**
+ * Holds the different entityTypes. They are accessed by their display name, value and language.
+ */
 class TranslationEntities {
     private  val entities = mutableMapOf<String, MutableMap<String, LanguagePhrases>>()
 

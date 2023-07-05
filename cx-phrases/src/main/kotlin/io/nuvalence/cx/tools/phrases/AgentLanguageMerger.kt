@@ -63,6 +63,11 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         }
     }
 
+    /**
+     * Replace the entity types and their synonyms with the contents of the spreadsheet. Those go to:
+     *
+     * <agent-root>/entityTypes/<entity-name>/entities/<language-code>.json
+     */
     private fun  processEntityTypes() {
         File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
             val entityPath = directory.absolutePath

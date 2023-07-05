@@ -36,6 +36,10 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
         return translationAgent
     }
 
+    /**
+     * Read the tab containing the entity types - those are the ones that come from
+     * <agent-root>/entityTypes/<entity-name>/entities, with one file per language.
+     */
     private fun processEntityTypes(translationAgent: TranslationAgent) {
         val entities = SheetReader(credentialsURL, spreadsheetId, Entities.title).read()
         entities.drop(1).forEach { row ->

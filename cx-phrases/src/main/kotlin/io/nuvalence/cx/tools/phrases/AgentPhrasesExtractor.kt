@@ -32,22 +32,6 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         return TranslationAgent(defaultLanguageCode, supportedLanguageCodes)
     }
 
-    private fun processEntityTypes(translationAgent: TranslationAgent) {
-        File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
-            val entityPath = directory.absolutePath
-            val entityName = directory.name // the directory name is the entity name
-            File("$entityPath/entities").listFiles()?.forEach { file ->
-                val language = file.nameWithoutExtension // as in en.json minus .json
-                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
-                jsonObject["entities"]?.asJsonArray?.forEach { entity ->
-                    val value = entity.asJsonObject["value"].asString
-                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.toList().map { it.asString }
-                    translationAgent.putEntity(entityName, value, language, synonyms)
-                }
-            }
-        }
-    }
-
     /**
      * Process all intent phrases. They are located under the "intents" directory under the
      * agent root path. Each intent has its own directory, whose name matches the intent name,
@@ -74,6 +58,27 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             }
             if (messages != null)
                 translationAgent.putIntent(PhrasePath(listOf(intentName)), LanguagePhrases(messages))
+        }
+    }
+
+    /**
+     * Extract the entity types. They are located under the entityTypes directory under the agent
+     * root path. Each entity type has its own directory, whose name matches its display name. The
+     * entities subdirectory contains one file per language, with the entity value ant its synonyms.
+     */
+    private fun processEntityTypes(translationAgent: TranslationAgent) {
+        File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
+            val entityPath = directory.absolutePath
+            val entityName = directory.name // the directory name is the entity name
+            File("$entityPath/entities").listFiles()?.forEach { file ->
+                val language = file.nameWithoutExtension // as in en.json minus .json
+                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                jsonObject["entities"]?.asJsonArray?.forEach { entity ->
+                    val value = entity.asJsonObject["value"].asString
+                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.toList().map { it.asString }
+                    translationAgent.putEntity(entityName, value, language, synonyms)
+                }
+            }
         }
     }
 
