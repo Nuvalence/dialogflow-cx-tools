@@ -13,6 +13,7 @@ import java.io.File
 class AgentPhrasesExtractor(private val rootPath: String) {
     fun process(): TranslationAgent {
         val translationAgent = processAgent()
+        processEntityTypes(translationAgent)
         processIntents(translationAgent)
         processFlows(translationAgent)
         processPages(translationAgent)
@@ -61,6 +62,27 @@ class AgentPhrasesExtractor(private val rootPath: String) {
     }
 
     /**
+     * Extract the entity types. They are located under the entityTypes directory under the agent
+     * root path. Each entity type has its own directory, whose name matches its display name. The
+     * entities subdirectory contains one file per language, with the entity value ant its synonyms.
+     */
+    private fun processEntityTypes(translationAgent: TranslationAgent) {
+        File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
+            val entityPath = directory.absolutePath
+            val entityName = directory.name // the directory name is the entity name
+            File("$entityPath/entities").listFiles()?.forEach { file ->
+                val language = file.nameWithoutExtension // as in en.json minus .json
+                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                jsonObject["entities"]?.asJsonArray?.forEach { entity ->
+                    val value = entity.asJsonObject["value"].asString
+                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.toList().map { it.asString }
+                    translationAgent.putEntity(entityName, value, language, synonyms)
+                }
+            }
+        }
+    }
+
+    /**
      * Process files under <agent-root>/flows/flow-name/flow-name.json. These contain events and transitions
      * based on conditions.
      */
@@ -72,20 +94,20 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             val jsonObject = JsonParser.parseString(File("$flowPath/$flowName.json").readText()).asJsonObject
             // Get all event handlers associated with this flow
             processEventHandlers(jsonObject, flowName).forEach { (event, messages) ->
-                translationAgent.putFlow(PhrasePath(listOf(flowName, "event", event)), messages)
+                translationAgent.putFlow(PhrasePath(listOf(flowName, "", "event", event)), messages)
             }
             // Get all transition routes and their associated condition
             jsonObject["transitionRoutes"].asJsonArray.forEach { route ->
                 route.asJsonObject["condition"]?.asString?.let { condition ->
                     // If there are trigger fulfillment messages, capture them
                     processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                        translationAgent.putFlow(PhrasePath(listOf(flowName, "condition", condition)), LanguagePhrases(messages))
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "condition", condition)), LanguagePhrases(messages))
                     }
                 }
                 route.asJsonObject["intent"]?.asString?.let { intent ->
                     // If there are trigger fulfillment messages, capture them
                     processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                        translationAgent.putFlow(PhrasePath(listOf(flowName, "intent", intent)), LanguagePhrases(messages))
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "intent", intent)), LanguagePhrases(messages))
                     }
                 }
             }
@@ -111,19 +133,27 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                     if (messages != null)
                         translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "message")), LanguagePhrases(messages))
                 }
+                jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
+                    route.asJsonObject["condition"]?.asString?.let { condition ->
+                        // If there are transition route fulfillment messages, capture them
+                        processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
+                            translationAgent.putFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)), LanguagePhrases(messages))
+                        }
+                    }
+                }
                 jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
                     val parameter = parameterElement.asJsonObject
                     val displayName = parameter["displayName"].asString
                     parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
                         fillBehavior["initialPromptFulfillment"]?.let { initialPrompt ->
                             val messages = processMessages(initialPrompt)
-                            if (messages != null)
+                            if (!messages.isNullOrEmpty())
                                 translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguagePhrases(messages))
                         }
                         fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { event ->
                             val messages = processMessages(event.asJsonObject["triggerFulfillment"])
                             val eventName = event.asJsonObject["event"].asString
-                            if (messages != null)
+                            if (!messages.isNullOrEmpty())
                                 translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguagePhrases(messages))
                         }
                     }

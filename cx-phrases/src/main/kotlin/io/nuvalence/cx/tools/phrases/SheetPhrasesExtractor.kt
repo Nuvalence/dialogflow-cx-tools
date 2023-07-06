@@ -14,6 +14,7 @@ import java.net.URL
 class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreadsheetId: String) {
     fun processSheet(): TranslationAgent {
         val translationAgent = processIntents()
+        processEntityTypes(translationAgent)
         processFlows(translationAgent)
         processPages(translationAgent)
         return translationAgent
@@ -36,12 +37,25 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
     }
 
     /**
+     * Read the tab containing the entity types - those are the ones that come from
+     * <agent-root>/entityTypes/<entity-name>/entities, with one file per language.
+     */
+    private fun processEntityTypes(translationAgent: TranslationAgent) {
+        val entities = SheetReader(credentialsURL, spreadsheetId, Entities.title).read()
+        entities.drop(1).forEach { row ->
+            (2 until row.size).forEach { languageCol ->
+                translationAgent.putEntity(row[0], row[1], entities[0][languageCol], row[languageCol].split("\n"))
+            }
+        }
+    }
+
+    /**
      * Read the tab containing the flow-related phrases - those are the ones that came from
      * <agent root>/flows/<flow-name>/<flow-name>.json
      */
     private fun processFlows(translationAgent: TranslationAgent) {
         val flows = SheetReader(credentialsURL, spreadsheetId, Flows.title).read()
-        processRows(translationAgent, flows, 3, translationAgent::putFlow)
+        processRows(translationAgent, flows, 4, translationAgent::putFlow)
     }
 
     /**
