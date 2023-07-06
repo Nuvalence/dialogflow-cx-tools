@@ -24,7 +24,7 @@ val URL_SEPARATORS = setOf("#", "/", ".", "_", "-")
 /**
  * Finds and matches URLs
  */
-val MATCH_URL_REGEX = Regex("\\b\\w+\\.\\w+(?:[.\\/\\-]\\w+)*\\b")
+val MATCH_URL_REGEX = Regex("\\s\\w+\\.\\w+(?:[.\\/\\-]\\w+)*\\b")
 
 /**
  * Finds and matches numbers, but ignore time (e.g. 14:29pm) since we want to
