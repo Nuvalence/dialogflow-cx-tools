@@ -6,8 +6,8 @@ import com.google.gson.JsonObject
  * Helper functions to generate SSML tags and audio prosody.
  */
 
-const val START_SPEAK = "<speak>\n"
-const val END_SPEAK = "\n</speak>"
+const val START_SPEAK = "<speak>"
+const val END_SPEAK = "</speak>"
 
 const val START_PROSODY_RATE = """. <break time="300ms"/><prosody rate="80%">"""
 const val BREAK_100_MS = """<break time="100ms"/>"""
@@ -64,12 +64,14 @@ fun audioMessage(languageCode: String, phrase: String): JsonObject {
  * @param phrase the phrase to convert
  */
 fun addSsmlTags(phrase: String): String {
+    if (phrase.contains(START_SPEAK) && phrase.contains(END_SPEAK))
+        return phrase // Because prosody has already been defined in the fulfillment - just use what's there
     val replacedNumbers = processString(phrase, MATCH_NUMBERS_REGEX, ::processNumber)
     val replacedUrls = processString(replacedNumbers, MATCH_URL_REGEX, ::processUrl)
     val replacedWebSite = replacedUrls
         .replace("\$session.params.web-site", "\$session.params.web-site-ssml")
         .replace("\$session.params.web-site-fwd", "\$session.params.web-site-fwd-ssml")
-    return "$START_SPEAK$replacedWebSite$END_SPEAK"
+    return "$START_SPEAK\n$replacedWebSite\n$END_SPEAK"
 }
 
 /**
