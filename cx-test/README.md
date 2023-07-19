@@ -88,3 +88,25 @@ Determines how to run tests generated from the spreadsheet.
   - Comprehensive: Tests every possible message for all user inputs at least once
 - Usage: `-DorchestrationMode=[simple, comprehensive]`
 - Default if not supplied: `simple`
+
+### Test Filtering
+
+#### Include Tags
+
+Determines which tests should be run, based on their tags.
+
+- Options:
+  - e2e: End-to-end tests.
+  - smoke: Smoke tests.
+- Usage: `-PincludeTags="e2e|smoke"`
+- Default if not supplied: `"e2e|smoke"` (runs both)
+
+#### Exclude Tags
+
+Determines which tests should not be run, based on their tags.
+
+- Options:
+  - e2e: End-to-end tests.
+  - smoke: Smoke tests.
+- Usage: `-PexcludeTags="e2e|smoke"`
+- Default if not supplied: nothing

@@ -6,6 +6,7 @@ import io.nuvalence.cx.tools.cxtest.sheetformat.E2EFormatReader
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import io.nuvalence.cx.tools.cxtest.util.assertFuzzyMatch
 import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
@@ -13,6 +14,7 @@ import java.util.*
 
 
 @Execution(ExecutionMode.CONCURRENT)
+@Tag("e2e")
 class E2ESpec {
     companion object {
         private const val EN_SHEET = "E2E_EN_TestCases"
@@ -34,7 +36,7 @@ class E2ESpec {
         val agentPath = PROPERTIES.AGENT_PATH.get()
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
         return e2eSheets.map { sheet ->
-            OrchestratedTestMap(E2EFormatReader().read(sheet.key)).generatePairs()
+            OrchestratedTestMap(E2EFormatReader().read(sheet.key, sheet.value)).generatePairs()
                 .map { (testScenario, executionPath) ->
                     DynamicTest.dynamicTest(testScenario.title) {
                         val sessionPath =
@@ -43,7 +45,7 @@ class E2ESpec {
                             val currentPathInput = input[executionPath[index]]
                             val queryInput = QueryInput.newBuilder()
                                 .setText(TextInput.newBuilder().setText(currentPathInput).build())
-                                .setLanguageCode(sheet.value).build()
+                                .setLanguageCode(testScenario.languageCode).build()
                             val detectIntentRequest =
                                 DetectIntentRequest.newBuilder().setSession(sessionPath.toString())
                                     .setQueryInput(queryInput).build()

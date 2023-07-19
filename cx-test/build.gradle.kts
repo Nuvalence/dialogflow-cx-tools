@@ -37,6 +37,19 @@ tasks.test {
         // Set the parallelism factor (optional)
         systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
         systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "4")
+
+
+        val includeTagsProperty = project.findProperty("includeTags").toString()
+        val excludeTagsProperty = project.findProperty("excludeTags").toString()
+        if (includeTagsProperty.isNotBlank()) {
+            includeTags(includeTagsProperty)
+        } else {
+            includeTags("e2e|smoke")
+        }
+
+        if (excludeTagsProperty.isNotBlank()) {
+            excludeTags(excludeTagsProperty)
+        }
     }
     finalizedBy("aggregateTestResults")
 }
