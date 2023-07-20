@@ -23,12 +23,14 @@ dependencies {
 }
 
 tasks.test {
-    systemProperty("agentPath", System.getProperty("agentPath"))
-    systemProperty("spreadsheetId", System.getProperty("spreadsheetId"))
-    systemProperty("credentialsUrl", System.getProperty("credentialsUrl"))
-    systemProperty("orchestrationMode", System.getProperty("orchestrationMode"))
-    systemProperty("matchingMode", System.getProperty("matchingMode"))
-    systemProperty("matchingRatio", System.getProperty("matchingRatio"))
+    // Leave these findProperty calls as is -- Kotlin's type checking does not play nice with Gradle's API and causes false positives upon linting.
+    systemProperty("agentPath", project.findProperty("agentPath"))
+    systemProperty("spreadsheetId", project.findProperty("spreadsheetId"))
+    systemProperty("credentialsUrl", project.findProperty("credentialsUrl"))
+    systemProperty("orchestrationMode", project.findProperty("orchestrationMode"))
+    systemProperty("matchingMode", project.findProperty("matchingMode"))
+    systemProperty("matchingRatio", project.findProperty("matchingRatio"))
+    systemProperty("dfcxEndpoint", project.findProperty("dfcxEndpoint"))
 
     useJUnitPlatform {
         // Enable parallel test execution
@@ -62,4 +64,3 @@ task("aggregateTestResults", type = TestReport::class) {
     // Set the test results directory
     reportOn(tasks.withType(Test::class))
 }
-

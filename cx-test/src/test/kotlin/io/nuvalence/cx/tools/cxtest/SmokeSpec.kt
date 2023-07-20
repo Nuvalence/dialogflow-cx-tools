@@ -1,5 +1,6 @@
 package io.nuvalence.cx.tools.cxtest
 
+import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.cloud.dialogflow.cx.v3beta1.*
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
 import io.nuvalence.cx.tools.cxtest.sheetformat.SmokeFormatReader
@@ -12,10 +13,15 @@ import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import java.util.*
 
+
 @Execution(ExecutionMode.CONCURRENT)
 @Tag("smoke")
 class SmokeSpec {
-    private val sessionClient: SessionsClient = SessionsClient.create()
+    private val sessionClient: SessionsClient = SessionsClient.create(
+        SessionsSettings.newBuilder()
+            .setEndpoint(PROPERTIES.DFCX_ENDPOINT.get())
+            .build()
+    )
 
     @TestFactory
     fun testCases(): List<DynamicTest> {

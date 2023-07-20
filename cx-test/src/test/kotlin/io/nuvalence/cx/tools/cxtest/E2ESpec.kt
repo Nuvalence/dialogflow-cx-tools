@@ -28,7 +28,11 @@ class E2ESpec {
         )
     }
 
-    private val sessionClient: SessionsClient = SessionsClient.create()
+    private val sessionClient: SessionsClient = SessionsClient.create(
+        SessionsSettings.newBuilder()
+        .setEndpoint(PROPERTIES.DFCX_ENDPOINT.get())
+        .build()
+    )
 
     @TestFactory
     fun testCases(): List<DynamicTest> {

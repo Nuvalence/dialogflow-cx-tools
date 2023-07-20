@@ -8,9 +8,9 @@ Run the following command:
 
 ```
 ./gradlew build --info \
-    -DcredentialsUrl="<credentials URL>" \
-    -DagentPath="<agent path, e.g. projects/projectName/locations/global/agents/agentUUID>" \
-    -DspreadsheetId="<Google Docs spreadsheet ID>"
+    -PcredentialsUrl="<credentials URL>" \
+    -PagentPath="<agent path, e.g. projects/projectName/locations/global/agents/agentUUID>" \
+    -PspreadsheetId="<Google Docs spreadsheet ID>"
 ```
 
 ### Required Arguments
@@ -37,7 +37,7 @@ To obtain the necessary credentials:
 
 6. If you already have an OAuth client ID available, you can click the download button under the "Actions" column, corresponding to your desired client ID.
 
-Usage: `-DcredentialsUrl="<credentials URL>"`
+Usage: `-PcredentialsUrl="<credentials URL>"`
 
 #### Agent Path
 
@@ -47,7 +47,17 @@ A portion of the URL specifying the path to the desired agent under test. The ag
 projects/<project name>/locations/<location>/agents/<agent UUID>
 ```
 
-Usage: `-DagentPath="<agent path>"`, e.g. `-DagentPath="projects/project/locations/global/agents/00000000-0000-0000-0000-000000000000"`
+Usage: `-PagentPath="<agent path>"`, e.g. `-PagentPath="projects/project/locations/global/agents/00000000-0000-0000-0000-000000000000"`
+
+#### Dialogflow CX Endpoint
+
+The service endpoint to use for Dialogflow CX sessions.
+
+This must correspond with the region specified in the agent path.  See [here](https://cloud.google.com/dialogflow/cx/docs/reference/rest/v3beta1-overview#service-endpoint) for a list of available endpoints. These will typically be suffixed with port 443.
+
+Defaults to us-east-1 if not specified.
+
+Usage: `-PdfcxEndpoint="<endpoint URL>"`, e.g. `-PdfcxEndpoint="us-east1-dialogflow.googleapis.com:443"`
 
 #### Spreadsheet ID
 
@@ -57,7 +67,7 @@ The ID for your desired spreadsheet on Google Sheets. This can be derived from t
 https://docs.google.com/spreadsheets/d/<spreadsheetId>
 ```
 
-Usage: `-DspreadsheetId="<spreadsheet ID>"`
+Usage: `-PspreadsheetId="<spreadsheet ID>"`
 
 ### Optional Arguments
 
@@ -65,7 +75,7 @@ Usage: `-DspreadsheetId="<spreadsheet ID>"`
 
 Determines the percentage matching threshold to use to consider agent responses sufficiently matching expectations.
 
-- Usage: `-DmatchingRatio=[<number>]`
+- Usage: `-PmatchingRatio=[<number>]`
 - Default if not supplied: `80`
 
 
@@ -76,7 +86,7 @@ Determines how agent response strings are matched.
 - Options:
   - Normal: Matches the full agent response against the full expected response wholesale
   - Adaptive: Matches the agent response against the expected response line by line
-- Usage: `-DmatchingMode=[normal, adaptive]`
+- Usage: `-PmatchingMode=[normal, adaptive]`
 - Default if not supplied: `normal`
 
 #### Orchestration Mode
@@ -86,7 +96,7 @@ Determines how to run tests generated from the spreadsheet.
 - Options:
   - Simple: Takes only the first message from all user inputs in a given scenario
   - Comprehensive: Tests every possible message for all user inputs at least once
-- Usage: `-DorchestrationMode=[simple, comprehensive]`
+- Usage: `-PorchestrationMode=[simple, comprehensive]`
 - Default if not supplied: `simple`
 
 ### Test Filtering
