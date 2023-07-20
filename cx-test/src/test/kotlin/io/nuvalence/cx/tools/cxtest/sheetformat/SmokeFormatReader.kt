@@ -2,6 +2,8 @@ package io.nuvalence.cx.tools.cxtest.sheetformat
 
 import io.nuvalence.cx.tools.cxtest.model.TestScenario
 import io.nuvalence.cx.tools.cxtest.model.TestStep
+import io.nuvalence.cx.tools.cxtest.util.ACTION_MAPPINGS
+import io.nuvalence.cx.tools.cxtest.util.LANGUAGE_MAPPINGS
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import io.nuvalence.cx.tools.shared.SheetReader
 import java.net.URL
@@ -13,23 +15,12 @@ class SmokeFormatReader {
         const val TEST_CASE_TITLE = 4
         const val USER_INPUT = 5
         const val EXPECTED_RESULT = 6
-
-        val langMap = mapOf(
-            "en" to "en-US", "es" to "es-ES"
-        )
-
-        val actionMap = mapOf(
-            "[Call begins]#en" to "Hello",
-            "[Call begins]#es" to "Hola",
-            "[No Input]#en" to "",
-            "[No Input]#es" to ""
-        )
     }
 
     private fun createTestScenario(
         testSteps: List<TestStep>, range: String, title: String, testCaseId: String, testCaseLanguage: String
     ): TestScenario {
-        return TestScenario("$range - $title - $testCaseId", testSteps.toList(), langMap.getValue(testCaseLanguage))
+        return TestScenario("$range - $title - $testCaseId", testSteps.toList(), LANGUAGE_MAPPINGS.getValue(testCaseLanguage))
     }
 
     fun read(range: String): List<TestScenario> {
@@ -45,7 +36,7 @@ class SmokeFormatReader {
         var testSteps = mutableListOf<TestStep>()
 
         fun addTestStep(userInput: String, expectedResult: String) {
-            val input = if (userInput.startsWith("[")) actionMap.getValue("${userInput}#$currentTestCaseLanguage") else userInput
+            val input = if (userInput.startsWith("[")) ACTION_MAPPINGS.getValue("${userInput}#$currentTestCaseLanguage") else userInput
             if (testSteps.isEmpty()) {
                 testSteps = mutableListOf(TestStep(input, expectedResult))
             } else {
