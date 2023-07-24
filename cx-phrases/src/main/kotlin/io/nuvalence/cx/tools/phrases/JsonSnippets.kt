@@ -94,9 +94,14 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Strin
         textBlob.addProperty("languageCode", languageCode)
         textBlob.add("text", outerText)
         messages.add(textBlob)
-        texts.forEach { text ->
-            messages.add(audioMessage(languageCode, text))
-        }
+        if (singleString)
+            messages.add(audioMessage(languageCode, texts.joinToString("\n")))
+        else
+            texts
+                .filter { it.isNotEmpty() }
+                .forEach { text ->
+                    messages.add(audioMessage(languageCode, text))
+                }
     }
     return messages
 }
