@@ -54,6 +54,7 @@ tasks.test {
         }
     }
     finalizedBy("aggregateTestResults")
+    outputs.upToDateWhen { false }
 }
 
 
