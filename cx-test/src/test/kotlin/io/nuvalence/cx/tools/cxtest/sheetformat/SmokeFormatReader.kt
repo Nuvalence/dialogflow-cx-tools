@@ -54,8 +54,8 @@ class SmokeFormatReader {
         }
 
         val scenarios = rows.drop(1).foldIndexed(mutableListOf<TestScenario>()) { index, acc, row ->
-            if (row.isEmpty()) {
-                if (testSteps.isNotEmpty() || index == rows.size - 1) {
+            if (row.isEmpty() || index == rows.size - 2) {
+                if (testSteps.isNotEmpty()) {
                     acc.add(
                         createTestScenario(
                             testSteps,
