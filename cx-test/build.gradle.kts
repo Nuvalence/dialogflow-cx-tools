@@ -23,12 +23,14 @@ dependencies {
 }
 
 tasks.test {
-    systemProperty("agentPath", System.getProperty("agentPath"))
-    systemProperty("spreadsheetId", System.getProperty("spreadsheetId"))
-    systemProperty("credentialsUrl", System.getProperty("credentialsUrl"))
-    systemProperty("orchestrationMode", System.getProperty("orchestrationMode"))
-    systemProperty("matchingMode", System.getProperty("matchingMode"))
-    systemProperty("matchingRatio", System.getProperty("matchingRatio"))
+    // Leave these findProperty calls as is -- Kotlin's type checking does not play nice with Gradle's API and causes false positives upon linting.
+    systemProperty("agentPath", project.findProperty("agentPath"))
+    systemProperty("spreadsheetId", project.findProperty("spreadsheetId"))
+    systemProperty("credentialsUrl", project.findProperty("credentialsUrl"))
+    systemProperty("orchestrationMode", project.findProperty("orchestrationMode"))
+    systemProperty("matchingMode", project.findProperty("matchingMode"))
+    systemProperty("matchingRatio", project.findProperty("matchingRatio"))
+    systemProperty("dfcxEndpoint", project.findProperty("dfcxEndpoint"))
 
     useJUnitPlatform {
         // Enable parallel test execution
@@ -37,6 +39,19 @@ tasks.test {
         // Set the parallelism factor (optional)
         systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
         systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "4")
+
+
+        val includeTagsProperty = project.findProperty("includeTags").toString()
+        val excludeTagsProperty = project.findProperty("excludeTags").toString()
+        if (includeTagsProperty.isNotBlank()) {
+            includeTags(includeTagsProperty)
+        } else {
+            includeTags("e2e|smoke")
+        }
+
+        if (excludeTagsProperty.isNotBlank()) {
+            excludeTags(excludeTagsProperty)
+        }
     }
     finalizedBy("aggregateTestResults")
 }
@@ -49,4 +64,3 @@ task("aggregateTestResults", type = TestReport::class) {
     // Set the test results directory
     reportOn(tasks.withType(Test::class))
 }
-

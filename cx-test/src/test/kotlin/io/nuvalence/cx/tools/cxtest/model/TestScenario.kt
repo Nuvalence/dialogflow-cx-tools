@@ -7,5 +7,5 @@ data class TestStep(
 }
 
 data class TestScenario(
-    val title: String, val testSteps: List<TestStep>
+    val title: String, val testSteps: List<TestStep>, val languageCode: String
 )

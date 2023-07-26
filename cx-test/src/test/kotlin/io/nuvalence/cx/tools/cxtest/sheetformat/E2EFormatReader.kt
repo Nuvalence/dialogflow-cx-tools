@@ -14,12 +14,12 @@ class E2EFormatReader {
     }
 
     private fun createTestScenario(
-        testSteps: List<TestStep>, range: String, section: String, title: String, lineNumber: Int
+        testSteps: List<TestStep>, range: String, section: String, title: String, lineNumber: Int, languageCode: String
     ): TestScenario {
-        return TestScenario("$range - $section - $title - L${lineNumber}", testSteps.toList())
+        return TestScenario("$range - $section - $title - L${lineNumber}", testSteps.toList(), languageCode)
     }
 
-    fun read(range: String): List<TestScenario> {
+    fun read(range: String, languageCode: String): List<TestScenario> {
         val url = PROPERTIES.CREDENTIALS_URL.get()
         val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
         val rows = SheetReader(
@@ -37,7 +37,7 @@ class E2EFormatReader {
             } else if (row.size >= 7) {
                 if (row[TEST_CASE_TITLE].isNotEmpty()) {
                     if (testSteps.isNotEmpty() || index == rows.size - 2) {
-                        acc.add(createTestScenario(testSteps, range, currentSection, currentTitle, currentLineNumber))
+                        acc.add(createTestScenario(testSteps, range, currentSection, currentTitle, currentLineNumber, languageCode))
                         testSteps.clear()
                     }
                     currentTitle = row[TEST_CASE_TITLE]
@@ -46,7 +46,7 @@ class E2EFormatReader {
                 } else {
                     testSteps.add(TestStep(row[USER_INPUT], row[EXPECTED_RESULT]))
                     if (index == rows.size - 2) {
-                        acc.add(createTestScenario(testSteps, range, currentSection, currentTitle, currentLineNumber))
+                        acc.add(createTestScenario(testSteps, range, currentSection, currentTitle, currentLineNumber, languageCode))
                         testSteps.clear()
                     }
                 }
