@@ -41,15 +41,17 @@ tasks.test {
         systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "4")
 
 
-        val includeTagsProperty = project.findProperty("includeTags").toString()
-        val excludeTagsProperty = project.findProperty("excludeTags").toString()
-        if (includeTagsProperty.isNotBlank()) {
+        val includeTagsProperty = project.findProperty("includeTags")?.toString()
+        val excludeTagsProperty = project.findProperty("excludeTags")?.toString()
+        if (includeTagsProperty?.isNotBlank() == true) {
+            println("Including tags $includeTagsProperty")
             includeTags(includeTagsProperty)
         } else {
+            println("Defaulting to both e2e and smoke")
             includeTags("e2e|smoke")
         }
 
-        if (excludeTagsProperty.isNotBlank()) {
+        if (excludeTagsProperty?.isNotBlank() == true) {
             excludeTags(excludeTagsProperty)
         }
     }
