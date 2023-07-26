@@ -8,11 +8,13 @@ import java.net.URL
 
 class SmokeFormatReader {
     companion object {
-        const val TEST_CASE_ID = 1
-        const val TEST_CASE_LANGUAGE = 2
-        const val TEST_CASE_TITLE = 4
-        const val USER_INPUT = 5
-        const val EXPECTED_RESULT = 6
+        const val TEST_CASE_ID = "Test Case ID"
+        const val TEST_CASE_LANGUAGE = "Language"
+        const val TEST_CASE_TITLE = "Test Description"
+        const val USER_INPUT = "Test Steps / User Input"
+        const val EXPECTED_RESULT = "Expected Telephony Result"
+
+        val colNames = listOf(TEST_CASE_ID, TEST_CASE_LANGUAGE, TEST_CASE_TITLE, USER_INPUT, EXPECTED_RESULT)
 
         val langMap = mapOf(
             "en" to "en-US", "es" to "es-ES"
@@ -39,6 +41,13 @@ class SmokeFormatReader {
             URL(url), spreadsheetId, range
         ).read()
 
+        val headerRow = rows[0].map { item -> item.trim() }
+        val cols = colNames.associateWith { colName -> headerRow.indexOf(colName) }
+        cols.forEach { (colName, value) ->
+            if(value == -1)
+            throw Error("Column $colName could not be found in the spreadsheet")
+        }
+
         var currentTitle = ""
         var currentTestCaseId = ""
         var currentTestCaseLanguage = ""
@@ -54,6 +63,10 @@ class SmokeFormatReader {
         }
 
         val scenarios = rows.drop(1).foldIndexed(mutableListOf<TestScenario>()) { index, acc, row ->
+            fun getRowElement(colName: String): String {
+                return row[cols[colName]!!]
+            }
+
             if (row.isEmpty() || index == rows.size - 2) {
                 if (testSteps.isNotEmpty()) {
                     acc.add(
@@ -68,13 +81,13 @@ class SmokeFormatReader {
                     testSteps.clear()
                 }
             } else {
-                if (row[TEST_CASE_TITLE].isNotEmpty()) {
-                    currentTitle = row[TEST_CASE_TITLE]
-                    currentTestCaseId = row[TEST_CASE_ID]
-                    currentTestCaseLanguage = row[TEST_CASE_LANGUAGE].lowercase()
-                    addTestStep(row[USER_INPUT], row[EXPECTED_RESULT])
+                if (getRowElement(TEST_CASE_TITLE).isNotEmpty()) {
+                    currentTitle = getRowElement(TEST_CASE_TITLE)
+                    currentTestCaseId = getRowElement(TEST_CASE_ID)
+                    currentTestCaseLanguage = getRowElement(TEST_CASE_LANGUAGE).lowercase()
+                    addTestStep(getRowElement(USER_INPUT), getRowElement(EXPECTED_RESULT))
                 } else {
-                    addTestStep(row[USER_INPUT], row[EXPECTED_RESULT])
+                    addTestStep(getRowElement(USER_INPUT), getRowElement(EXPECTED_RESULT))
                     if (index == rows.size - 1) {
                         acc.add(createTestScenario(testSteps, range, currentTitle, currentTestCaseId, currentTestCaseLanguage))
                         testSteps.clear()
