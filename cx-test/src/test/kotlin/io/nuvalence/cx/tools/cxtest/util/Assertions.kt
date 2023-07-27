@@ -39,7 +39,11 @@ fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessa
 
     val newActual = actual.joinToString("\n") { responseMessage ->
         if (responseMessage.text.textCount > 0) responseMessage.text.getText(0); else ""
-    }
+    }.let { stripSsml(it) }
 
     matchingMode.assertFuzzyMatchString(input, expected, newActual, expectedRatio)
+}
+
+fun stripSsml(input: String): String {
+    return input.replace(Regex("<.*?>"), "")
 }
