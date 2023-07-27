@@ -35,4 +35,22 @@ class SheetReader(private val credentialsURL: URL, private val spreadsheetId: St
         @Suppress("UNCHECKED_CAST")
         return response.getValues() as List<List<String>>
     }
+
+    fun listSheets() : List<String> {
+        val transport = GoogleNetHttpTransport.newTrustedTransport()
+        val service = Sheets.Builder(
+            transport,
+            GsonFactory.getDefaultInstance(),
+            Authorizer(credentialsURL, transport).getCredentials()
+        )
+            .setApplicationName("Dialogflow Agent Generator")
+            .build()
+        return service.spreadsheets()
+            .get(spreadsheetId)
+            .execute()
+            .sheets
+            .map {sheet ->
+                sheet.properties?.title!!
+            }
+    }
 }
