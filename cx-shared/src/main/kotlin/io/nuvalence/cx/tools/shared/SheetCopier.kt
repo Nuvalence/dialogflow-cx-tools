@@ -48,11 +48,29 @@ class SheetCopier(credentialsURL: URL, private val spreadsheetId: String) {
         service.spreadsheets().batchUpdate(destinationSpreadsheetId, renameRequest).execute()
 
         // Copy the all sheets from the source spreadsheet to the destination spreadsheet
-        val request = CopySheetToAnotherSpreadsheetRequest().setDestinationSpreadsheetId(destinationSpreadsheetId)
         service.spreadsheets().get(spreadsheetId).execute()
-            .sheets.forEachIndexed { index, _ ->
-                service.spreadsheets().sheets().copyTo(spreadsheetId, index, request).execute()
+            .sheets.forEachIndexed { index, sheet ->
+                val request = CopySheetToAnotherSpreadsheetRequest()
+                    .setDestinationSpreadsheetId(destinationSpreadsheetId)
+                service.spreadsheets().sheets().copyTo(spreadsheetId, sheet.properties?.sheetId!!, request).execute()
+                val newSheetId = service.spreadsheets().get(destinationSpreadsheetId).execute().sheets?.get(index+1)?.properties?.sheetId!!
+                val updateRequest = BatchUpdateSpreadsheetRequest().setRequests(
+                    listOf(Request().setUpdateSheetProperties(
+                        UpdateSheetPropertiesRequest().setProperties(SheetProperties().setSheetId(newSheetId).setTitle(sheet.properties?.title)).setFields("title")
+                    ))
+                )
+                service.spreadsheets().batchUpdate(destinationSpreadsheetId, updateRequest).execute()
             }
+
+
+        // Delete default first sheet from destination spreadsheet
+        val firstSheetId = service.spreadsheets().get(destinationSpreadsheetId).execute().sheets?.firstOrNull()?.properties?.sheetId
+        val deleteRequest = BatchUpdateSpreadsheetRequest().setRequests(
+            listOf(Request().setDeleteSheet(
+                DeleteSheetRequest().setSheetId(firstSheetId)
+            ))
+        )
+        service.spreadsheets().batchUpdate(destinationSpreadsheetId, deleteRequest).execute()
 
         return destinationSpreadsheetId
     }

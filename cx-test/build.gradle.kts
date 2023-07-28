@@ -23,14 +23,8 @@ dependencies {
 }
 
 tasks.test {
-    // Leave these findProperty calls as is -- Kotlin's type checking does not play nice with Gradle's API and causes false positives upon linting.
-    systemProperty("agentPath", project.findProperty("agentPath"))
-    systemProperty("spreadsheetId", project.findProperty("spreadsheetId"))
-    systemProperty("credentialsUrl", project.findProperty("credentialsUrl"))
-    systemProperty("orchestrationMode", project.findProperty("orchestrationMode"))
-    systemProperty("matchingMode", project.findProperty("matchingMode"))
-    systemProperty("matchingRatio", project.findProperty("matchingRatio"))
-    systemProperty("dfcxEndpoint", project.findProperty("dfcxEndpoint"))
+    val properties = listOf("agentPath", "spreadsheetId", "credentialsUrl", "orchestrationMode", "matchingMode", "matchingRatio", "dfcxEndpoint")
+    systemProperties(project.properties.filter { (key, _) -> key in properties })
 
     useJUnitPlatform {
         // Enable parallel test execution

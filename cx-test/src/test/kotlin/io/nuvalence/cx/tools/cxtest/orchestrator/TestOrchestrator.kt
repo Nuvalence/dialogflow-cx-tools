@@ -44,7 +44,7 @@ enum class TestOrchestrationMode(val value: String) {
     abstract fun generateExecutionPaths(testScenarios: List<TestScenario>): Map<TestScenario, List<ExecutionPath>>
 
     companion object {
-        infix fun from(value: String): TestOrchestrationMode =
+        infix fun from(value: String?): TestOrchestrationMode =
             TestOrchestrationMode.values().firstOrNull { testOrchestrationMode -> testOrchestrationMode.value == value }
                 ?: SIMPLE
     }

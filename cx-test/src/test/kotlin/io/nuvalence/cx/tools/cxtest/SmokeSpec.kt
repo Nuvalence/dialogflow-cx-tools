@@ -1,15 +1,18 @@
 package io.nuvalence.cx.tools.cxtest
 
 import com.google.cloud.dialogflow.cx.v3beta1.*
+import io.nuvalence.cx.tools.cxtest.artifact.SpreadsheetArtifactCreator
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
 import io.nuvalence.cx.tools.cxtest.sheetformat.SmokeFormatReader
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import io.nuvalence.cx.tools.cxtest.util.assertFuzzyMatch
+import io.nuvalence.cx.tools.shared.SheetCopier
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -25,8 +28,10 @@ class SmokeSpec {
     @TestFactory
     fun testCases(): List<DynamicTest> {
         println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
-        val agentPath = PROPERTIES.AGENT_PATH.get()
+        val agentPath = PROPERTIES.AGENT_PATH.get()!!
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
+        val artifactSpreadsheetId = SpreadsheetArtifactCreator().createArtifact("Smoke Spreadsheet ${SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(Date())}")
+        println("Created spreadsheet $artifactSpreadsheetId")
         return SmokeFormatReader().listSheets("SMOKE_").map { sheet ->
             OrchestratedTestMap(SmokeFormatReader().read(sheet)).generatePairs()
                 .map { (testScenario, executionPath) ->

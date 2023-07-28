@@ -28,14 +28,14 @@ enum class MatchingMode(val value: String) {
     abstract fun assertFuzzyMatchString(input: String, expected: String, actual: String, expectedRatio: Int)
 
     companion object {
-        infix fun from(value: String): MatchingMode =
+        infix fun from(value: String?): MatchingMode =
             MatchingMode.values().firstOrNull { matchingMode -> matchingMode.value == value } ?: NORMAL
     }
 }
 
 fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessage>) {
     val matchingMode = MatchingMode.from(PROPERTIES.MATCHING_MODE.get())
-    val expectedRatio = PROPERTIES.MATCHING_RATIO.get().toInt()
+    val expectedRatio = PROPERTIES.MATCHING_RATIO.get()!!.toInt()
 
     val newActual = actual.joinToString("\n") { responseMessage ->
         if (responseMessage.text.textCount > 0) responseMessage.text.getText(0); else ""

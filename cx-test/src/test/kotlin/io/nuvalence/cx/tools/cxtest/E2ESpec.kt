@@ -37,7 +37,7 @@ class E2ESpec {
     @TestFactory
     fun testCases(): List<DynamicTest> {
         println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
-        val agentPath = PROPERTIES.AGENT_PATH.get()
+        val agentPath = PROPERTIES.AGENT_PATH.get()!!
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
         return e2eSheets.map { sheet ->
             OrchestratedTestMap(E2EFormatReader().read(sheet.key, sheet.value)).generatePairs()

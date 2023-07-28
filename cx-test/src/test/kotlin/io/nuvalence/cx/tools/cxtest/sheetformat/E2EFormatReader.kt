@@ -20,8 +20,8 @@ class E2EFormatReader {
     }
 
     fun read(range: String, languageCode: String): List<TestScenario> {
-        val url = PROPERTIES.CREDENTIALS_URL.get()
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
+        val url = PROPERTIES.CREDENTIALS_URL.get()!!
+        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()!!
         val rows = SheetReader(
             URL(url), spreadsheetId, range
         ).read()

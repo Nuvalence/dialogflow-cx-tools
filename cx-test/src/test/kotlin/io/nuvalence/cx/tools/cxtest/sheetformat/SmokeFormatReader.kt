@@ -16,6 +16,9 @@ class SmokeFormatReader {
         const val USER_INPUT = "Test Steps / User Input"
         const val EXPECTED_RESULT = "Expected Telephony Result"
 
+        val url = PROPERTIES.CREDENTIALS_URL.get()!!
+        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()!!
+
         val colNames = listOf(TEST_CASE_ID, TEST_CASE_LANGUAGE, TEST_CASE_TITLE, USER_INPUT, EXPECTED_RESULT)
     }
 
@@ -26,14 +29,10 @@ class SmokeFormatReader {
     }
 
     fun listSheets(prefix: String): List<String> {
-        val url = PROPERTIES.CREDENTIALS_URL.get()
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
         return SheetReader(URL(url), spreadsheetId, "").listSheets().filter { sheetName -> sheetName.startsWith(prefix) }
     }
 
     fun read(range: String): List<TestScenario> {
-        val url = PROPERTIES.CREDENTIALS_URL.get()
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
         val rows = SheetReader(
             URL(url), spreadsheetId, range
         ).read()
