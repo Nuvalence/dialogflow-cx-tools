@@ -25,6 +25,12 @@ class SmokeFormatReader {
         return TestScenario("$range - $title - $testCaseId", testSteps.toList(), LANGUAGE_MAPPINGS.getValue(testCaseLanguage))
     }
 
+    fun listSheets(prefix: String): List<String> {
+        val url = PROPERTIES.CREDENTIALS_URL.get()
+        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
+        return SheetReader(URL(url), spreadsheetId, "").listSheets().filter { sheetName -> sheetName.startsWith(prefix) }
+    }
+
     fun read(range: String): List<TestScenario> {
         val url = PROPERTIES.CREDENTIALS_URL.get()
         val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
