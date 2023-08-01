@@ -30,7 +30,7 @@ class SmokeSpec {
         println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
         val agentPath = PROPERTIES.AGENT_PATH.get()!!
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
-        val artifactSpreadsheetId = SpreadsheetArtifactCreator().createArtifact("Smoke Spreadsheet ${SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(Date())}")
+        val artifactSpreadsheetId = SpreadsheetArtifactCreator().createArtifact("Smoke Spreadsheet ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}")
         println("Created spreadsheet $artifactSpreadsheetId")
         return SmokeFormatReader().listSheets("SMOKE_").map { sheet ->
             OrchestratedTestMap(SmokeFormatReader().read(sheet)).generatePairs()
