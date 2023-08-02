@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.Test
+import java.io.*
+
 plugins {
     kotlin("jvm") version "1.7.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
@@ -22,7 +25,31 @@ dependencies {
     testImplementation("me.xdrop:fuzzywuzzy:1.2.0")
 }
 
-tasks.test {
+val reportDestinationPath = "$buildDir/reports/tests"
+
+val aggregateTestResults by tasks.register<TestReport>("aggregateTestResults") {
+    destinationDir = file(reportDestinationPath)
+
+    // Set the test results directory
+    reportOn(tasks.withType(Test::class))
+}
+
+val postProcessTestReport = tasks.register<DefaultTask>("postProcessTestReport") {
+    doLast {
+        file(reportDestinationPath).walkTopDown().forEach { file ->
+            if (file.isFile) {
+                val content = file.readText()
+                val regex = Regex("[\\s]+at.*\\..*:.*\\)\n")
+                val modifiedContent = content.replace(regex, "")
+                file.bufferedWriter().use { writer ->
+                    writer.write(modifiedContent)
+                }
+            }
+        }
+    }
+}
+
+val testTask = tasks.withType<Test> {
     val properties = listOf("agentPath", "spreadsheetId", "credentialsUrl", "orchestrationMode", "matchingMode", "matchingRatio", "dfcxEndpoint")
     systemProperties(project.properties.filter { (key, _) -> key in properties })
 
@@ -49,15 +76,8 @@ tasks.test {
             excludeTags(excludeTagsProperty)
         }
     }
-    finalizedBy("aggregateTestResults")
+
+    finalizedBy(aggregateTestResults, postProcessTestReport)
+
     outputs.upToDateWhen { false }
-}
-
-
-task("aggregateTestResults", type = TestReport::class) {
-    // Set the output directory for the test report
-    destinationDir = file("$buildDir/reports/tests")
-
-    // Set the test results directory
-    reportOn(tasks.withType(Test::class))
 }
