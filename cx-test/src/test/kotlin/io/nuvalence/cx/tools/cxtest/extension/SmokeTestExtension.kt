@@ -36,7 +36,7 @@ class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCall
         val outputColumn = SmokeFormatReader.cols[SmokeFormatReader.COMMENTS]!!
 
         val requestData = errorList.associate { e ->
-            "${'A' + outputColumn}${e.sourceLocator}" to e.message!!
+            "${e.sourceId}!${'A' + outputColumn}${e.sourceLocator}" to e.message!!
         }
 
         artifact.writeArtifact(artifactSpreadsheetId, requestData)
