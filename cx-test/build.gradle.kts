@@ -1,5 +1,4 @@
 import org.gradle.api.tasks.testing.Test
-import java.io.*
 
 plugins {
     kotlin("jvm") version "1.7.10"
@@ -15,8 +14,9 @@ repositories {
 dependencies {
     implementation(project(":cx-shared"))
     implementation(kotlin("stdlib"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 
     testImplementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
     testImplementation("com.google.cloud:google-cloud-dialogflow-cx:0.25.0")
@@ -39,8 +39,9 @@ val postProcessTestReport = tasks.register<DefaultTask>("postProcessTestReport")
         file(reportDestinationPath).walkTopDown().forEach { file ->
             if (file.isFile) {
                 val content = file.readText()
-                val regex = Regex("[\\s]+at.*\\..*:.*\\)\n")
-                val modifiedContent = content.replace(regex, "")
+                val stacktraceRegex = Regex("[\\s]+at.*\\..*:.*\\)\n")
+                val locationRegex = Regex("&quot; ==&gt;.*\\)")
+                val modifiedContent = content.replace(stacktraceRegex, "").replace(locationRegex, "\"")
                 file.bufferedWriter().use { writer ->
                     writer.write(modifiedContent)
                 }
@@ -61,6 +62,7 @@ val testTask = tasks.withType<Test> {
         systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
         systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "4")
 
+        systemProperty("junit.jupiter.listeners", "io.nuvalence.cx.tools.cxtest.listener.DynamicTestListener")
 
         val includeTagsProperty = project.findProperty("includeTags")?.toString()
         val excludeTagsProperty = project.findProperty("excludeTags")?.toString()

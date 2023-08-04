@@ -1,23 +1,27 @@
 package io.nuvalence.cx.tools.cxtest
 
 import com.google.cloud.dialogflow.cx.v3beta1.*
-import io.nuvalence.cx.tools.cxtest.artifact.SpreadsheetArtifactCreator
-import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
-import io.nuvalence.cx.tools.cxtest.sheetformat.SmokeFormatReader
+import io.nuvalence.cx.tools.cxtest.assertion.ContextAwareAssertionError
+import io.nuvalence.cx.tools.cxtest.extension.SmokeTestExtension
+import io.nuvalence.cx.tools.cxtest.listener.DynamicTestListener
+import io.nuvalence.cx.tools.cxtest.model.TestScenario
+import io.nuvalence.cx.tools.cxtest.orchestrator.ExecutionPath
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
-import io.nuvalence.cx.tools.cxtest.util.assertFuzzyMatch
-import io.nuvalence.cx.tools.shared.SheetCopier
-import org.junit.jupiter.api.DynamicTest
+import io.nuvalence.cx.tools.cxtest.assertion.assertFuzzyMatch
+import org.junit.jupiter.api.Named
 import org.junit.jupiter.api.Tag
-import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import java.text.SimpleDateFormat
-import java.util.*
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ArgumentsSource
+import java.io.IOException
+import java.util.UUID
 
 
 @Execution(ExecutionMode.CONCURRENT)
 @Tag("smoke")
+@ExtendWith(DynamicTestListener::class, SmokeTestExtension::class)
 class SmokeSpec {
     private val sessionClient: SessionsClient = SessionsClient.create(
         SessionsSettings.newBuilder()
@@ -25,35 +29,30 @@ class SmokeSpec {
             .build()
     )
 
-    @TestFactory
-    fun testCases(): List<DynamicTest> {
-        println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
+    @ParameterizedTest(name = "{0}")
+    @ArgumentsSource(SmokeTestExtension::class)
+    fun testCases(testScenario: TestScenario, executionPath: ExecutionPath) {
         val agentPath = PROPERTIES.AGENT_PATH.get()!!
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
-        val artifactSpreadsheetId = SpreadsheetArtifactCreator().createArtifact("Smoke Spreadsheet ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}")
-        println("Created spreadsheet $artifactSpreadsheetId")
-        return SmokeFormatReader().listSheets("SMOKE_").map { sheet ->
-            OrchestratedTestMap(SmokeFormatReader().read(sheet)).generatePairs()
-                .map { (testScenario, executionPath) ->
-                    DynamicTest.dynamicTest(testScenario.title) {
-                        val sessionPath =
-                            SessionName.format(projectId, location, agentId, "test-session-" + UUID.randomUUID())
-                        testScenario.testSteps.forEachIndexed { index, (input, expectedResponse) ->
-                            val currentPathInput = input[executionPath[index]]
-                            val queryInput = QueryInput.newBuilder()
-                                .setText(TextInput.newBuilder().setText(currentPathInput).build())
-                                .setLanguageCode(testScenario.languageCode).build()
-                            val detectIntentRequest =
-                                DetectIntentRequest.newBuilder().setSession(sessionPath.toString())
-                                    .setQueryInput(queryInput).build()
-                            val detectIntentResponse = sessionClient.detectIntent(detectIntentRequest)
-                            val response = detectIntentResponse.queryResult.responseMessagesList
+        val sessionPath =
+            SessionName.format(projectId, location, agentId, "test-session-" + UUID.randomUUID())
+        testScenario.testSteps.forEachIndexed { index, (input, expectedResponse, sourceLocator) ->
+            val currentPathInput = input[executionPath[index]]
+            val queryInput = QueryInput.newBuilder()
+                .setText(TextInput.newBuilder().setText(currentPathInput).build())
+                .setLanguageCode(testScenario.languageCode).build()
+            val detectIntentRequest =
+                DetectIntentRequest.newBuilder().setSession(sessionPath.toString())
+                    .setQueryInput(queryInput).build()
+            val detectIntentResponse = sessionClient.detectIntent(detectIntentRequest)
+            val response = detectIntentResponse.queryResult.responseMessagesList
 
-                            assertFuzzyMatch(currentPathInput, expectedResponse, response)
-                        }
-                    }
-                }
-        }.flatten()
+            try {
+                assertFuzzyMatch(currentPathInput, expectedResponse, response)
+            } catch (e: AssertionError) {
+                throw ContextAwareAssertionError(e.message, testScenario.sourceId, sourceLocator)
+            }
+        }
     }
 }
 

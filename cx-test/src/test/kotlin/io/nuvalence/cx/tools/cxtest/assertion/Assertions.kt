@@ -1,6 +1,7 @@
-package io.nuvalence.cx.tools.cxtest.util
+package io.nuvalence.cx.tools.cxtest.assertion
 
 import com.google.cloud.dialogflow.cx.v3beta1.ResponseMessage
+import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.junit.jupiter.api.Assertions
 

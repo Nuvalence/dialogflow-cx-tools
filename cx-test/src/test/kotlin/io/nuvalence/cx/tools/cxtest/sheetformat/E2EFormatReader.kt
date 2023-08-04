@@ -14,9 +14,15 @@ class E2EFormatReader {
     }
 
     private fun createTestScenario(
-        testSteps: List<TestStep>, range: String, section: String, title: String, lineNumber: Int, languageCode: String
+        testSteps: List<TestStep>, range: String, section: String, title: String, languageCode: String, sourceLocator: Any?
     ): TestScenario {
-        return TestScenario("$range - $section - $title - L${lineNumber}", testSteps.toList(), languageCode)
+        return TestScenario(
+            title = "$range - $section - $title - L${sourceLocator}",
+            testSteps = testSteps.toList(),
+            languageCode = languageCode,
+            sourceId = range,
+            sourceLocator = sourceLocator
+        )
     }
 
     fun read(range: String, languageCode: String): List<TestScenario> {
@@ -31,22 +37,42 @@ class E2EFormatReader {
         var currentLineNumber = 0
         var testSteps = mutableListOf<TestStep>()
 
+        val rowSkip = 2
         val scenarios = rows.drop(1).foldIndexed(mutableListOf<TestScenario>()) { index, acc, row ->
             if (row.size == 1) {
                 currentSection = row[0]
             } else if (row.size >= 7) {
                 if (row[TEST_CASE_TITLE].isNotEmpty()) {
-                    if (testSteps.isNotEmpty() || index == rows.size - 2) {
-                        acc.add(createTestScenario(testSteps, range, currentSection, currentTitle, currentLineNumber, languageCode))
+                    if (testSteps.isNotEmpty() || index == rows.size - rowSkip) {
+                        acc.add(createTestScenario(
+                            testSteps = testSteps,
+                            range = range,
+                            section = currentSection,
+                            title = currentTitle,
+                            languageCode = languageCode,
+                            sourceLocator = testSteps[0].sourceLocator))
                         testSteps.clear()
                     }
                     currentTitle = row[TEST_CASE_TITLE]
-                    currentLineNumber = index + 2 // +1 skipped header, +1 1-indexed rows on sheet
-                    testSteps = mutableListOf(TestStep(row[USER_INPUT], row[EXPECTED_RESULT]))
+                    currentLineNumber = index + rowSkip
+                    testSteps = mutableListOf(TestStep(
+                        input = row[USER_INPUT],
+                        expectedResponse = row[EXPECTED_RESULT],
+                        sourceLocator = currentLineNumber)
+                    )
                 } else {
-                    testSteps.add(TestStep(row[USER_INPUT], row[EXPECTED_RESULT]))
-                    if (index == rows.size - 2) {
-                        acc.add(createTestScenario(testSteps, range, currentSection, currentTitle, currentLineNumber, languageCode))
+                    testSteps.add(TestStep(
+                        input = row[USER_INPUT],
+                        expectedResponse = row[EXPECTED_RESULT],
+                        sourceLocator = currentLineNumber))
+                    if (index == rows.size - rowSkip) {
+                        acc.add(createTestScenario(
+                            testSteps = testSteps,
+                            range = range,
+                            section = currentSection,
+                            title = currentTitle,
+                            languageCode = languageCode,
+                            sourceLocator = testSteps[0].sourceLocator))
                         testSteps.clear()
                     }
                 }
