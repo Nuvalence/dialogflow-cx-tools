@@ -35,7 +35,7 @@ val MATCH_NUMBERS_REGEX = Regex("\\b\\d+(?!\\s*(:|\\.)\\s*\\d{1,2})\\b")
 /**
  * These tokens will not be spelled out
  */
-val SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov", "1099")
+val SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov")
 
 /**
  * Consonant sequences that sound weird in English, so we revert to spelling out the word instead
