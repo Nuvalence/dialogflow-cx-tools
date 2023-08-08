@@ -35,7 +35,7 @@ val MATCH_NUMBERS_REGEX = Regex("\\b\\d+(?!\\s*(:|\\.)\\s*\\d{1,2})\\b")
 /**
  * These tokens will not be spelled out
  */
-val SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov")
+val SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov", "1099")
 
 /**
  * Consonant sequences that sound weird in English, so we revert to spelling out the word instead
@@ -103,7 +103,7 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
  * Given a URL token, apply the appropriate prosody.
  */
 fun processUrl(url: String) =
-    if (url != "session.params.web-site" && url !="session.params.web-site-fwd") // We don't want to change those
+    if (url != "session.params.web-site" && url != "session.params.web-site-fwd") // We don't want to change those
         START_PROSODY_RATE + // Pause and talk slowly
         splitUrl(url).joinToString("") { token ->
             if (token in URL_SEPARATORS) {  // . - / are said as-is
@@ -126,7 +126,7 @@ fun processNumber(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
     (if (number == "800")  // Special case for phone numbers
         " eight hundred "
-    else if (number.length < 4)
+    else if (number.length < 5)
             number
          else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
             number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
