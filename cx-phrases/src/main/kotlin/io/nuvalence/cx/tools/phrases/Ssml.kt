@@ -9,7 +9,7 @@ import com.google.gson.JsonObject
 const val START_SPEAK = "<speak>"
 const val END_SPEAK = "</speak>"
 
-const val START_PROSODY_RATE = """. <break time="300ms"/><prosody rate="80%">"""
+const val START_PROSODY_RATE = """. <break time="300ms"/><prosody rate="90%">"""
 const val BREAK_100_MS = """<break time="100ms"/>"""
 const val END_PROSODY_RATE = "</prosody> ."
 
@@ -27,10 +27,15 @@ val URL_SEPARATORS = setOf("#", "/", ".", "_", "-")
 val MATCH_URL_REGEX = Regex("\\s\\w+\\.\\w+(?:[.\\/\\-]\\w+)*\\b")
 
 /**
+ * Finds and matches 10-digit phone numbers with dashes
+ */
+val MATCH_PHONE_REGEX = Regex("\\b(\\d{3}-\\d{3}-\\d{4})\\b")
+
+/**
  * Finds and matches numbers, but ignore time (e.g. 14:29pm) since we want to
  * say those as is.
  */
-val MATCH_NUMBERS_REGEX = Regex("\\b\\d+(?!\\s*(:|\\.)\\s*\\d{1,2})\\b")
+val MATCH_NUMBERS_REGEX = Regex("(\\b?<!\\d{3}-\\d{3}-)\\b\\d+\\b(?!-\\d{3}-\\d{4})(?!-\\d{1,4})\\b")
 
 /**
  * These tokens will not be spelled out
@@ -66,7 +71,8 @@ fun audioMessage(languageCode: String, phrase: String): JsonObject {
 fun addSsmlTags(phrase: String): String {
     if (phrase.contains(START_SPEAK) && phrase.contains(END_SPEAK))
         return phrase // Because prosody has already been defined in the fulfillment - just use what's there
-    val replacedNumbers = processString(phrase, MATCH_NUMBERS_REGEX, ::processNumber)
+    val replacedPhone = processString(phrase, MATCH_PHONE_REGEX, ::processPhone)
+    val replacedNumbers = processString(replacedPhone, MATCH_NUMBERS_REGEX, ::processNumber)
     val replacedUrls = processString(replacedNumbers, MATCH_URL_REGEX, ::processUrl)
     val replacedWebSite = replacedUrls
         .replace("\$session.params.web-site", "\$session.params.web-site-ssml")
@@ -76,7 +82,7 @@ fun addSsmlTags(phrase: String): String {
 
 /**
  * Helper function to reduce code duplication - it finds tokens that match the supplied
- * regular expressoin, and replaces them with the return value of the function passed
+ * regular expression, and replaces them with the return value of the function passed
  * as parameter.
  *
  * @param phrase the phrase to process.
@@ -103,7 +109,7 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
  * Given a URL token, apply the appropriate prosody.
  */
 fun processUrl(url: String) =
-    if (url != "session.params.web-site" && url !="session.params.web-site-fwd") // We don't want to change those
+    if (url != "session.params.web-site" && url != "session.params.web-site-fwd") // We don't want to change those
         START_PROSODY_RATE + // Pause and talk slowly
         splitUrl(url).joinToString("") { token ->
             if (token in URL_SEPARATORS) {  // . - / are said as-is
@@ -126,18 +132,24 @@ fun processNumber(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
     (if (number == "800")  // Special case for phone numbers
         " eight hundred "
-    else if (number.length < 4)
+    else if (number.length < 5)
             number
          else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
             number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
+
+fun processPhone(number: String) =
+    START_PROSODY_RATE + // Pause and talk slowly
+        """<say-as interpret-as="telephone">""" +
+            number + END_SAY + END_PROSODY_RATE
 
 /**
  * Splits a URL in its basic components, including the separators (e.g. . or /)
  */
 fun splitUrl(url: String): List<String> {
+    var trimmedUrl = url.drop(1)
     val tokens = mutableListOf<StringBuilder>()
     tokens.add(StringBuilder())
-    url.forEach { c ->
+    trimmedUrl.forEach { c ->
         if (c.toString() in URL_SEPARATORS) {
             if (tokens.last().isEmpty()) {
                 tokens.last().append(c)
