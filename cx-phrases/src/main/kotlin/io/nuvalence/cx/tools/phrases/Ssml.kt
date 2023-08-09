@@ -35,7 +35,7 @@ val MATCH_PHONE_REGEX = Regex("\\b(\\d{3}-\\d{3}-\\d{4})\\b")
  * Finds and matches numbers, but ignore time (e.g. 14:29pm) since we want to
  * say those as is.
  */
-val MATCH_NUMBERS_REGEX = Regex("\\b\\d+(?!(\\s*(:)\\s*\\d{1,2})|(-G\\s*))\\b")
+val MATCH_NUMBERS_REGEX = Regex("(\\b?<!\\d{3}-\\d{3}-)\\b\\d+\\b(?!-\\d{3}-\\d{4})(?!-\\d{1,4})\\b")
 
 /**
  * These tokens will not be spelled out
