@@ -1,5 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.extension
 
+import com.google.cloud.dialogflow.cx.v3beta1.SessionsClient
+import com.google.cloud.dialogflow.cx.v3beta1.SessionsSettings
 import io.nuvalence.cx.tools.cxtest.artifact.SpreadsheetArtifact
 import io.nuvalence.cx.tools.cxtest.assertion.ContextAwareAssertionError
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
@@ -16,7 +18,10 @@ import java.util.Date
 import java.util.stream.Stream
 
 class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCallback {
-    private val artifact = SpreadsheetArtifact()
+    companion object {
+        val artifact = SpreadsheetArtifact()
+        var sessionClient: SessionsClient? = null
+    }
 
     override fun beforeAll(context: ExtensionContext?) {
         println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
@@ -27,6 +32,11 @@ class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCall
             )}")
         context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("artifactSpreadsheetId", artifactSpreadsheetId)
         println("Created spreadsheet $artifactSpreadsheetId")
+
+        sessionClient = SessionsClient.create(
+            SessionsSettings.newBuilder()
+                .setEndpoint(PROPERTIES.DFCX_ENDPOINT.get())
+                .build())
     }
 
     override fun afterAll(context: ExtensionContext?) {
@@ -40,6 +50,7 @@ class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCall
         }
 
         artifact.writeArtifact(artifactSpreadsheetId, requestData)
+        sessionClient?.close()
     }
 
     override fun provideArguments(context: ExtensionContext?): Stream<out Arguments?> {
