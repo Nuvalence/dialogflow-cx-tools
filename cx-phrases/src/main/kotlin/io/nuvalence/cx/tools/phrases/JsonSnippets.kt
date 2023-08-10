@@ -42,7 +42,9 @@ fun processIntentText(toProcess: String): JsonArray {
     pattern.findAll(toProcess).forEach { matchResult ->
         // Process the text before the first match
         val text = toProcess.substring(lastEndIndex, matchResult.range.first)
-        parts.add(createIntentPart(text))
+        if (text.isNotEmpty()) {
+            parts.add(createIntentPart(text))
+        }
         // Process the matches
         val parameterText = matchResult.groupValues[1]
         val parameterId = matchResult.groupValues[2]

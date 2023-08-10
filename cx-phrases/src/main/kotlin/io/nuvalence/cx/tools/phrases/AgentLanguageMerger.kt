@@ -180,7 +180,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             File("$flowPath/transitionRouteGroups").listFiles()?.forEach { file ->
                 val rgPath = file.absolutePath
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
-                processTransitionRoutes(jsonObject["transitionRoutes"].asJsonArray)
+                processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
                 prettySave(jsonObject, rgPath)
             }
         }
