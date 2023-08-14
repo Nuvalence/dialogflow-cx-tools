@@ -9,9 +9,9 @@ import com.google.gson.JsonObject
 const val START_SPEAK = "<speak>"
 const val END_SPEAK = "</speak>"
 
-const val START_PROSODY_RATE = """. <break time="300ms"/><prosody rate="90%">"""
+const val START_PROSODY_RATE = """ . <break time="300ms"/><prosody rate="90%">"""
 const val BREAK_100_MS = """<break time="100ms"/>"""
-const val END_PROSODY_RATE = "</prosody> ."
+const val END_PROSODY_RATE = "</prosody> . "
 
 const val START_SAY_VERBATIM = """<say-as interpret-as="verbatim">"""
 const val END_SAY = "</say-as>"
@@ -35,7 +35,7 @@ val MATCH_PHONE_REGEX = Regex("\\b(\\d{3}-\\d{3}-\\d{4})\\b")
  * Finds and matches numbers, but ignore time (e.g. 14:29pm) since we want to
  * say those as is.
  */
-val MATCH_NUMBERS_REGEX = Regex("(\\b?<!\\d{3}-\\d{3}-)\\b\\d+\\b(?!-\\d{3}-\\d{4})(?!-\\d{1,4})\\b")
+val MATCH_NUMBERS_REGEX = Regex("\\b(?<!\\d{3}-\\d{3}-)\\b\\d+\\b(?!-\\d{3}-\\d{4})(?!-\\d{1,4})(?!%\">|:|-)\\b")
 
 /**
  * These tokens will not be spelled out
@@ -146,7 +146,7 @@ fun processPhone(number: String) =
  * Splits a URL in its basic components, including the separators (e.g. . or /)
  */
 fun splitUrl(url: String): List<String> {
-    var trimmedUrl = url.drop(1)
+    var trimmedUrl = url.trim()
     val tokens = mutableListOf<StringBuilder>()
     tokens.add(StringBuilder())
     trimmedUrl.forEach { c ->
