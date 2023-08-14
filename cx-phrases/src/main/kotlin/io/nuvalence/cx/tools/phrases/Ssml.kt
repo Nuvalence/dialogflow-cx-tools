@@ -9,9 +9,9 @@ import com.google.gson.JsonObject
 const val START_SPEAK = "<speak>"
 const val END_SPEAK = "</speak>"
 
-const val START_PROSODY_RATE = """ . <break time="300ms"/><prosody rate="90%">"""
+const val START_PROSODY_RATE = """<break time="300ms"/><prosody rate="90%">"""
 const val BREAK_100_MS = """<break time="100ms"/>"""
-const val END_PROSODY_RATE = "</prosody> . "
+const val END_PROSODY_RATE = """</prosody><break time="300ms"/>"""
 
 const val START_SAY_VERBATIM = """<say-as interpret-as="verbatim">"""
 const val END_SAY = "</say-as>"
