@@ -8,7 +8,6 @@ internal class SsmlKtTest {
     @Test
     fun testAudioMessage() {
         var outputAudioText = audioMessage("en", "Hello world! Please call us at 555-555-5555 to save 15.0% or more on car insurance.").toString()
-        println(outputAudioText)
         assert(outputAudioText.contains("outputAudioText"))
         assert(outputAudioText.contains("\"ssml\":"))
         assert(outputAudioText.contains("<speak>"))

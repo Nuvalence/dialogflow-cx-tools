@@ -132,7 +132,7 @@ fun processNumber(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
     (if (number == "800")  // Special case for phone numbers
         " eight hundred "
-    else if (number.length < 5)
+    else if (number.length < 4)
             number
          else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
             number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
