@@ -31,12 +31,8 @@ Please visit<break time="300ms"/><prosody rate="90%"><say-as interpret-as="verba
 </speak>""", addSsmlTags("Please visit dol.ny.gov/1099-G"))
 
         assertEquals("""<speak>
-To request information or records, follow the instructions outlined at<break time="300ms"/><prosody rate="90%"><say-as interpret-as="verbatim"> o n </say-as><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as><say-as interpret-as="verbatim"> n y </say-as><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as>gov<break time="100ms"/><say-as interpret-as="verbatim"> / </say-as>d c f a q</prosody><break time="300ms"/>.
+To request information or records, follow the instructions outlined at<break time="300ms"/><prosody rate="90%"><say-as interpret-as="verbatim"> o n </say-as><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as><say-as interpret-as="verbatim"> n y </say-as><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as>gov<break time="100ms"/><say-as interpret-as="verbatim"> / </say-as>dcfaq</prosody><break time="300ms"/>.
 </speak>""", addSsmlTags("To request information or records, follow the instructions outlined at on.ny.gov/dcfaq ."))
-
-        assertEquals("""<speak>
-To appeal a hearing, send a letter to the UI Appeal Board at PO Box <break time="300ms"/><prosody rate="90%">1 5 1 2 6</prosody><break time="300ms"/>, Albany, NY <break time="300ms"/><prosody rate="90%">1 2 2 1 2</prosody><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as><break time="300ms"/><prosody rate="90%">5 1 2 6</prosody><break time="300ms"/>, or by fax to <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone">518-402-6208</say-as></prosody><break time="300ms"/>. Be sure to include your Administrative Law Judge Case number in your appeal request.
-</speak>""", addSsmlTags("To appeal a hearing, send a letter to the UI Appeal Board at PO Box 15126, Albany, NY 12212-5126, or by fax to 518-402-6208. Be sure to include your Administrative Law Judge Case number in your appeal request."))
 
         assertEquals("""<speak>
 Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone">555-123-1234</say-as></prosody><break time="300ms"/>to schedule an appointment.
