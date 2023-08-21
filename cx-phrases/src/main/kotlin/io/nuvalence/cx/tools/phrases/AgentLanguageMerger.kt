@@ -54,14 +54,46 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         File("$rootPath/intents").listFiles()?.forEach { directory ->
             val intentPath = directory.absolutePath
             val intentName = directory.name
-            val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))
-            languagePhrases?.phraseByLanguage?.keys?.forEach { languageCode ->
-                val phrases = languagePhrases[languageCode] ?: listOf()
-                val jsonElement = intentLanguage(languageCode, phrases)
-                prettySave(jsonElement, "$intentPath/trainingPhrases/$languageCode.json")
+            File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
+                val language = file.name.removeSuffix(".json")
+                val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
+                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)
+                val languagePhrasesToAdd = languagePhrases?.toMutableList()
+                val outputTrainingPhrases = JsonArray()
+
+                originalTrainingPhrases["trainingPhrases"].asJsonArray.forEach { phrase ->
+                    val parts = phrase.asJsonObject["parts"].asJsonArray
+                    val combinedText = combineParts(parts)
+
+                    if (languagePhrases?.contains(combinedText) == true) {
+                        outputTrainingPhrases.add(phrase)
+                        languagePhrasesToAdd?.remove(combinedText)
+                    }
+                }
+
+                val languagePhrasesToAddArray = intentLanguage(language, languagePhrasesToAdd?.toList())
+                languagePhrasesToAddArray.forEach{outputTrainingPhrases.add(it)}
+
+                val resultJsonObject = JsonObject()
+                resultJsonObject.add("trainingPhrases", outputTrainingPhrases)
+                prettySave(resultJsonObject, file.absolutePath)
             }
         }
     }
+
+    fun combineParts(parts: JsonArray): String {
+        return parts.joinToString("") { part ->
+            val text = part.asJsonObject["text"].asString
+            val parameterId = part.asJsonObject["parameterId"]
+
+            if (parameterId != null) {
+                "[$text](${parameterId.asString})"
+            } else {
+                text
+            }
+        }
+    }
+
 
     /**
      * Replace the entity types and their synonyms with the contents of the spreadsheet. Those go to:

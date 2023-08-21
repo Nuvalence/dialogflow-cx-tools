@@ -12,21 +12,19 @@ import java.util.*
  * Given a language code and a list of training phrases, create a JSON object
  * containing those training phrases in the structure Dialogflow expects.
  */
-fun intentLanguage(languageCode: String, phrases: List<String>): JsonObject {
-    val trainingPhrases = JsonObject()
+fun intentLanguage(languageCode: String, phrases: List<String>?): JsonArray {
     val trainingPhrasesArray = JsonArray()
-    phrases.forEach { phrase ->
+    phrases?.forEach { phrase ->
         val trainingPhrase = JsonObject()
+        val parts = processIntentText(phrase)
+        trainingPhrase.addProperty("id", UUID.randomUUID().toString())
+        trainingPhrase.add("parts", parts)
         trainingPhrase.addProperty("repeatCount", 1)
         trainingPhrase.addProperty("languageCode", languageCode)
-        trainingPhrase.addProperty("id", UUID.randomUUID().toString())
-        val parts = processIntentText(phrase)
-        trainingPhrase.add("parts", parts)
         trainingPhrasesArray.add(trainingPhrase)
     }
 
-    trainingPhrases.add("trainingPhrases", trainingPhrasesArray)
-    return trainingPhrases
+    return trainingPhrasesArray
 }
 
 /**
