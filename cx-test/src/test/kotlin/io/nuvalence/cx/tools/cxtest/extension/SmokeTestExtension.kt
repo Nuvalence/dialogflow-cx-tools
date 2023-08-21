@@ -40,7 +40,7 @@ class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCall
     }
 
     override fun afterAll(context: ExtensionContext?) {
-        val errorList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("errors") as MutableList<ContextAwareAssertionError>
+        val errorList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.getOrComputeIfAbsent("errors") { mutableListOf<ContextAwareAssertionError>() } as MutableList<ContextAwareAssertionError>
         val artifactSpreadsheetId = context.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("artifactSpreadsheetId") as String
 
         val outputColumn = SmokeFormatReader.cols[SmokeFormatReader.COMMENTS]!!
