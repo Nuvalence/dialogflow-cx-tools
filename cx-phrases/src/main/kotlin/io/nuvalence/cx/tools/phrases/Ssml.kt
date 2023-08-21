@@ -1,6 +1,10 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonObject
+import java.io.File
+import java.io.FileInputStream
+import java.net.URL
+import java.util.*
 
 /**
  * Helper functions to generate SSML tags and audio prosody.
@@ -19,34 +23,34 @@ const val END_SAY = "</say-as>"
 /**
  * Used to separate URL components
  */
-val URL_SEPARATORS = setOf("#", "/", ".", "_", "-")
+var URL_SEPARATORS = setOf("#", "/", ".", "_", "-")
 
 /**
  * Finds and matches URLs
  */
-val MATCH_URL_REGEX = Regex("\\s\\w+\\.\\w+(?:[.\\/\\-]\\w+)*\\b")
+var MATCH_URL_REGEX = Regex("\\s\\w+\\.\\w+(?:[.\\/\\-]\\w+)*\\b")
 
 /**
  * Finds and matches 10-digit phone numbers with dashes
  */
-val MATCH_PHONE_REGEX = Regex("\\b(\\d{3}-\\d{3}-\\d{4})\\b")
+var MATCH_PHONE_REGEX = Regex("\\b(\\d{3}-\\d{3}-\\d{4})\\b")
 
 /**
- * Finds and matches numbers, but ignore time (e.g. 14:29pm) since we want to
- * say those as is.
+ * Finds and matches numbers, but ignore time (e.g. 14:29pm) and phone numbers since we want to
+ * say those as is/they were already processed.
  */
-val MATCH_NUMBERS_REGEX = Regex("\\b(?<!\\d{3}-\\d{3}-)\\b\\d+\\b(?!-\\d{3}-\\d{4})(?!-\\d{1,4})(?!%\">|:|-)\\b")
+var MATCH_NUMBERS_REGEX = Regex("\\b(?<!\\d{3}-\\d{3}-)\\b\\d+\\b(?!-\\d{3}-\\d{4})(?!-\\d{1,4})(?!%\">|:|-)\\b")
 
 /**
  * These tokens will not be spelled out
  */
-val SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov")
+var SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov")
 
 /**
  * Consonant sequences that sound weird in English, so we revert to spelling out the word instead
  * of saying it as-is.
  */
-val INVALID_CONSONANT_SEQUENCE = Regex("\\b.*([^aeiouy]{5,}|[^aeiou][^aeiouy]{4,}[^aeiou]|[hjmnqvwxz]r|[cdfghjqvwxz]s|[dhjmnqrtvxwz]l|sth|kpy|ww|hh|jj|kk|qq|vv|xx).*\\b")
+var INVALID_CONSONANT_SEQUENCE = Regex("\\b.*([^aeiouy]{5,}|[^aeiou][^aeiouy]{4,}[^aeiou]|[hjmnqvwxz]r|[cdfghjqvwxz]s|[dhjmnqrtvxwz]l|sth|kpy|ww|hh|jj|kk|qq|vv|xx).*\\b")
 
 /**
  * Generates the outputAudioText element
@@ -55,6 +59,20 @@ val INVALID_CONSONANT_SEQUENCE = Regex("\\b.*([^aeiouy]{5,}|[^aeiou][^aeiouy]{4,
  * @param phrase the text phrase to convert
  */
 fun audioMessage(languageCode: String, phrase: String): JsonObject {
+    // load the properties file from which regexes will be read
+    val propertiesFile = File("config.properties")
+    val configProperties = Properties()
+    FileInputStream(propertiesFile).use { configProperties.load(it) }
+    configProperties.stringPropertyNames().associateWith { configProperties.getProperty(it) }
+    when {
+        configProperties.getProperty("urlSeparators").isNotEmpty() -> URL_SEPARATORS = setOf(configProperties.getProperty("urlSeparators"))
+        configProperties.getProperty("matchUrlRegex").isNotEmpty() -> MATCH_URL_REGEX = Regex(configProperties.getProperty("matchUrlRegex"))
+        configProperties.getProperty("matchPhoneRegex").isNotEmpty() -> MATCH_PHONE_REGEX = Regex(configProperties.getProperty("matchPhoneRegex"))
+        configProperties.getProperty("matchNumbersRegex").isNotEmpty() -> MATCH_NUMBERS_REGEX = Regex(configProperties.getProperty("matchNumbersRegex"))
+        configProperties.getProperty("shortTokenWhitelist").isNotEmpty() -> SHORT_TOKEN_WHITELIST = setOf(configProperties.getProperty("shortTokenWhitelist"))
+        configProperties.getProperty("invalidConsonantSequence").isNotEmpty() -> INVALID_CONSONANT_SEQUENCE = Regex(configProperties.getProperty("invalidConsonantSequence"))
+    }
+
     val ssml = JsonObject()
     ssml.addProperty("ssml", addSsmlTags(phrase))
     val audio = JsonObject()
