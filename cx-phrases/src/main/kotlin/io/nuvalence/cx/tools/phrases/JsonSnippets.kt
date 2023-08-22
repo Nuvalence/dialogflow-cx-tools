@@ -9,7 +9,7 @@ import java.util.*
 
 
 /**
- * Given a language code and a list of training phrases, create a JSON object
+ * Given a language code and a list of training phrases, create a JSON array
  * containing those training phrases in the structure Dialogflow expects.
  */
 fun intentLanguage(languageCode: String, phrases: List<String>?): JsonArray {
