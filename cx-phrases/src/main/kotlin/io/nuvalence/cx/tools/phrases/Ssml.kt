@@ -20,9 +20,9 @@ const val START_SAY_VERBATIM = """<say-as interpret-as="verbatim">"""
 const val END_SAY = "</say-as>"
 
 /**
- * Read config.hocon file from which regex values will be read
+ * Read config file from which regex values will be read
  */
-val configFile = File("config.hocon")
+val configFile = File("config.conf")
 val config = ConfigFactory.parseString(configFile.readText().trimMargin())
 
 /**
