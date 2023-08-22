@@ -69,6 +69,12 @@ cd cx-phrases
 we make no assumption whether we can go ahead and delete things...) 
 * URL where to find the `credentials.json` file granting access to the Google Sheet above
 
+#### Configuration
+Regexes, URL separators, and an allowlist of short tokens can be found in the `defaults.conf` file. Tokens in a fulfillment phrase
+that match these items will be surrounded with appropriate ssml tags during import. Short tokens appearing in the allowlist will be read
+verbatim. To overwrite these values, add custom values to the `config.conf` file as shown in the commented out SHORT_TOKEN_WHITELIST value.
+
+
 # Running Tests
 Please see cx-test README.md for instructions.
 

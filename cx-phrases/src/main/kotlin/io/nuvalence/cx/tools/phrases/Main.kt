@@ -1,7 +1,7 @@
 package io.nuvalence.cx.tools.phrases
 
 /**
- * Entry point for export/import. The firs parameter specifies the operation to be performed,
+ * Entry point for export/import. The first parameter specifies the operation to be performed,
  * followed by operation-specific parameters.
  */
 fun main(args: Array<String>) {

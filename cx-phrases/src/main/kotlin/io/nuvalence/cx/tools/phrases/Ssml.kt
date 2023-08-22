@@ -1,6 +1,9 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonObject
+import com.typesafe.config.ConfigFactory
+import io.github.config4k.getValue
+import java.io.File
 
 /**
  * Helper functions to generate SSML tags and audio prosody.
@@ -17,36 +20,42 @@ const val START_SAY_VERBATIM = """<say-as interpret-as="verbatim">"""
 const val END_SAY = "</say-as>"
 
 /**
+ * Read config file from which regex values will be read
+ */
+val configFile = File("config.conf")
+val config = ConfigFactory.parseString(configFile.readText().trimMargin())
+
+/**
  * Used to separate URL components
  */
-val URL_SEPARATORS = setOf("#", "/", ".", "_", "-")
+val URL_SEPARATORS: Set<String> by config
 
 /**
  * Finds and matches URLs
  */
-val MATCH_URL_REGEX = Regex("\\s\\w+\\.\\w+(?:[.\\/\\-]\\w+)*\\b")
+val MATCH_URL_REGEX: Regex by config
 
 /**
  * Finds and matches 10-digit phone numbers with dashes
  */
-val MATCH_PHONE_REGEX = Regex("\\b(\\d{3}-\\d{3}-\\d{4})\\b")
+val MATCH_PHONE_REGEX: Regex by config
 
 /**
- * Finds and matches numbers, but ignore time (e.g. 14:29pm) since we want to
- * say those as is.
+ * Finds and matches numbers, but ignore time (e.g. 14:29pm) and phone numbers since we want to
+ * say those as is/they were already processed.
  */
-val MATCH_NUMBERS_REGEX = Regex("\\b(?<!\\d{3}-\\d{3}-)\\b\\d+\\b(?!-\\d{3}-\\d{4})(?!-\\d{1,4})(?!%\">|:|-)\\b")
+val MATCH_NUMBERS_REGEX: Regex by config
 
 /**
  * These tokens will not be spelled out
  */
-val SHORT_TOKEN_WHITELIST = setOf("com", "org", "gov")
+val SHORT_TOKEN_WHITELIST: Set<String> by config
 
 /**
  * Consonant sequences that sound weird in English, so we revert to spelling out the word instead
  * of saying it as-is.
  */
-val INVALID_CONSONANT_SEQUENCE = Regex("\\b.*([^aeiouy]{5,}|[^aeiou][^aeiouy]{4,}[^aeiou]|[hjmnqvwxz]r|[cdfghjqvwxz]s|[dhjmnqrtvxwz]l|sth|kpy|ww|hh|jj|kk|qq|vv|xx).*\\b")
+val INVALID_CONSONANT_SEQUENCE: Regex by config
 
 /**
  * Generates the outputAudioText element
