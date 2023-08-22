@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation(project(mapOf("path" to ":cx-shared")))
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("io.github.config4k:config4k:0.6.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 }
 
