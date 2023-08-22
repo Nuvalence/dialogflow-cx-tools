@@ -44,10 +44,11 @@ class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCall
         val artifactSpreadsheetId = context.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("artifactSpreadsheetId") as String
 
         val outputColumn = SmokeFormatReader.cols[SmokeFormatReader.COMMENTS]!!
+        val resultColumn = SmokeFormatReader.cols[SmokeFormatReader.STEP_STATUS]!!
 
         val requestData = errorList.associate { e ->
             "${e.sourceId}!${'A' + outputColumn}${e.sourceLocator}" to e.message!!
-        }
+        } + errorList.associate { e -> "${e.sourceId}!${'A' + resultColumn}${e.sourceLocator}" to "Fail" }
 
         artifact.writeArtifact(artifactSpreadsheetId, requestData)
         sessionClient?.close()
