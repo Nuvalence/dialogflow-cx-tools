@@ -54,12 +54,39 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         File("$rootPath/intents").listFiles()?.forEach { directory ->
             val intentPath = directory.absolutePath
             val intentName = directory.name
-            val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))
-            languagePhrases?.phraseByLanguage?.keys?.forEach { languageCode ->
-                val phrases = languagePhrases[languageCode] ?: listOf()
-                val jsonElement = intentLanguage(languageCode, phrases)
-                prettySave(jsonElement, "$intentPath/trainingPhrases/$languageCode.json")
+            File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
+                val language = file.name.removeSuffix(".json")
+                val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
+                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.toMutableSet()
+                val outputTrainingPhrases = JsonArray()
+
+                originalTrainingPhrases["trainingPhrases"].asJsonArray.forEach { phrase ->
+                    val parts = phrase.asJsonObject["parts"].asJsonArray
+                    val combinedText = combineParts(parts)
+
+                    if (combinedText in languagePhrases.orEmpty()) {
+                        outputTrainingPhrases.add(phrase)
+                        languagePhrases?.remove(combinedText)
+                    }
+                }
+
+                languagePhrases?.let {
+                    intentLanguage(language, it.toList()).forEach { phrase -> outputTrainingPhrases.add(phrase) }
+                }
+
+                val resultJsonObject = JsonObject().apply { add("trainingPhrases", outputTrainingPhrases) }
+                prettySave(resultJsonObject, file.absolutePath)
             }
+        }
+    }
+
+    /**
+     * Combine the different parts of the training phrase to build the full phrase.
+     */
+    private fun combineParts(parts: JsonArray): String = parts.joinToString("") { part ->
+        part.asJsonObject.run {
+            val text = this["text"].asString
+            this["parameterId"]?.asString?.let { "[$text]($it)" } ?: text
         }
     }
 
@@ -180,7 +207,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             File("$flowPath/transitionRouteGroups").listFiles()?.forEach { file ->
                 val rgPath = file.absolutePath
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
-                processTransitionRoutes(jsonObject["transitionRoutes"].asJsonArray)
+                processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
                 prettySave(jsonObject, rgPath)
             }
         }

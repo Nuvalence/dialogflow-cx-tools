@@ -9,24 +9,22 @@ import java.util.*
 
 
 /**
- * Given a language code and a list of training phrases, create a JSON object
+ * Given a language code and a list of training phrases, create a JSON array
  * containing those training phrases in the structure Dialogflow expects.
  */
-fun intentLanguage(languageCode: String, phrases: List<String>): JsonObject {
-    val trainingPhrases = JsonObject()
+fun intentLanguage(languageCode: String, phrases: List<String>?): JsonArray {
     val trainingPhrasesArray = JsonArray()
-    phrases.forEach { phrase ->
+    phrases?.forEach { phrase ->
         val trainingPhrase = JsonObject()
+        val parts = processIntentText(phrase)
+        trainingPhrase.addProperty("id", UUID.randomUUID().toString())
+        trainingPhrase.add("parts", parts)
         trainingPhrase.addProperty("repeatCount", 1)
         trainingPhrase.addProperty("languageCode", languageCode)
-        trainingPhrase.addProperty("id", UUID.randomUUID().toString())
-        val parts = processIntentText(phrase)
-        trainingPhrase.add("parts", parts)
         trainingPhrasesArray.add(trainingPhrase)
     }
 
-    trainingPhrases.add("trainingPhrases", trainingPhrasesArray)
-    return trainingPhrases
+    return trainingPhrasesArray
 }
 
 /**
@@ -42,7 +40,9 @@ fun processIntentText(toProcess: String): JsonArray {
     pattern.findAll(toProcess).forEach { matchResult ->
         // Process the text before the first match
         val text = toProcess.substring(lastEndIndex, matchResult.range.first)
-        parts.add(createIntentPart(text))
+        if (text.isNotEmpty()) {
+            parts.add(createIntentPart(text))
+        }
         // Process the matches
         val parameterText = matchResult.groupValues[1]
         val parameterId = matchResult.groupValues[2]
