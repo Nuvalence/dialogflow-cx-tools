@@ -16,7 +16,8 @@ const val START_PROSODY_RATE = """<break time="300ms"/><prosody rate="90%">"""
 const val BREAK_100_MS = """<break time="100ms"/>"""
 const val END_PROSODY_RATE = """</prosody><break time="300ms"/>"""
 
-const val START_SAY_VERBATIM = """<say-as interpret-as="verbatim">"""
+const val START_SAY_VERBATIM = """<s><break time="100ms"/><say-as interpret-as="verbatim">"""
+const val END_SAY_VERBATIM = """</say-as></s>"""
 const val END_SAY = "</say-as>"
 
 /**
@@ -52,11 +53,20 @@ val MATCH_NUMBERS_REGEX: Regex by config
 val SHORT_TOKEN_WHITELIST: Set<String> by config
 
 /**
+ * These tokens are specifically spelled out
+ */
+val URL_VERBATIM_TOKENS: Set<String> by config
+
+/**
  * Consonant sequences that sound weird in English, so we revert to spelling out the word instead
  * of saying it as-is.
  */
 val INVALID_CONSONANT_SEQUENCE: Regex by config
 
+/**
+ * Boolean indicating if we are processing URLs based on English or other languages
+ */
+var LANGUAGE_CODE = "en"
 /**
  * Generates the outputAudioText element
  *
@@ -64,6 +74,7 @@ val INVALID_CONSONANT_SEQUENCE: Regex by config
  * @param phrase the text phrase to convert
  */
 fun audioMessage(languageCode: String, phrase: String): JsonObject {
+    LANGUAGE_CODE = languageCode
     val ssml = JsonObject()
     ssml.addProperty("ssml", addSsmlTags(phrase))
     val audio = JsonObject()
@@ -105,6 +116,10 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
         val text = phrase.substring(lastEndIndex, matchResult.range.first)
         parts.append(text)
         val toProcess = matchResult.groupValues[0]
+        if (phrase.contains(Regex(">\\s*$toProcess\\s*<"))) {
+            println("Already processed \"${matchResult.groupValues[0]}\" in phrase \"$phrase\"")
+            return phrase
+        }
         parts.append(replace(toProcess))
         lastEndIndex = matchResult.range.last + 1
     }
@@ -121,18 +136,22 @@ fun processUrl(url: String) =
     if (url != "session.params.web-site" && url != "session.params.web-site-fwd") // We don't want to change those
         START_PROSODY_RATE + // Pause and talk slowly
         splitUrl(url).joinToString("") { token ->
-            if (token in URL_SEPARATORS) {  // . - / are said as-is
-                "$BREAK_100_MS$START_SAY_VERBATIM $token $END_SAY"
-            } else if (token.length < 4) { // Short tokens have special treatment
-                if (token in SHORT_TOKEN_WHITELIST) // These are read as-is (e.g. "com")
-                    token
-                else // Otherwise we spell it. Stupid say-as verbatim or character not always work...
-                    "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY"
-            } else {
-                if (token.contains(INVALID_CONSONANT_SEQUENCE)) // If the token has weird consonant sequences, spell it
-                    "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY"
-                else
-                    token
+            if (LANGUAGE_CODE == "en") {    // if English, we want to make sure we process certain words in URLs differently
+                if (token in URL_SEPARATORS) {  // . - / are said as-is
+                    "$BREAK_100_MS$START_SAY_VERBATIM $token $END_SAY_VERBATIM"
+                } else if (token.length < 4) { // Short tokens have special treatment
+                    if (token in SHORT_TOKEN_WHITELIST) // These are read as-is (e.g. "com")
+                        token
+                    else // Otherwise we spell it. Stupid say-as verbatim or character not always work...
+                        "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
+                } else {
+                    if (token.contains(INVALID_CONSONANT_SEQUENCE) || token in URL_VERBATIM_TOKENS) // If the token has weird consonant sequences or is specifically listed in our spelling dictionary, spell it
+                        "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
+                    else
+                        token
+                }
+            } else {    // if other languages, just spell out URL tokens
+                "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
             }
         } + END_PROSODY_RATE
     else url
