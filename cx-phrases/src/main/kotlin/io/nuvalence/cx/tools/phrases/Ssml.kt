@@ -117,7 +117,6 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
         parts.append(text)
         val toProcess = matchResult.groupValues[0]
         if (phrase.contains(Regex(">\\s*$toProcess\\s*<"))) {
-            println("Already processed \"${matchResult.groupValues[0]}\" in phrase \"$phrase\"")
             return phrase
         }
         parts.append(replace(toProcess))

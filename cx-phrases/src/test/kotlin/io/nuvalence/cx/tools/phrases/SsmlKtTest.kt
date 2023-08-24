@@ -7,13 +7,23 @@ internal class SsmlKtTest {
 
     @Test
     fun testAudioMessage() {
-        var outputAudioText = audioMessage("en", "Hello world! Please call us at <say-as interpret-as=\"telephone\">555-555-5555</say-as> to save 15.0% or more on car insurance.").toString()
+        var outputAudioText = audioMessage("en", "Hello world! Please call us at 555-555-5555 to save 15.0% or more on car insurance.").toString()
         assert(outputAudioText.contains("outputAudioText"))
         assert(outputAudioText.contains("\"ssml\":"))
         assert(outputAudioText.contains("<speak>"))
         assert(outputAudioText.contains("""<say-as interpret-as=\"telephone\">"""))
         assert(outputAudioText.contains("""<break time=\"300ms\"/><prosody rate=\"90%\">"""))
         assert(outputAudioText.contains("languageCode"))
+
+        var outputAudioTextEs = audioMessage("es", "¡Hola Mundo! Llámenos al 555-555-5555 o ir a google.com/insurance para ahorrar un 15,0% o más en seguro de automóvil.").toString()
+        assert(outputAudioTextEs.contains("outputAudioText"))
+        assert(outputAudioTextEs.contains("\"ssml\":"))
+        assert(outputAudioTextEs.contains("<speak>"))
+        assert(outputAudioTextEs.contains("""<say-as interpret-as=\"telephone\">"""))
+        assert(outputAudioTextEs.contains("""<break time=\"300ms\"/><prosody rate=\"90%\">"""))
+        assert(outputAudioTextEs.contains("languageCode"))
+        assert(outputAudioTextEs.contains("g o o g l e") && outputAudioTextEs.contains("i n s u r a n c e"))
+        assert(!outputAudioTextEs.contains("google") && !outputAudioTextEs.contains("insurance"))
     }
 
     @Test
