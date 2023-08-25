@@ -13,7 +13,7 @@ enum class PROPERTIES(private val value: String) {
     SPREADSHEET_ID("spreadsheetId"),
     DFCX_ENDPOINT("dfcxEndpoint") {
         override fun get(): String {
-            return super.get().takeIf { prop -> prop.isNotEmpty() } ?: "us-east1-dialogflow.googleapis.com:443"
+            return super.get().takeIf { prop -> prop.isNotEmpty() } ?: "dialogflow.googleapis.com:443"
         }
     };
 

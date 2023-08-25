@@ -1,5 +1,8 @@
 package io.nuvalence.cx.tools.cxtest
 
+import com.google.cloud.dialogflow.cx.v3.TestCaseName
+import com.google.cloud.dialogflow.cx.v3.TestCasesClient
+import com.google.cloud.dialogflow.cx.v3.TestCasesSettings
 import com.google.cloud.dialogflow.cx.v3beta1.*
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
 import io.nuvalence.cx.tools.cxtest.sheetformat.SmokeFormatReader
@@ -22,8 +25,26 @@ class SmokeSpec {
             .build()
     )
 
+    private val testClient: TestCasesClient = TestCasesClient.create(
+        TestCasesSettings.newBuilder()
+            .setEndpoint(PROPERTIES.DFCX_ENDPOINT.get())
+            .build()
+    )
+
     @TestFactory
     fun testCases(): List<DynamicTest> {
+
+        val testCase = testClient.getTestCase(
+            TestCaseName.of(
+                "dol-uisim-ccai-dev-app",
+                "global",
+                "d9104994-1eb3-4f33-84b5-721a7343d2de",
+                "0084b792-2885-4071-ae5a-223b755b7181"
+            ).toString()
+        )
+
+        println(testCase)
+
         println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
         val agentPath = PROPERTIES.AGENT_PATH.get()
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
