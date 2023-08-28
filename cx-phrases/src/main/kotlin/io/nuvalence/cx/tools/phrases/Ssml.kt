@@ -1,6 +1,7 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonObject
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.getValue
 import java.io.File
@@ -23,8 +24,8 @@ const val END_SAY = "</say-as>"
 /**
  * Read config file from which regex values will be read
  */
-val configFile = File("config.conf")
-val config = ConfigFactory.parseString(configFile.readText().trimMargin())
+val configFile = File("cx-phrases/config.conf")
+val config: Config = ConfigFactory.parseString(configFile.readText().trimMargin())
 
 /**
  * Used to separate URL components

@@ -30,6 +30,7 @@ it to source control!
 Instructions [here.](https://developers.google.com/workspace/guides/configure-oauth-consent)
 
 # Running the Agent Generator
+Note that unless you are using a sheet that is already created, you will need to create your own Google Sheet.
 
 Main class: `io.nuvalence.cx.tools.cxagent.MainKt`
 
@@ -68,12 +69,6 @@ cd cx-phrases
 * Path to where the resulting agent should be created (**must be an empty directory**,
 we make no assumption whether we can go ahead and delete things...) 
 * URL where to find the `credentials.json` file granting access to the Google Sheet above
-
-#### Configuration
-Regexes, URL separators, and an allowlist of short tokens can be found in the `defaults.conf` file. Tokens in a fulfillment phrase
-that match these items will be surrounded with appropriate ssml tags during import. Short tokens appearing in the allowlist will be read
-verbatim. To overwrite these values, add custom values to the `config.conf` file as shown in the commented out SHORT_TOKEN_WHITELIST value.
-
 
 # Running Tests
 Please see cx-test README.md for instructions.
