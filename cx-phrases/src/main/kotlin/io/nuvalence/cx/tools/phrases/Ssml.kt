@@ -65,6 +65,11 @@ val URL_VERBATIM_TOKENS: Set<String> by config
 val INVALID_CONSONANT_SEQUENCE: Regex by config
 
 /**
+ * List of custom regex matchers found in config file to run and replace
+ */
+val CUSTOM_MATCH_REPLACE_LIST: Set<Map<String, String>> by config
+
+/**
  * Boolean indicating if we are processing URLs based on English or other languages
  */
 var LANGUAGE_CODE = "en"
@@ -98,7 +103,11 @@ fun addSsmlTags(phrase: String): String {
     val replacedWebSite = replacedUrls
         .replace("\$session.params.web-site", "\$session.params.web-site-ssml")
         .replace("\$session.params.web-site-fwd", "\$session.params.web-site-fwd-ssml")
-    return "$START_SPEAK\n$replacedWebSite\n$END_SPEAK"
+    var replacedCustom = replacedWebSite
+    CUSTOM_MATCH_REPLACE_LIST.forEach {
+        replacedCustom = processString(replacedCustom, Regex(it.getValue("match").toString()), fun(_: String) = it.getValue("replace").toString())
+    }
+    return "$START_SPEAK\n$replacedCustom\n$END_SPEAK"
 }
 
 /**
@@ -117,7 +126,7 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
         val text = phrase.substring(lastEndIndex, matchResult.range.first)
         parts.append(text)
         val toProcess = matchResult.groupValues[0]
-        if (phrase.contains(Regex(">\\s*$toProcess\\s*<"))) {
+        if (phrase.matches(Regex(">\\s*$toProcess\\s*<"))) {
             return phrase
         }
         parts.append(replace(toProcess))
