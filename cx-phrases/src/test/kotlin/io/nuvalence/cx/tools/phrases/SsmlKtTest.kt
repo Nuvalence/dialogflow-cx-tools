@@ -77,6 +77,12 @@ Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telep
     }
 
     @Test
+    fun testProcessPercentage() {
+        var ssmlPercentage = """<break time="300ms"/><prosody rate="90%"><say-as interpret-as="percentage">2.5%</say-as></prosody><break time="300ms"/>"""
+        assertEquals(ssmlPercentage, processPercentage("2.5%"))
+    }
+
+    @Test
     fun testSplitUrl() {
         assertEquals(9, splitUrl("dol.ny.gov/1099-G").size)
         assertEquals(13, splitUrl(" dol.ny.gov/create-confirmation-number/signin").size)
