@@ -132,7 +132,7 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
         parts.append(replace(toProcess))
         lastEndIndex = matchResult.range.last + 1
     }
-    val text = phrase.substring(lastEndIndex).trim()
+    val text = phrase.substring(lastEndIndex)
     if (text.isNotEmpty())
         parts.append(text)
     return parts.toString()
@@ -166,13 +166,17 @@ fun processUrl(url: String) =
     else url
 
 fun processNumber(number: String) =
-    START_PROSODY_RATE + // Pause and talk slowly
-    (if (number == "800")  // Special case for phone numbers
-        " eight hundred "
-    else if (number.length < 4)
+    (if (number.length > 2)
+        START_PROSODY_RATE + // Pause and talk slowly
+        (if (number == "800")  // Special case for phone numbers
+            " eight hundred "
+        else if (number.length < 4)
             number
-         else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
+        else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
             number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
+    else
+        number
+    )
 
 fun processPhone(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
