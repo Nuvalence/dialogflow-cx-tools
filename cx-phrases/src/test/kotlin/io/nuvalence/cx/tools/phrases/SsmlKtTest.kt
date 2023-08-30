@@ -29,7 +29,7 @@ internal class SsmlKtTest {
     @Test
     fun testAddSsmlTags() {
         assertEquals("""<speak>
-OK. You want to withhold <break time="300ms"/><prosody rate="90%">2</prosody><break time="300ms"/>.<break time="300ms"/><prosody rate="90%">5</prosody><break time="300ms"/>% of your benefits for state taxes.
+OK. You want to withhold <break time="300ms"/><prosody rate="90%"><say-as interpret-as="percentage">2.5%</say-as></prosody><break time="300ms"/>of your benefits for state taxes.
 </speak>""", addSsmlTags("OK. You want to withhold 2.5% of your benefits for state taxes."))
 
         assertEquals("""<speak>
@@ -67,8 +67,7 @@ Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telep
         assertEquals(ssmlNumber, processNumber("123450"))
         var ssmlNumberNormal = """<break time="300ms"/><prosody rate="90%">1 5 6 4</prosody><break time="300ms"/>"""
         assertEquals(ssmlNumberNormal, processNumber("1564"))
-        var ssmlNumber800 = """<break time="300ms"/><prosody rate="90%"> eight hundred </prosody><break time="300ms"/>"""
-        assertEquals(ssmlNumber800, processNumber("800"))
+        assertEquals("800", processNumber("800"))
     }
 
     @Test

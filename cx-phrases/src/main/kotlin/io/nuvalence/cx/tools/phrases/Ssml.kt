@@ -43,6 +43,11 @@ val MATCH_URL_REGEX: Regex by config
 val MATCH_PHONE_REGEX: Regex by config
 
 /**
+ * Finds and matches percentages with or without decimals
+ */
+val MATCH_PERCENTAGE_REGEX: Regex by config
+
+/**
  * Finds and matches numbers, but ignore time (e.g. 14:29pm) and phone numbers since we want to
  * say those as is/they were already processed.
  */
@@ -98,7 +103,8 @@ fun addSsmlTags(phrase: String): String {
     if (phrase.contains(START_SPEAK) && phrase.contains(END_SPEAK))
         return phrase // Because prosody has already been defined in the fulfillment - just use what's there
     val replacedPhone = processString(phrase, MATCH_PHONE_REGEX, ::processPhone)
-    val replacedNumbers = processString(replacedPhone, MATCH_NUMBERS_REGEX, ::processNumber)
+    val replacedPercentage = processString(replacedPhone, MATCH_PERCENTAGE_REGEX, ::processPercentage)
+    val replacedNumbers = processString(replacedPercentage, MATCH_NUMBERS_REGEX, ::processNumber)
     val replacedUrls = processString(replacedNumbers, MATCH_URL_REGEX, ::processUrl)
     val replacedWebSite = replacedUrls
         .replace("\$session.params.web-site", "\$session.params.web-site-ssml")
@@ -132,7 +138,7 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
         parts.append(replace(toProcess))
         lastEndIndex = matchResult.range.last + 1
     }
-    val text = phrase.substring(lastEndIndex)
+    val text = phrase.substring(lastEndIndex).trim()
     if (text.isNotEmpty())
         parts.append(text)
     return parts.toString()
@@ -166,18 +172,24 @@ fun processUrl(url: String) =
     else url
 
 fun processNumber(number: String) =
-    (if (number.length > 2)
-        START_PROSODY_RATE + // Pause and talk slowly
-        (if (number == "800")  // Special case for phone numbers
-            " eight hundred "
-        else if (number.length < 4)
-            number
-        else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
-            number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
+    // if a number has more than 3 digits, say one digit at a time, and make sure we say "zero", not "oh"
+    (if (number.length > 3)
+        START_PROSODY_RATE + number.map { if (it == '0') "zero" else it }.joinToString(" ") + END_PROSODY_RATE
     else
         number
     )
 
+/**
+ * Adds prosody rate and percentage interpretation to percentages
+ */
+fun processPercentage(number: String) =
+    START_PROSODY_RATE + // Pause and talk slowly
+        """<say-as interpret-as="percentage">""" +
+            number + END_SAY + END_PROSODY_RATE
+
+/**
+ * Adds prosody rate and telephone interpretation to phone numbers
+ */
 fun processPhone(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
         """<say-as interpret-as="telephone">""" +
