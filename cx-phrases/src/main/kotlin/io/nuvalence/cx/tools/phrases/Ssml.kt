@@ -1,6 +1,7 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonObject
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.getValue
 import java.io.File
@@ -16,14 +17,15 @@ const val START_PROSODY_RATE = """<break time="300ms"/><prosody rate="90%">"""
 const val BREAK_100_MS = """<break time="100ms"/>"""
 const val END_PROSODY_RATE = """</prosody><break time="300ms"/>"""
 
-const val START_SAY_VERBATIM = """<say-as interpret-as="verbatim">"""
+const val START_SAY_VERBATIM = """<s><break time="100ms"/><say-as interpret-as="verbatim">"""
+const val END_SAY_VERBATIM = """</say-as></s>"""
 const val END_SAY = "</say-as>"
 
 /**
  * Read config file from which regex values will be read
  */
-val configFile = File("config.conf")
-val config = ConfigFactory.parseString(configFile.readText().trimMargin())
+val configFile = File("cx-phrases/config.conf")
+val config: Config = ConfigFactory.parseString(configFile.readText().trimMargin())
 
 /**
  * Used to separate URL components
@@ -41,6 +43,11 @@ val MATCH_URL_REGEX: Regex by config
 val MATCH_PHONE_REGEX: Regex by config
 
 /**
+ * Finds and matches percentages with or without decimals
+ */
+val MATCH_PERCENTAGE_REGEX: Regex by config
+
+/**
  * Finds and matches numbers, but ignore time (e.g. 14:29pm) and phone numbers since we want to
  * say those as is/they were already processed.
  */
@@ -52,11 +59,25 @@ val MATCH_NUMBERS_REGEX: Regex by config
 val SHORT_TOKEN_WHITELIST: Set<String> by config
 
 /**
+ * These tokens are specifically spelled out
+ */
+val URL_VERBATIM_TOKENS: Set<String> by config
+
+/**
  * Consonant sequences that sound weird in English, so we revert to spelling out the word instead
  * of saying it as-is.
  */
 val INVALID_CONSONANT_SEQUENCE: Regex by config
 
+/**
+ * List of custom regex matchers found in config file to run and replace
+ */
+val CUSTOM_MATCH_REPLACE_LIST: Set<Map<String, String>> by config
+
+/**
+ * Boolean indicating if we are processing URLs based on English or other languages
+ */
+var LANGUAGE_CODE = "en"
 /**
  * Generates the outputAudioText element
  *
@@ -64,6 +85,7 @@ val INVALID_CONSONANT_SEQUENCE: Regex by config
  * @param phrase the text phrase to convert
  */
 fun audioMessage(languageCode: String, phrase: String): JsonObject {
+    LANGUAGE_CODE = languageCode
     val ssml = JsonObject()
     ssml.addProperty("ssml", addSsmlTags(phrase))
     val audio = JsonObject()
@@ -81,12 +103,17 @@ fun addSsmlTags(phrase: String): String {
     if (phrase.contains(START_SPEAK) && phrase.contains(END_SPEAK))
         return phrase // Because prosody has already been defined in the fulfillment - just use what's there
     val replacedPhone = processString(phrase, MATCH_PHONE_REGEX, ::processPhone)
-    val replacedNumbers = processString(replacedPhone, MATCH_NUMBERS_REGEX, ::processNumber)
+    val replacedPercentage = processString(replacedPhone, MATCH_PERCENTAGE_REGEX, ::processPercentage)
+    val replacedNumbers = processString(replacedPercentage, MATCH_NUMBERS_REGEX, ::processNumber)
     val replacedUrls = processString(replacedNumbers, MATCH_URL_REGEX, ::processUrl)
     val replacedWebSite = replacedUrls
         .replace("\$session.params.web-site", "\$session.params.web-site-ssml")
         .replace("\$session.params.web-site-fwd", "\$session.params.web-site-fwd-ssml")
-    return "$START_SPEAK\n$replacedWebSite\n$END_SPEAK"
+    var replacedCustom = replacedWebSite
+    CUSTOM_MATCH_REPLACE_LIST.forEach {
+        replacedCustom = processString(replacedCustom, Regex(it.getValue("match").toString()), fun(_: String) = it.getValue("replace").toString())
+    }
+    return "$START_SPEAK\n$replacedCustom\n$END_SPEAK"
 }
 
 /**
@@ -105,6 +132,9 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
         val text = phrase.substring(lastEndIndex, matchResult.range.first)
         parts.append(text)
         val toProcess = matchResult.groupValues[0]
+        if (phrase.matches(Regex(">\\s*$toProcess\\s*<"))) {
+            return phrase
+        }
         parts.append(replace(toProcess))
         lastEndIndex = matchResult.range.last + 1
     }
@@ -121,31 +151,45 @@ fun processUrl(url: String) =
     if (url != "session.params.web-site" && url != "session.params.web-site-fwd") // We don't want to change those
         START_PROSODY_RATE + // Pause and talk slowly
         splitUrl(url).joinToString("") { token ->
-            if (token in URL_SEPARATORS) {  // . - / are said as-is
-                "$BREAK_100_MS$START_SAY_VERBATIM $token $END_SAY"
-            } else if (token.length < 4) { // Short tokens have special treatment
-                if (token in SHORT_TOKEN_WHITELIST) // These are read as-is (e.g. "com")
-                    token
-                else // Otherwise we spell it. Stupid say-as verbatim or character not always work...
-                    "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY"
-            } else {
-                if (token.contains(INVALID_CONSONANT_SEQUENCE)) // If the token has weird consonant sequences, spell it
-                    "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY"
-                else
-                    token
+            if (LANGUAGE_CODE == "en") {    // if English, we want to make sure we process certain words in URLs differently
+                if (token in URL_SEPARATORS) {  // . - / are said as-is
+                    "$BREAK_100_MS$START_SAY_VERBATIM $token $END_SAY_VERBATIM"
+                } else if (token.length < 4) { // Short tokens have special treatment
+                    if (token in SHORT_TOKEN_WHITELIST) // These are read as-is (e.g. "com")
+                        token
+                    else // Otherwise we spell it. Stupid say-as verbatim or character not always work...
+                        "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
+                } else {
+                    if (token.contains(INVALID_CONSONANT_SEQUENCE) || token in URL_VERBATIM_TOKENS) // If the token has weird consonant sequences or is specifically listed in our spelling dictionary, spell it
+                        "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
+                    else
+                        token
+                }
+            } else {    // if other languages, just spell out URL tokens
+                "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
             }
         } + END_PROSODY_RATE
     else url
 
 fun processNumber(number: String) =
-    START_PROSODY_RATE + // Pause and talk slowly
-    (if (number == "800")  // Special case for phone numbers
-        " eight hundred "
-    else if (number.length < 4)
-            number
-         else // Otherwise, say one digit at a time, and make sure we say "zero", not "oh"
-            number.map { if (it == '0') "zero" else it }.joinToString(" ")) + END_PROSODY_RATE
+    // if a number has more than 3 digits, say one digit at a time, and make sure we say "zero", not "oh"
+    (if (number.length > 3)
+        START_PROSODY_RATE + START_SAY_VERBATIM + number + END_SAY_VERBATIM + END_PROSODY_RATE
+    else
+        number
+    )
 
+/**
+ * Adds prosody rate and percentage interpretation to percentages
+ */
+fun processPercentage(number: String) =
+    START_PROSODY_RATE + // Pause and talk slowly
+        """<say-as interpret-as="percentage">""" +
+            number + END_SAY + END_PROSODY_RATE
+
+/**
+ * Adds prosody rate and telephone interpretation to phone numbers
+ */
 fun processPhone(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
         """<say-as interpret-as="telephone">""" +
