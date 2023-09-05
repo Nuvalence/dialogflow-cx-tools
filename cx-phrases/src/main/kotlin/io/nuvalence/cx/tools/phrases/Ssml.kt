@@ -1,6 +1,5 @@
 package io.nuvalence.cx.tools.phrases
 
-import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
