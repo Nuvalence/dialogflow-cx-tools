@@ -1,5 +1,6 @@
 package io.nuvalence.cx.tools.phrases
 
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -110,8 +111,14 @@ fun addSsmlTags(phrase: String): String {
         .replace("\$session.params.web-site", "\$session.params.web-site-ssml")
         .replace("\$session.params.web-site-fwd", "\$session.params.web-site-fwd-ssml")
     var replacedCustom = replacedWebSite
-    CUSTOM_MATCH_REPLACE_LIST.forEach {
-        replacedCustom = processString(replacedCustom, Regex(it.getValue("match").toString()), fun(_: String) = it.getValue("replace").toString())
+    CUSTOM_MATCH_REPLACE_LIST.forEach {     // loop through custom_match_replace_list rules
+        var languages = it.getValue("languages").split(",")
+        if (LANGUAGE_CODE in languages || "all" in languages) { // if language matches the language of the rule or "all", then run it
+            replacedCustom = processString(
+                replacedCustom,
+                Regex(it.getValue("match").toString()),
+                fun(_: String) = it.getValue("replace").toString())
+        }
     }
     return "$START_SPEAK\n$replacedCustom\n$END_SPEAK"
 }
