@@ -20,15 +20,16 @@ import java.net.URL
  * The id is 16xjZ4tnVlRLlwd0jiKX6Q7d3TV08jtGWF_SxoCS-DHc
  */
 class SheetReader(private val credentialsURL: URL, private val spreadsheetId: String, private val range: String) {
+    private val transport = GoogleNetHttpTransport.newTrustedTransport()
+    private val service = Sheets.Builder(
+        transport,
+        GsonFactory.getDefaultInstance(),
+        Authorizer(credentialsURL, transport).getCredentials()
+    )
+        .setApplicationName("Dialogflow Agent Generator")
+        .build()
+
     fun read(): List<List<String>> {
-        val transport = GoogleNetHttpTransport.newTrustedTransport()
-        val service = Sheets.Builder(
-            transport,
-            GsonFactory.getDefaultInstance(),
-            Authorizer(credentialsURL, transport).getCredentials()
-        )
-            .setApplicationName("Dialogflow Agent Generator")
-            .build()
         val response = service.spreadsheets().values()
             .get(spreadsheetId, range)
             .execute()
@@ -37,14 +38,6 @@ class SheetReader(private val credentialsURL: URL, private val spreadsheetId: St
     }
 
     fun listSheets() : List<String> {
-        val transport = GoogleNetHttpTransport.newTrustedTransport()
-        val service = Sheets.Builder(
-            transport,
-            GsonFactory.getDefaultInstance(),
-            Authorizer(credentialsURL, transport).getCredentials()
-        )
-            .setApplicationName("Dialogflow Agent Generator")
-            .build()
         return service.spreadsheets()
             .get(spreadsheetId)
             .execute()

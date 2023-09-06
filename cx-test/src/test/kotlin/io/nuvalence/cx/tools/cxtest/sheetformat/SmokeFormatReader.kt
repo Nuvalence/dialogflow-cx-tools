@@ -8,38 +8,45 @@ import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import io.nuvalence.cx.tools.shared.SheetReader
 import java.net.URL
 
-class SmokeFormatReader {
+class SmokeFormatReader : FormatReader {
     companion object {
         const val TEST_CASE_ID = "Test Case ID"
         const val TEST_CASE_LANGUAGE = "Language"
         const val TEST_CASE_TITLE = "Test Description"
         const val USER_INPUT = "Test Steps / User Input"
         const val EXPECTED_RESULT = "Expected Telephony Result"
+        const val STEP_STATUS = "Step Status"
+        const val COMMENTS = "Comments"
 
-        val colNames = listOf(TEST_CASE_ID, TEST_CASE_LANGUAGE, TEST_CASE_TITLE, USER_INPUT, EXPECTED_RESULT)
+        val url = PROPERTIES.CREDENTIALS_URL.get()!!
+        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()!!
+
+        val colNames = listOf(TEST_CASE_ID, TEST_CASE_LANGUAGE, TEST_CASE_TITLE, USER_INPUT, EXPECTED_RESULT, STEP_STATUS, COMMENTS)
+        lateinit var cols : Map<String, Int>
     }
 
     private fun createTestScenario(
-        testSteps: List<TestStep>, range: String, title: String, testCaseId: String, testCaseLanguage: String
+        testSteps: List<TestStep>, range: String, title: String, testCaseId: String, testCaseLanguage: String, sourceLocator: Any?
     ): TestScenario {
-        return TestScenario("$range - $title - $testCaseId", testSteps.toList(), LANGUAGE_MAPPINGS.getValue(testCaseLanguage))
+        return TestScenario(
+            title = "$range - $title - $testCaseId",
+            testSteps = testSteps.toList(),
+            languageCode = LANGUAGE_MAPPINGS.getValue(testCaseLanguage),
+            sourceId = range,
+            sourceLocator = sourceLocator)
     }
 
     fun listSheets(prefix: String): List<String> {
-        val url = PROPERTIES.CREDENTIALS_URL.get()
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
         return SheetReader(URL(url), spreadsheetId, "").listSheets().filter { sheetName -> sheetName.startsWith(prefix) }
     }
 
-    fun read(range: String): List<TestScenario> {
-        val url = PROPERTIES.CREDENTIALS_URL.get()
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()
+    override fun read(range: String): List<TestScenario> {
         val rows = SheetReader(
             URL(url), spreadsheetId, range
         ).read()
 
         val headerRow = rows[0].map { item -> item.trim() }
-        val cols = colNames.associateWith { colName -> headerRow.indexOf(colName) }
+        cols = colNames.associateWith { colName -> headerRow.indexOf(colName) }
         cols.forEach { (colName, value) ->
             if(value == -1)
             throw Error("Column $colName could not be found in the spreadsheet")
@@ -48,31 +55,35 @@ class SmokeFormatReader {
         var currentTitle = ""
         var currentTestCaseId = ""
         var currentTestCaseLanguage = ""
+        var currentLineNumber = 0
         var testSteps = mutableListOf<TestStep>()
 
-        fun addTestStep(userInput: String, expectedResult: String) {
+        fun addTestStep(userInput: String, expectedResult: String, sourceLocator: Any?) {
             val input = if (userInput.startsWith("[")) ACTION_MAPPINGS.getValue("${userInput}#$currentTestCaseLanguage") else userInput
             if (testSteps.isEmpty()) {
-                testSteps = mutableListOf(TestStep(input, expectedResult))
+                testSteps = mutableListOf(TestStep(input, expectedResult, sourceLocator))
             } else {
-                testSteps.add(TestStep(input, expectedResult))
+                testSteps.add(TestStep(input, expectedResult, sourceLocator))
             }
         }
 
+        val rowSkip = 2
         val scenarios = rows.drop(1).foldIndexed(mutableListOf<TestScenario>()) { index, acc, row ->
+            currentLineNumber = index + rowSkip
             fun getRowElement(colName: String): String {
                 return row[cols[colName]!!]
             }
 
-            if (row.isEmpty() || index == rows.size - 2) {
+            if (row.isEmpty() || index == rows.size - rowSkip) {
                 if (testSteps.isNotEmpty()) {
                     acc.add(
                         createTestScenario(
-                            testSteps,
-                            range,
-                            currentTitle,
-                            currentTestCaseId,
-                            currentTestCaseLanguage
+                            testSteps = testSteps,
+                            range = range,
+                            title = currentTitle,
+                            testCaseId = currentTestCaseId,
+                            testCaseLanguage = currentTestCaseLanguage,
+                            sourceLocator = testSteps[0].sourceLocator
                         )
                     )
                     testSteps.clear()
@@ -82,11 +93,25 @@ class SmokeFormatReader {
                     currentTitle = getRowElement(TEST_CASE_TITLE)
                     currentTestCaseId = getRowElement(TEST_CASE_ID)
                     currentTestCaseLanguage = getRowElement(TEST_CASE_LANGUAGE).lowercase()
-                    addTestStep(getRowElement(USER_INPUT), getRowElement(EXPECTED_RESULT))
+                    addTestStep(
+                        userInput = getRowElement(USER_INPUT),
+                        expectedResult = getRowElement(EXPECTED_RESULT),
+                        sourceLocator = currentLineNumber
+                    )
                 } else {
-                    addTestStep(getRowElement(USER_INPUT), getRowElement(EXPECTED_RESULT))
-                    if (index == rows.size - 1) {
-                        acc.add(createTestScenario(testSteps, range, currentTitle, currentTestCaseId, currentTestCaseLanguage))
+                    addTestStep(
+                        userInput = getRowElement(USER_INPUT),
+                        expectedResult = getRowElement(EXPECTED_RESULT),
+                        sourceLocator = currentLineNumber
+                    )
+                    if (index == rows.size - rowSkip + 1) {
+                        acc.add(createTestScenario(
+                            testSteps = testSteps,
+                            range = range,
+                            title = currentTitle,
+                            testCaseId = currentTestCaseId,
+                            testCaseLanguage = currentTestCaseLanguage,
+                            sourceLocator = testSteps[0].sourceLocator))
                         testSteps.clear()
                     }
                 }

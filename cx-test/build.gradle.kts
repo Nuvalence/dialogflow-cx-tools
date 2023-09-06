@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.Test
+
 plugins {
     kotlin("jvm") version "1.7.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
@@ -12,8 +14,9 @@ repositories {
 dependencies {
     implementation(project(":cx-shared"))
     implementation(kotlin("stdlib"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 
     testImplementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
     testImplementation("com.google.cloud:google-cloud-dialogflow-cx:0.25.0")
@@ -22,15 +25,34 @@ dependencies {
     testImplementation("me.xdrop:fuzzywuzzy:1.2.0")
 }
 
-tasks.test {
-    // Leave these findProperty calls as is -- Kotlin's type checking does not play nice with Gradle's API and causes false positives upon linting.
-    systemProperty("agentPath", project.findProperty("agentPath"))
-    systemProperty("spreadsheetId", project.findProperty("spreadsheetId"))
-    systemProperty("credentialsUrl", project.findProperty("credentialsUrl"))
-    systemProperty("orchestrationMode", project.findProperty("orchestrationMode"))
-    systemProperty("matchingMode", project.findProperty("matchingMode"))
-    systemProperty("matchingRatio", project.findProperty("matchingRatio"))
-    systemProperty("dfcxEndpoint", project.findProperty("dfcxEndpoint"))
+val reportDestinationPath = "$buildDir/reports/tests"
+
+val aggregateTestResults by tasks.register<TestReport>("aggregateTestResults") {
+    destinationDir = file(reportDestinationPath)
+
+    // Set the test results directory
+    reportOn(tasks.withType(Test::class))
+}
+
+val postProcessTestReport = tasks.register<DefaultTask>("postProcessTestReport") {
+    doLast {
+        file(reportDestinationPath).walkTopDown().forEach { file ->
+            if (file.isFile) {
+                val content = file.readText()
+                val stacktraceRegex = Regex("[\\s]+at.*\\..*:.*\\)\n")
+                val locationRegex = Regex("&quot; ==&gt;.*\\)")
+                val modifiedContent = content.replace(stacktraceRegex, "").replace(locationRegex, "\"")
+                file.bufferedWriter().use { writer ->
+                    writer.write(modifiedContent)
+                }
+            }
+        }
+    }
+}
+
+val testTask = tasks.withType<Test> {
+    val properties = listOf("agentPath", "spreadsheetId", "credentialsUrl", "orchestrationMode", "matchingMode", "matchingRatio", "dfcxEndpoint")
+    systemProperties(project.properties.filter { (key, _) -> key in properties })
 
     useJUnitPlatform {
         // Enable parallel test execution
@@ -40,6 +62,7 @@ tasks.test {
         systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
         systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", "4")
 
+        systemProperty("junit.jupiter.listeners", "io.nuvalence.cx.tools.cxtest.listener.DynamicTestListener")
 
         val includeTagsProperty = project.findProperty("includeTags")?.toString()
         val excludeTagsProperty = project.findProperty("excludeTags")?.toString()
@@ -55,15 +78,8 @@ tasks.test {
             excludeTags(excludeTagsProperty)
         }
     }
-    finalizedBy("aggregateTestResults")
+
+    finalizedBy(aggregateTestResults, postProcessTestReport)
+
     outputs.upToDateWhen { false }
-}
-
-
-task("aggregateTestResults", type = TestReport::class) {
-    // Set the output directory for the test report
-    destinationDir = file("$buildDir/reports/tests")
-
-    // Set the test results directory
-    reportOn(tasks.withType(Test::class))
 }

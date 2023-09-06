@@ -5,7 +5,7 @@ enum class PROPERTIES(private val value: String) {
     MATCHING_MODE("matchingMode"),
     MATCHING_RATIO("matchingRatio") {
         override fun get(): String {
-            return super.get().takeIf { prop -> prop.isNotEmpty() } ?: "80"
+            return super.get().takeIf { prop -> !prop.isNullOrEmpty() } ?: "80"
         }
     },
     CREDENTIALS_URL("credentialsUrl"),
@@ -13,11 +13,11 @@ enum class PROPERTIES(private val value: String) {
     SPREADSHEET_ID("spreadsheetId"),
     DFCX_ENDPOINT("dfcxEndpoint") {
         override fun get(): String {
-            return super.get().takeIf { prop -> prop.isNotEmpty() } ?: "us-east1-dialogflow.googleapis.com:443"
+            return super.get().takeIf { prop -> !prop.isNullOrEmpty() } ?: "us-east1-dialogflow.googleapis.com:443"
         }
     };
 
-    open fun get(): String {
+    open fun get(): String? {
         return System.getProperty(value)
     }
 }

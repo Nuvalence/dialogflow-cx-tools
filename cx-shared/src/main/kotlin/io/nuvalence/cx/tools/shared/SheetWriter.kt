@@ -76,7 +76,7 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
         val sheet = service.spreadsheets().get(spreadsheetId).execute().sheets.find { it.properties.title == tabName }
         val sheetId = sheet?.properties?.sheetId ?: error("Could not find tab $tabName")
         sizes.forEachIndexed { i, size ->
-            // Set column widith
+            // Set column width
             val dimensionRange = DimensionRange()
                 .setSheetId(sheetId)
                 .setDimension("COLUMNS")
@@ -107,4 +107,20 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
             ).execute()
         }
     }
+
+    fun batchUpdateCells(updateRequests: List<UpdateRequest>) {
+        val data = updateRequests.map { (sheetIdAndRange, value) ->
+            ValueRange().setRange(sheetIdAndRange).setValues(listOf(listOf(value)))
+        }
+
+        // Create a BatchUpdateValuesRequest object and set the data
+        val body = BatchUpdateValuesRequest().setValueInputOption("RAW").setData(data)
+
+        // Execute the batch update request
+        val result = service.spreadsheets().values().batchUpdate(spreadsheetId, body).execute()
+
+        println("${result.totalUpdatedCells} cells updated.")
+    }
 }
+
+data class UpdateRequest (val cellAddress: String, val data: String)
