@@ -24,6 +24,13 @@ internal class SsmlKtTest {
         assert(outputAudioTextEs.contains("languageCode"))
         assert(outputAudioTextEs.contains("g o o g l e") && outputAudioTextEs.contains("i n s u r a n c e"))
         assert(!outputAudioTextEs.contains("google") && !outputAudioTextEs.contains("insurance"))
+
+        outputAudioText = audioMessage("en", "Albany will be said normally.").toString()
+        outputAudioTextEs = audioMessage("es", "Albany spelled A-l-b-a-n-i").toString()
+        var outputAudioTextOther = audioMessage("na", "Albany spelled A-l-b-a-n-y").toString()
+        assert(outputAudioText.contains("Albany"))
+        assert(outputAudioTextEs.contains("Albani"))
+        assert(outputAudioTextOther.contains("A l b a n y"))
     }
 
     @Test
@@ -49,6 +56,10 @@ Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telep
 </speak>""", addSsmlTags("Please call 555-123-1234 to schedule an appointment."))
 
         assert(!addSsmlTags("Do not process 1234567890 as a telephone number").contains("<say-as interpret-as=\"telephone\">"))
+
+        assertEquals("""<speak>
+1099-G <break time="300ms"/> and 1099-G <break time="300ms"/> and 1099-G <break time="300ms"/>
+</speak>""", addSsmlTags("1099-G and 1099G and 1099 G"))
     }
 
     @Test
@@ -59,6 +70,16 @@ Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telep
             processUrl(" dol.ny.gov/when-to-file-a-claim"))
         assertEquals("""<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> d o l </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s>com<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s>1099<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> G </say-as></s></prosody><break time="300ms"/>""",
             processUrl("ny.dol.gov.com/1099-G"))
+        assertEquals("""<break time="300ms"/><prosody rate="90%">unemployment<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s>labor<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s></prosody><break time="300ms"/>""",
+            processUrl("unemployment.labor.ny.gov"))
+
+        var processedUrl = processUrl("nys.dol.ny.gov/nysdol-po-ny-gov")
+        assert(processedUrl.contains("n y s"))
+        assert(processedUrl.contains("d o l"))
+        assert(processedUrl.contains("n y"))
+        assert(processedUrl.contains("g o v"))
+        assert(processedUrl.contains("n y s d o l"))
+        assert(processedUrl.contains("p o"))
     }
 
     @Test

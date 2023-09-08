@@ -1,3 +1,9 @@
+# SSML Processing
+We process a number of token types to surround with SSML tags in the Output Audio Text section of an agent fulfillment. These include by default
+<i>URLs, phone numbers, percentages,</i> and <i>numbers</i>. We've defined some custom rules as well - letter sequences that don't make sense
+in English, tokens that we specifically want to pronounce versus spell out, and some custom matching rules to replace very specific strings with desired
+SSML. These are all done using regexes or matching within a list, and therefore are overridable and customizable.
+
 # Configuration
 Regexes, URL separators, and an allowlist of short tokens can be found in the `defaults.conf` file. Tokens in a fulfillment phrase
 that match these items will be surrounded with appropriate ssml tags during import. Short tokens appearing in the allowlist will be read
@@ -14,14 +20,21 @@ verbatim. To overwrite these values, add custom values to the `config.conf` file
     URL_VERBATIM_TOKENS: []
     MATCH_URL_REGEX: ""
 
-    # Custom matchers can be defined using regexes and replacements starting with "CUSTOM_MATCH_":
+    # Custom match rules can be defined using regexes and replacements in the CUSTOM_MATCH_REPLACE_LIST", along with language code values
+    # to indicate the languages in which to perform the match/replace:
     CUSTOM_MATCH_REPLACE_LIST: [ 
        {
+            languages: "en",
             match: "^.*$",
-            replace: "hello 1"
+            replace: "hello"
         }, {
+            languages: "en,es",
             match: "^.*$",
-            replace: "hello 2"
+            replace: "hola"
+        }, {
+            languages: "all",
+            match: "^.*$",
+            replace: ":)"
         } 
     ]
 }
