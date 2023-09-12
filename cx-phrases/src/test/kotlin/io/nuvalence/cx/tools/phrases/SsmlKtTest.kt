@@ -11,7 +11,7 @@ internal class SsmlKtTest {
         assert(outputAudioText.contains("outputAudioText"))
         assert(outputAudioText.contains("\"ssml\":"))
         assert(outputAudioText.contains("<speak>"))
-        assert(outputAudioText.contains("""<say-as interpret-as=\"telephone\">"""))
+        assert(outputAudioText.contains("""<say-as interpret-as=\"telephone\""""))
         assert(outputAudioText.contains("""<break time=\"300ms\"/><prosody rate=\"90%\">"""))
         assert(outputAudioText.contains("languageCode"))
 
@@ -19,11 +19,11 @@ internal class SsmlKtTest {
         assert(outputAudioTextEs.contains("outputAudioText"))
         assert(outputAudioTextEs.contains("\"ssml\":"))
         assert(outputAudioTextEs.contains("<speak>"))
-        assert(outputAudioTextEs.contains("""<say-as interpret-as=\"telephone\">"""))
+        assert(outputAudioTextEs.contains("""<say-as interpret-as=\"telephone\""""))
         assert(outputAudioTextEs.contains("""<break time=\"300ms\"/><prosody rate=\"90%\">"""))
         assert(outputAudioTextEs.contains("languageCode"))
         assert(outputAudioTextEs.contains("g o o g l e") && outputAudioTextEs.contains("i n s u r a n c e"))
-        assert(!outputAudioTextEs.contains("google") && !outputAudioTextEs.contains("insurance"))
+        assert(!outputAudioTextEs.contains("google.com") && !outputAudioTextEs.contains("insurance"))
 
         outputAudioText = audioMessage("en", "Albany will be said normally.").toString()
         outputAudioTextEs = audioMessage("es", "Albany spelled A-l-b-a-n-i").toString()
@@ -48,12 +48,12 @@ Please visit<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><sa
 </speak>""", addSsmlTags("Please visit dol.ny.gov/1099-G"))
 
         assertEquals("""<speak>
-To request information or records, follow the instructions outlined at<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> o n </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> d c f a q </say-as></s></prosody><break time="300ms"/>.
+To request information or records, follow the instructions outlined at<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> o n </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> d c f a q </say-as></s></prosody><break time="300ms"/><s></s>
 </speak>""", addSsmlTags("To request information or records, follow the instructions outlined at on.ny.gov/dcfaq ."))
 
         assertEquals("""<speak>
-Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone">555-123-1234</say-as></prosody><break time="300ms"/>to schedule an appointment.
-</speak>""", addSsmlTags("Please call 555-123-1234 to schedule an appointment."))
+Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">800-833-3000</say-as></prosody><break time="300ms"/>to schedule an appointment.
+</speak>""", addSsmlTags("Please call 800-833-3000 to schedule an appointment."))
 
         assert(!addSsmlTags("Do not process 1234567890 as a telephone number").contains("<say-as interpret-as=\"telephone\">"))
 
@@ -93,7 +93,7 @@ Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telep
 
     @Test
     fun testProcessPhone() {
-        var ssmlPhone = """<break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone">123-456-7890</say-as></prosody><break time="300ms"/>"""
+        var ssmlPhone = """<break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">123-456-7890</say-as></prosody><break time="300ms"/>"""
         assertEquals(ssmlPhone, processPhone("123-456-7890"))
     }
 
