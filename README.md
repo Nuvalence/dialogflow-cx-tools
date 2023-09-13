@@ -79,3 +79,4 @@ Please refer to the README.md files under `cx-large` and `cx-variations` for add
 # Contributors
 * https://github.com/aantenangeli
 * https://github.com/gteng-nuvalence
+* https://github.com/nuvalencenate
