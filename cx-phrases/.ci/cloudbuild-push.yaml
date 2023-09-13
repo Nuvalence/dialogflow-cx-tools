@@ -1,6 +1,9 @@
 logsBucket: "gs://${_ARTIFACT_BUCKET_NAME}/cloudbuild-logs/${REPO_NAME}-push-trigger"
 timeout: 1800s
 steps:
-  - name: gradle:jdk17
+  - name: gradle:8-jdk17
     entrypoint: gradle
-    args: ['--version']
+    args:
+      - 'build'
+      - '-x'
+      - 'test'
