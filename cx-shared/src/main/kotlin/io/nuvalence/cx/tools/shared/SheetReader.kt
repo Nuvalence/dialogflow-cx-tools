@@ -3,6 +3,7 @@ package io.nuvalence.cx.tools.shared
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.sheets.v4.Sheets
+import com.google.api.services.sheets.v4.model.Sheet
 import java.net.URL
 
 /**
@@ -38,12 +39,16 @@ class SheetReader(private val credentialsURL: URL, private val spreadsheetId: St
     }
 
     fun listSheets() : List<String> {
+        return getSheets()
+            .map {sheet ->
+                sheet.properties?.title!!
+            }
+    }
+
+    fun getSheets() : List<Sheet> {
         return service.spreadsheets()
             .get(spreadsheetId)
             .execute()
             .sheets
-            .map {sheet ->
-                sheet.properties?.title!!
-            }
     }
 }
