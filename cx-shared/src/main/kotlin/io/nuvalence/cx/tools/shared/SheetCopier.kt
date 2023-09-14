@@ -62,16 +62,6 @@ class SheetCopier(credentialsURL: URL, private val spreadsheetId: String) {
                 service.spreadsheets().batchUpdate(destinationSpreadsheetId, updateRequest).execute()
             }
 
-
-        // Delete default first sheet from destination spreadsheet
-        val firstSheetId = service.spreadsheets().get(destinationSpreadsheetId).execute().sheets?.firstOrNull()?.properties?.sheetId
-        val deleteRequest = BatchUpdateSpreadsheetRequest().setRequests(
-            listOf(Request().setDeleteSheet(
-                DeleteSheetRequest().setSheetId(firstSheetId)
-            ))
-        )
-        service.spreadsheets().batchUpdate(destinationSpreadsheetId, deleteRequest).execute()
-
         return destinationSpreadsheetId
     }
 

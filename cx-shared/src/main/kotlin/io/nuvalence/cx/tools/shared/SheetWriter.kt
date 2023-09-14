@@ -119,7 +119,13 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
         // Execute the batch update request
         val result = service.spreadsheets().values().batchUpdate(spreadsheetId, body).execute()
 
-        println("${result.totalUpdatedCells} cells updated.")
+        println("${result.totalUpdatedCells ?: 0} cells updated.")
+    }
+
+    fun batchUpdateSheets(requests: List<Request>) {
+        // Create a BatchUpdateSpreadsheetRequest
+        val updateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
+        service.spreadsheets().batchUpdate(spreadsheetId, updateRequest).execute()
     }
 }
 

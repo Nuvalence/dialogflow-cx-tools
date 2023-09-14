@@ -1,5 +1,8 @@
 package io.nuvalence.cx.tools.cxtest.extension
 
+import com.google.api.services.sheets.v4.model.Request
+import com.google.api.services.sheets.v4.model.SheetProperties
+import com.google.api.services.sheets.v4.model.UpdateSheetPropertiesRequest
 import com.google.cloud.dialogflow.cx.v3beta1.SessionsClient
 import com.google.cloud.dialogflow.cx.v3beta1.SessionsSettings
 import io.nuvalence.cx.tools.cxtest.artifact.SpreadsheetArtifact
@@ -24,6 +27,7 @@ class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCall
     }
 
     override fun beforeAll(context: ExtensionContext?) {
+        println("Agent: ${PROPERTIES.AGENT_PATH.get()}")
         println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
 
         val artifactSpreadsheetId = artifact.createArtifact("Smoke Spreadsheet ${
