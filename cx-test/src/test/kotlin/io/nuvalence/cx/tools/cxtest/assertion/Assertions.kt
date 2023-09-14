@@ -39,7 +39,7 @@ fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessa
     val expectedRatio = PROPERTIES.MATCHING_RATIO.get()!!.toInt()
 
     val newActual = actual.joinToString("\n") { responseMessage ->
-        if (responseMessage.text.textCount > 0) responseMessage.text.getText(0); else ""
+        if (responseMessage.outputAudioText.hasSsml()) responseMessage.outputAudioText.ssml; else ""
     }.let { stripSsml(it) }
 
     matchingMode.assertFuzzyMatchString(input, expected, newActual, expectedRatio)
