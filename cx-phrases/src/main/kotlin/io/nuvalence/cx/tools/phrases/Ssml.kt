@@ -166,7 +166,7 @@ fun processUrl(url: String) =
                     else // Otherwise we spell it. Stupid say-as verbatim or character not always work...
                         "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
                 } else {
-                    if (token.contains(INVALID_CONSONANT_SEQUENCE) || token in URL_VERBATIM_TOKENS) // If the token has weird consonant sequences or is specifically listed in our spelling dictionary, spell it
+                    if (token.contains(INVALID_CONSONANT_SEQUENCE) || token.lowercase() in URL_VERBATIM_TOKENS) // If the token has weird consonant sequences or is specifically listed in our spelling dictionary, spell it
                         "$START_SAY_VERBATIM ${token.map { it }.joinToString(" ")} $END_SAY_VERBATIM"
                     else
                         token
