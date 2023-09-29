@@ -4,6 +4,7 @@ import com.google.cloud.dialogflow.cx.v3beta1.*
 import io.nuvalence.cx.tools.cxtest.assertion.ContextAwareAssertionError
 import io.nuvalence.cx.tools.cxtest.assertion.assertFuzzyMatch
 import io.nuvalence.cx.tools.cxtest.extension.SmokeTestExtension
+import io.nuvalence.cx.tools.cxtest.listener.DebugTestExecutionListener
 import io.nuvalence.cx.tools.cxtest.listener.DynamicTestListener
 import io.nuvalence.cx.tools.cxtest.model.TestScenario
 import io.nuvalence.cx.tools.cxtest.orchestrator.ExecutionPath
