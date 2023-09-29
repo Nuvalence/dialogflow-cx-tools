@@ -1,5 +1,6 @@
 package io.nuvalence.cx.tools.cxtest
 
+import com.google.cloud.dialogflow.cx.v3.ConversationTurn
 import com.google.cloud.dialogflow.cx.v3.TestCaseName
 import com.google.cloud.dialogflow.cx.v3.TestCasesClient
 import com.google.cloud.dialogflow.cx.v3.TestCasesSettings
@@ -31,6 +32,43 @@ class SmokeSpec {
             .build()
     )
 
+    fun parseJson(data: List<ConversationTurn>) {
+        for (i in data.indices) {
+            val turn = data[i];
+
+            // User Input
+            if (turn.hasUserInput()) {
+                val userInput = turn.userInput
+                if (userInput.hasInput()) {
+                    val input = userInput.input
+                    if (input.hasText()) {
+                        val text = input.text
+                        println("CALLER SAYS: ${text.text}")
+                    }
+                }
+            }
+
+            // Virtual Agent Output
+            if (turn.hasVirtualAgentOutput()) {
+                val virtualAgentOutput = turn.virtualAgentOutput
+                if (virtualAgentOutput.textResponsesCount > 0) {
+                    val textResponses = virtualAgentOutput.textResponsesList
+                    for (j in 0 until textResponses.size) {
+                        val response = textResponses[j]
+                        if (response.textCount > 0) {
+                            println("AGENT SAYS: ${response.textList}")
+                        }
+                    }
+                }
+                if (virtualAgentOutput.differencesCount > 0) {
+                    val differences = virtualAgentOutput.differencesList
+
+                    println(differences.toString())
+                }
+            }
+        }
+    }
+
     @TestFactory
     fun testCases(): List<DynamicTest> {
 
@@ -38,16 +76,34 @@ class SmokeSpec {
             TestCaseName.of(
                 "dol-uisim-ccai-dev-app",
                 "global",
-                "d9104994-1eb3-4f33-84b5-721a7343d2de",
-                "0084b792-2885-4071-ae5a-223b755b7181"
+                "375be0f6-4a92-4cd3-a4fc-a47226c748cc",
+                "008f032b-d917-4101-ab7f-6ef9f6b20c59"
             ).toString()
         )
 
-        println(testCase)
+        testClient.updateTestCase()
+
+        println(testCase.displayName)
+        println(testCase.tagsList)
+        println(testCase.notes)
+        parseJson(testCase.lastTestResult.conversationTurnsList);
+        println(testCase.lastTestResult)
+
+        println(testCase.lastTestResult.conversationTurnsList);
 
         println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
         val agentPath = PROPERTIES.AGENT_PATH.get()
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
+
+        SmokeFormatReader().listSheets("SMOKE_").map { sheet ->
+            OrchestratedTestMap(SmokeFormatReader().read(sheet)).generatePairs()
+                .map { (testScenario, executionPath) ->
+                    DynamicTest.dynamicTest(testScenario.title) {
+                        println(testScenario.title)
+                    }
+                }
+        }
+
         return SmokeFormatReader().listSheets("SMOKE_").map { sheet ->
             OrchestratedTestMap(SmokeFormatReader().read(sheet)).generatePairs()
                 .map { (testScenario, executionPath) ->
