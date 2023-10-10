@@ -29,7 +29,7 @@ class DFCXTestBuilderSpec {
             testCaseId = testCase.name,
             testCaseName = testCase.displayName,
             tags = testCase.tagsList.map { tag -> tag.toString() },
-            note = testCase.notes
+            notes = testCase.notes
         )
         formattedResult.set(testBuilderResult)
 

@@ -1,6 +1,6 @@
 package io.nuvalence.cx.tools.cxtest.model
 
-enum class ResultLabel(private val value: String) {
+enum class ResultLabel(val value: String) {
     PASS("PASS"),
     WARN("WARN"),
     FAIL("FAIL");
@@ -30,12 +30,12 @@ data class DFCXTestBuilderResult(
     val testCaseId: String,
     val testCaseName: String,
     val tags: List<String>,
-    val note: String,
+    val notes: String,
     var result: ResultLabel,
     val resultSteps: MutableList<DFCXTestBuilderResultStep>
 ) {
-    constructor (testCaseId: String, testCaseName: String, tags: List<String>, note: String) :
-        this(testCaseId, testCaseName, tags, note,
+    constructor (testCaseId: String, testCaseName: String, tags: List<String>, notes: String) :
+        this(testCaseId, testCaseName, tags, notes,
             ResultLabel.PASS, mutableListOf<DFCXTestBuilderResultStep>())
 
     override fun toString(): String {

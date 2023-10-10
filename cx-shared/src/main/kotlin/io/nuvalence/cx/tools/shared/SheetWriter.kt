@@ -127,6 +127,23 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
         val updateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
         service.spreadsheets().batchUpdate(spreadsheetId, updateRequest).execute()
     }
+
+    fun addEmptyRows(numberOfRows: Int, spreadsheetId: String, sheetName: String, sheetId: Int) {
+        val response = service.spreadsheets().values().get(spreadsheetId, "$sheetName!A:A").execute()
+        val lastRow = response.getValues()?.size ?: 0
+
+        val request = Request()
+            .setInsertDimension(InsertDimensionRequest()
+                .setRange(DimensionRange()
+                    .setSheetId(sheetId)
+                    .setDimension("ROWS")
+                    .setStartIndex(lastRow + 1)
+                    .setEndIndex(lastRow + 1 + numberOfRows))
+            )
+
+        val batchUpdate = service.spreadsheets().batchUpdate(spreadsheetId, BatchUpdateSpreadsheetRequest().setRequests(listOf(request)))
+        batchUpdate.execute()
+    }
 }
 
 data class UpdateRequest (val cellAddress: String, val data: String)
