@@ -7,7 +7,7 @@ import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import java.util.*
 
 class DFCXTestBuilderTestSource {
-    fun getTestScenarios(): MutableList<TestCase> {
+    fun getTestScenarios(): List<TestCase> {
         val listTestCasesRequest = ListTestCasesRequest.newBuilder()
             .setParent(PROPERTIES.AGENT_PATH.get())
             .setView(ListTestCasesRequest.TestCaseView.FULL)
@@ -22,7 +22,18 @@ class DFCXTestBuilderTestSource {
         }
         testCaseList.sortBy { testCase -> testCase.name }
 
-        // TODO: filter on tags
+        val tagFilter = PROPERTIES.DFCX_TAG_FILTER.get()!!
+
+        if (tagFilter != "ALL") {
+            val tagFilters = tagFilter.split(',')
+
+            val filteredTestCaseList = testCaseList.filter { testCase ->
+                testCase.tagsList.containsAll(tagFilters)
+            }
+
+            println("Found ${filteredTestCaseList.size} tests")
+            return filteredTestCaseList
+        }
 
         println("Found ${testCaseList.size} tests")
         return testCaseList
