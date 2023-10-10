@@ -51,7 +51,7 @@ val postProcessTestReport = tasks.register<DefaultTask>("postProcessTestReport")
 }
 
 val testTask = tasks.withType<Test> {
-    val properties = listOf("agentPath", "spreadsheetId", "credentialsUrl", "orchestrationMode", "matchingMode", "matchingRatio", "dfcxEndpoint")
+    val properties = listOf("agentPath", "spreadsheetId", "dfcxTagFilter", "credentialsUrl", "orchestrationMode", "matchingMode", "matchingRatio", "dfcxEndpoint")
     systemProperties(project.properties.filter { (key, _) -> key in properties })
 
     useJUnitPlatform {

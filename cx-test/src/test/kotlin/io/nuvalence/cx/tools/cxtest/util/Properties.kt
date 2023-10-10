@@ -15,6 +15,11 @@ enum class PROPERTIES(private val value: String) {
         override fun get(): String {
             return super.get().takeIf { prop -> !prop.isNullOrEmpty() } ?: "dialogflow.googleapis.com:443"
         }
+    },
+    DFCX_TAG_FILTER("dfcxTagFilter") {
+        override fun get(): String {
+            return super.get().takeIf { prop -> !prop.isNullOrEmpty() } ?: "ALL"
+        }
     };
 
     open fun get(): String? {

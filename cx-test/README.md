@@ -133,8 +133,9 @@ Determines which tests should be run, based on their tags.
 - Options:
   - e2e: End-to-end tests.
   - smoke: Smoke tests.
-- Usage: `-PincludeTags="e2e|smoke"`
-- Default if not supplied: `"e2e|smoke"` (runs both)
+  - dfcx: DFCX Test Builder tests.
+- Usage: `-PincludeTags="e2e|smoke|dfcx"`
+- Default if not supplied: `"dfcx"`
 
 #### Exclude Tags
 
@@ -143,5 +144,16 @@ Determines which tests should not be run, based on their tags.
 - Options:
   - e2e: End-to-end tests.
   - smoke: Smoke tests.
-- Usage: `-PexcludeTags="e2e|smoke"`
+  - dfcx: DFCX Test Builder tests.
+- Usage: `-PexcludeTags="e2e|smoke|dfcx"`
 - Default if not supplied: nothing
+
+#### DFCX Tag Filter
+
+Determines which tests should be run, based on the associated tags on the test. Used exclusively for the DFCX Test Builder Spec.
+
+- Options:
+    - `"ALL"`: runs all tests associated with the agent
+    - `"#Filter1,#Filter2,..."`: runs all tests that include all tags contained within the comma-separated expression
+- Usage: `-dfcxTagFilter="#Filter1,#Filter2"`
+- Default if not supplied: `"ALL"`
