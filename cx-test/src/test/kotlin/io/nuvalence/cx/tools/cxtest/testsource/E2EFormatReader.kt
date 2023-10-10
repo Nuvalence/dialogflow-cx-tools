@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.cxtest.sheetformat
+package io.nuvalence.cx.tools.cxtest.testsource
 
 import io.nuvalence.cx.tools.cxtest.model.TestScenario
 import io.nuvalence.cx.tools.cxtest.model.TestStep

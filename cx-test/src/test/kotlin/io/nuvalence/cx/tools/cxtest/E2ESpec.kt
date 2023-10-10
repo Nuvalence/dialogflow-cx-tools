@@ -2,7 +2,7 @@ package io.nuvalence.cx.tools.cxtest
 
 import com.google.cloud.dialogflow.cx.v3beta1.*
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
-import io.nuvalence.cx.tools.cxtest.sheetformat.E2EFormatReader
+import io.nuvalence.cx.tools.cxtest.testsource.E2EFormatReader
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import io.nuvalence.cx.tools.cxtest.assertion.assertFuzzyMatch
 import org.junit.jupiter.api.DynamicTest
