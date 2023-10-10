@@ -70,8 +70,8 @@ val testTask = tasks.withType<Test> {
             println("Including tags $includeTagsProperty")
             includeTags(includeTagsProperty)
         } else {
-            println("Defaulting to both e2e and smoke")
-            includeTags("e2e|smoke")
+            println("Defaulting to dfcx")
+            includeTags("dfcx")
         }
 
         if (excludeTagsProperty?.isNotBlank() == true) {

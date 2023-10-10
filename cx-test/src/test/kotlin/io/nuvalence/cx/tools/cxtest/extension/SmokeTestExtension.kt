@@ -1,16 +1,12 @@
 package io.nuvalence.cx.tools.cxtest.extension
 
-import com.google.api.services.sheets.v4.model.Request
-import com.google.api.services.sheets.v4.model.SheetProperties
-import com.google.api.services.sheets.v4.model.UpdateSheetPropertiesRequest
 import com.google.cloud.dialogflow.cx.v3beta1.SessionsClient
 import com.google.cloud.dialogflow.cx.v3beta1.SessionsSettings
 import io.nuvalence.cx.tools.cxtest.artifact.SpreadsheetArtifact
 import io.nuvalence.cx.tools.cxtest.assertion.ContextAwareAssertionError
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
-import io.nuvalence.cx.tools.cxtest.sheetformat.SmokeFormatReader
+import io.nuvalence.cx.tools.cxtest.testsource.SmokeFormatReader
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
-import io.nuvalence.cx.tools.shared.SheetReader
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.params.provider.Arguments
