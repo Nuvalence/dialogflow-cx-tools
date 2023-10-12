@@ -19,6 +19,16 @@ dependencies {
     implementation("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
 }
 
+tasks.register("setup") {
+    doLast {
+        copy {
+            from("src/main/resources/template.properties")
+            into("src/main/resources/")
+            rename("template.properties", "default.properties")
+        }
+    }
+}
+
 tasks.register<JavaExec>("run") {
     val properties = listOf("spreadsheetId", "credentialsUrl", "agentPath", "dfcxEndpoint")
     systemProperties(project.properties.filter { (key, _) -> key in properties })

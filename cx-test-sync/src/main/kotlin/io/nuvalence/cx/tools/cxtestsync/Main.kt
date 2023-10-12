@@ -9,10 +9,10 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
             if (args.isEmpty()) {
-                throw ConfigurationException("Please specify a properties file in the arguments before proceeding.")
+                Properties.init("default.properties")
+            } else {
+                Properties.init(args[0])
             }
-
-            Properties.init(args[0])
 
             // Process
             // SpreadsheetProcessor
