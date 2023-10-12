@@ -1,2 +1,2 @@
-cx-test-sync/src/main/resources/*.properties
-!cx-test-sync/src/main/resources/template.properties
+src/main/resources/*.properties
+!src/main/resources/template.properties
