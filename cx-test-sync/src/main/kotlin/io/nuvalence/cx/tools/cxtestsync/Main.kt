@@ -14,8 +14,7 @@ class Main {
                 Properties.init(args[0])
             }
 
-            // Process
-            // SpreadsheetProcessor
+            SpreadsheetProcessor().process()
         }
     }
 
