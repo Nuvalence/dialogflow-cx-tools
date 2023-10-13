@@ -21,6 +21,7 @@ class DFCXSpreadsheetArtifact {
         var sheetId by Delegates.notNull<Int>()
 
         private const val TEST_CASE_NAME = "Test Case Name"
+        private const val TEST_CASE_ID = "Test Case ID"
         private const val TAGS = "Tags"
         private const val NOTES = "Notes"
         private const val USER_INPUT = "User Input"
@@ -28,7 +29,7 @@ class DFCXSpreadsheetArtifact {
         private const val STATUS = "Status"
         private const val ERROR_DETAILS = "Error Details"
 
-        val colNames = listOf(TEST_CASE_NAME, TAGS, NOTES, USER_INPUT, AGENT_OUTPUT, STATUS, ERROR_DETAILS)
+        val colNames = listOf(TEST_CASE_NAME, TEST_CASE_ID, TAGS, NOTES, USER_INPUT, AGENT_OUTPUT, STATUS, ERROR_DETAILS)
     }
 
     fun createArtifact(title: String) : String {
@@ -56,7 +57,8 @@ class DFCXSpreadsheetArtifact {
         formattedResultsList.forEach { result ->
             // Add display name, tags, notes
             requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(TEST_CASE_NAME)}${rowCounter}", result.testCaseName)
-            requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(TAGS)}${rowCounter}", result.tags.toString())
+            requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(TEST_CASE_ID)}${rowCounter}", result.testCaseId)
+            requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(TAGS)}${rowCounter}", result.tags.reduce { acc, tag -> "$acc,$tag"})
             requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(NOTES)}${rowCounter}", result.notes)
 
             // For each step
