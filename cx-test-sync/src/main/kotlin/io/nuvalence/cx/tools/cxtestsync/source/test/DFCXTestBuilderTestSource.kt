@@ -5,6 +5,7 @@ import com.google.cloud.dialogflow.cx.v3.TestCase
 import com.google.cloud.dialogflow.cx.v3.TestCasesClient
 import com.google.cloud.dialogflow.cx.v3.TestCasesSettings
 import io.nuvalence.cx.tools.cxtestsync.model.DFCXTest
+import io.nuvalence.cx.tools.cxtestsync.model.DFCXTestDiff
 import io.nuvalence.cx.tools.cxtestsync.model.DFCXTestStep
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
 import java.util.*
@@ -45,5 +46,9 @@ class DFCXTestBuilderTestSource {
         }
 
         return convertTestScenarios(testCaseList)
+    }
+
+    fun applyDiffs(diffs: List<DFCXTestDiff>) {
+        // TODO: apply diffs to tests in agent
     }
 }
