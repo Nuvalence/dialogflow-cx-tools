@@ -35,6 +35,17 @@ class DFCXSpreadsheetArtifactSource {
 
         val startingRow = 2
 
+        // If test case found
+            // If test steps are empty, it's probably the first step
+                // Keep row in current
+            // If test steps are NOT empty, it's probably a new test case
+                // Persist current test case + steps
+        // If test step found
+            // Create new test step
+        // If empty row found
+            // Probably EOF
+                // Persist current test case + steps
+
         val scenarios = rows.drop(1).foldIndexed(mutableListOf<DFCXTest>()) { index, acc, row ->
             fun getRowElement(colName: String): String {
                 return row[cols[colName]!!]
@@ -44,41 +55,22 @@ class DFCXSpreadsheetArtifactSource {
                 return tags.split(",").map { it.trim() }
             }
 
-            if (row.isEmpty() || index == rows.size - startingRow) {
-                if (testSteps.isNotEmpty()) {
-                    acc.add(
-                        DFCXTest(
-                            currentTestCaseId,
-                            currentTestCaseName,
-                            processTags(currentTags),
-                            currentNotes,
-                            testSteps
-                        )
+            // is empty or EOF
+            if (row.isEmpty() || index >= rows.size - startingRow) {
+                acc.add(
+                    DFCXTest(
+                        currentTestCaseId,
+                        currentTestCaseName,
+                        processTags(currentTags),
+                        currentNotes,
+                        testSteps
                     )
-                    testSteps = mutableListOf()
-                }
+                )
+                testSteps = mutableListOf()
             } else {
+                // is test case
                 if (getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME).isNotEmpty()) {
-                    currentTestCaseName = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME)
-                    currentTestCaseId = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_ID)
-                    currentTags = getRowElement(DFCXTestSpreadsheetModel.TAGS)
-                    currentNotes = getRowElement(DFCXTestSpreadsheetModel.NOTES)
-                    testSteps.add(
-                        DFCXTestStep(
-                            getRowElement(DFCXTestSpreadsheetModel.USER_INPUT),
-                            getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT),
-                            ResultLabel.valueOf(DFCXTestSpreadsheetModel.STATUS)
-                        )
-                    )
-                } else {
-                    testSteps.add(
-                        DFCXTestStep(
-                            getRowElement(DFCXTestSpreadsheetModel.USER_INPUT),
-                            getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT),
-                            ResultLabel.valueOf(DFCXTestSpreadsheetModel.STATUS)
-                        )
-                    )
-                    if (index == rows.size - startingRow + 1) {
+                    if (testSteps.isNotEmpty()) {
                         acc.add(
                             DFCXTest(
                                 currentTestCaseId,
@@ -90,7 +82,20 @@ class DFCXSpreadsheetArtifactSource {
                         )
                         testSteps = mutableListOf()
                     }
+                    currentTestCaseName = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME)
+                    currentTestCaseId = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_ID)
+                    currentTags = getRowElement(DFCXTestSpreadsheetModel.TAGS)
+                    currentNotes = getRowElement(DFCXTestSpreadsheetModel.NOTES)
                 }
+
+                // is test step
+                testSteps.add(
+                    DFCXTestStep(
+                        getRowElement(DFCXTestSpreadsheetModel.USER_INPUT),
+                        getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT),
+                        ResultLabel.valueOf(getRowElement(DFCXTestSpreadsheetModel.STATUS))
+                    )
+                )
             }
 
             acc

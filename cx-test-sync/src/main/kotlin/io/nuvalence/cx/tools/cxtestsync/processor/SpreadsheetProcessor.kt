@@ -62,7 +62,23 @@ class SpreadsheetProcessor () {
         val tagsDiff = sourceTest.tags != destinationTest.tags
         val notesDiff = sourceTest.notes != destinationTest.notes
 
+        if (testCaseNameDiff) {
+            println(sourceTest.testCaseName)
+            println(destinationTest.testCaseName)
+        }
+
+        if (tagsDiff) {
+            println(sourceTest.tags)
+            println(destinationTest.tags)
+        }
+
+        if (notesDiff) {
+            println(sourceTest.notes)
+            println(destinationTest.notes)
+        }
+
         return if (testCaseNameDiff || tagsDiff || notesDiff) {
+
             DFCXTestDiff(
                 testCaseId = destinationTest.testCaseId,
                 testCaseName = if (testCaseNameDiff) { sourceTest.testCaseName } else null,
@@ -81,12 +97,17 @@ class SpreadsheetProcessor () {
         val spreadsheetTests = DFCXSpreadsheetArtifactSource().getTestScenarios().sortedBy { it.testCaseId }
         val agentTests = DFCXTestBuilderTestSource().getTestScenarios().sortedBy { it.testCaseId }
 
-        spreadsheetTests.fold(mutableListOf<DFCXTestDiff>()) { acc, spreadsheetTest ->
+        println(spreadsheetTests.size)
+        println(agentTests.size)
+
+        val diffs = spreadsheetTests.fold(mutableListOf<DFCXTestDiff>()) { acc, spreadsheetTest ->
             val agentTest = agentTests.find { it.testCaseId == spreadsheetTest.testCaseId }!!
             val testDiff = getTestDiff(spreadsheetTest, agentTest)
-            if (testDiff != null) acc.add(testDiff)
+            if (testDiff !== null) acc.add(testDiff)
             acc
         }
+
+        println(diffs.toString())
 
         // update agent
     }
