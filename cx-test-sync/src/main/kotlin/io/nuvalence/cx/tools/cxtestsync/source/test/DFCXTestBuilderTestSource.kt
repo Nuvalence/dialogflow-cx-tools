@@ -1,14 +1,13 @@
 package io.nuvalence.cx.tools.cxtestsync.source.test
 
-import com.google.cloud.dialogflow.cx.v3.ListTestCasesRequest
-import com.google.cloud.dialogflow.cx.v3.TestCase
-import com.google.cloud.dialogflow.cx.v3.TestCasesClient
-import com.google.cloud.dialogflow.cx.v3.TestCasesSettings
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTest
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTestDiff
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTestStep
+import com.google.cloud.dialogflow.cx.v3.*
+import com.google.protobuf.FieldMask
+import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTest
+import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
+import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTestStep
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
 import java.util.*
+import kotlin.reflect.full.companionObjectInstance
 
 class DFCXTestBuilderTestSource {
     companion object {
@@ -16,6 +15,13 @@ class DFCXTestBuilderTestSource {
             TestCasesSettings.newBuilder()
                 .setEndpoint(Properties.DFCX_ENDPOINT)
                 .build())
+
+        val dfcxTestCases = Collections.synchronizedList(mutableListOf<TestCase>())
+        val testScenarios = mutableListOf<DFCXTest>()
+    }
+
+    init {
+        getTestScenarios()
     }
 
     private fun convertTestScenarios(testCaseList: List<TestCase>): List<DFCXTest> {
@@ -32,6 +38,10 @@ class DFCXTestBuilderTestSource {
     }
 
     fun getTestScenarios(): List<DFCXTest> {
+        if (testScenarios.isNotEmpty()) {
+            return testScenarios
+        }
+
         val listTestCasesRequest = ListTestCasesRequest.newBuilder()
             .setParent(Properties.AGENT_PATH)
             .setView(ListTestCasesRequest.TestCaseView.FULL)
@@ -39,16 +49,34 @@ class DFCXTestBuilderTestSource {
             .build()
 
         val testCasesResponse = testClient.listTestCases(listTestCasesRequest)
-        val testCaseList = Collections.synchronizedList(mutableListOf<TestCase>())
 
         testCasesResponse.iteratePages().forEach { page ->
-            testCaseList.addAll(page.response.testCasesList)
+            dfcxTestCases.addAll(page.response.testCasesList)
         }
 
-        return convertTestScenarios(testCaseList)
+        testScenarios.addAll(convertTestScenarios(dfcxTestCases))
+        return testScenarios
     }
 
     fun applyDiffs(diffs: List<DFCXTestDiff>) {
-        // TODO: apply diffs to tests in agent
+        if (dfcxTestCases.isEmpty()) {
+            getTestScenarios()
+        }
+
+        diffs.forEach { diff ->
+            val testCase = dfcxTestCases.find { dfcxTestCase -> dfcxTestCase.name == diff.testCaseId }!!
+            val updatedTestCaseBuilder = testCase.toBuilder()!!
+            updatedTestCaseBuilder.displayName = diff.testCaseName ?: testCase.displayName
+            updatedTestCaseBuilder.clearTags()
+            updatedTestCaseBuilder.addAllTags(diff.tags ?: testCase.tagsList)
+            updatedTestCaseBuilder.notes = diff.notes ?: testCase.notes
+
+            val updateRequest = UpdateTestCaseRequest.newBuilder()
+                .setTestCase(updatedTestCaseBuilder.build())
+                .setUpdateMask(FieldMask.newBuilder().addAllPaths(listOf("display_name", "tags", "notes")).build())
+                .build()
+
+            testClient.updateTestCase(updateRequest)
+        }
     }
 }

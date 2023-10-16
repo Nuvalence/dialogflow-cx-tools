@@ -1,10 +1,10 @@
 package io.nuvalence.cx.tools.cxtestsync.source.artifact
 
 import io.nuvalence.cx.tools.shared.SheetReader
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTest
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTestSpreadsheetModel
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTestStep
-import io.nuvalence.cx.tools.cxtestsync.model.ResultLabel
+import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTest
+import io.nuvalence.cx.tools.cxtestsync.model.artifact.DFCXTestSpreadsheetModel
+import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTestStep
+import io.nuvalence.cx.tools.cxtestsync.model.test.ResultLabel
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
 
 class DFCXSpreadsheetArtifactSource {

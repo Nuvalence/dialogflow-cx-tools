@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.cxtestsync.model
+package io.nuvalence.cx.tools.cxtestsync.model.artifact
 
 class DFCXTestSpreadsheetModel {
     companion object {

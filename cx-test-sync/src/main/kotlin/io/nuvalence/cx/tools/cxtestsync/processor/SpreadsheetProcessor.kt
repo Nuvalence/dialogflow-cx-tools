@@ -1,16 +1,14 @@
 package io.nuvalence.cx.tools.cxtestsync.processor
 
 import com.google.api.services.sheets.v4.model.*
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTest
-import io.nuvalence.cx.tools.cxtestsync.model.DFCXTestDiff
+import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTest
+import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
 import io.nuvalence.cx.tools.cxtestsync.source.artifact.DFCXSpreadsheetArtifactSource
 import io.nuvalence.cx.tools.cxtestsync.source.test.DFCXTestBuilderTestSource
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
 import io.nuvalence.cx.tools.shared.SheetCopier
 import io.nuvalence.cx.tools.shared.SheetReader
 import io.nuvalence.cx.tools.shared.SheetWriter
-import io.nuvalence.cx.tools.shared.UpdateRequest
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -62,21 +60,6 @@ class SpreadsheetProcessor () {
         val tagsDiff = sourceTest.tags != destinationTest.tags
         val notesDiff = sourceTest.notes != destinationTest.notes
 
-        if (testCaseNameDiff) {
-            println(sourceTest.testCaseName)
-            println(destinationTest.testCaseName)
-        }
-
-        if (tagsDiff) {
-            println(sourceTest.tags)
-            println(destinationTest.tags)
-        }
-
-        if (notesDiff) {
-            println(sourceTest.notes)
-            println(destinationTest.notes)
-        }
-
         return if (testCaseNameDiff || tagsDiff || notesDiff) {
 
             DFCXTestDiff(
@@ -89,16 +72,16 @@ class SpreadsheetProcessor () {
     }
 
     fun process () {
-        val destinationSpreadsheetId = createArtifact("DFCX Synced Test Spreadsheet ${
+        createArtifact("DFCX Synced Test Spreadsheet ${
             SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
                 Date()
             )}")
 
-        val spreadsheetTests = DFCXSpreadsheetArtifactSource().getTestScenarios().sortedBy { it.testCaseId }
-        val agentTests = DFCXTestBuilderTestSource().getTestScenarios().sortedBy { it.testCaseId }
+        val artifactSource = DFCXSpreadsheetArtifactSource()
+        val testSource = DFCXTestBuilderTestSource()
 
-        println(spreadsheetTests.size)
-        println(agentTests.size)
+        val spreadsheetTests = artifactSource.getTestScenarios().sortedBy { it.testCaseId }
+        val agentTests = testSource.getTestScenarios().sortedBy { it.testCaseId }
 
         val diffs = spreadsheetTests.fold(mutableListOf<DFCXTestDiff>()) { acc, spreadsheetTest ->
             val agentTest = agentTests.find { it.testCaseId == spreadsheetTest.testCaseId }!!
@@ -107,8 +90,6 @@ class SpreadsheetProcessor () {
             acc
         }
 
-        println(diffs.toString())
-
-        // update agent
+        testSource.applyDiffs(diffs)
     }
 }

@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.cxtestsync.model
+package io.nuvalence.cx.tools.cxtestsync.model.test
 
 enum class ResultLabel(private val value: String) {
     PASS("PASS"),
