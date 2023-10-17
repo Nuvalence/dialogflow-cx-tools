@@ -108,6 +108,10 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
         }
     }
 
+    fun deleteCellRange(range: String) {
+        service.spreadsheets().values().clear(spreadsheetId, range, ClearValuesRequest()).execute()
+    }
+
     fun batchUpdateCellContents(cellContentUpdateRequests: List<CellContentUpdateRequest>) {
         val data = cellContentUpdateRequests.map { (sheetIdAndRange, value) ->
             ValueRange().setRange(sheetIdAndRange).setValues(listOf(listOf(value)))
