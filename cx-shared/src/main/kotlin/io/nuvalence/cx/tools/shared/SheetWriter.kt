@@ -108,25 +108,56 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
         }
     }
 
-    fun batchUpdateCells(updateRequests: List<UpdateRequest>) {
-        val data = updateRequests.map { (sheetIdAndRange, value) ->
+    fun batchUpdateCellContents(cellContentUpdateRequests: List<CellContentUpdateRequest>) {
+        val data = cellContentUpdateRequests.map { (sheetIdAndRange, value) ->
             ValueRange().setRange(sheetIdAndRange).setValues(listOf(listOf(value)))
         }
 
-        // Create a BatchUpdateValuesRequest object and set the data
         val body = BatchUpdateValuesRequest().setValueInputOption("RAW").setData(data)
-
-        // Execute the batch update request
         val result = service.spreadsheets().values().batchUpdate(spreadsheetId, body).execute()
 
         println("${result.totalUpdatedCells ?: 0} cells updated.")
     }
 
+    fun batchUpdateCellFormats(updateRequests: List<FormatUpdateRequest>) {
+        val requests = ArrayList<Request>()
+
+        updateRequests.forEach { request ->
+            val repeatCellRequest = RepeatCellRequest()
+                .setRange(request.range)
+                .setCell(CellData().setUserEnteredFormat(request.format))
+                .setFields("userEnteredFormat(backgroundColor,textFormat,wrapStrategy,verticalAlignment)")
+
+            requests.add(Request().setRepeatCell(repeatCellRequest))
+        }
+
+        val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
+        service.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
+    }
+
     fun batchUpdateSheets(requests: List<Request>) {
-        // Create a BatchUpdateSpreadsheetRequest
         val updateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
         service.spreadsheets().batchUpdate(spreadsheetId, updateRequest).execute()
     }
+
+    fun addEmptyRows(numberOfRows: Int, spreadsheetId: String, sheetName: String, sheetId: Int, startRowIndex: Int = 0) {
+        val response = service.spreadsheets().values().get(spreadsheetId, "$sheetName!A:A").execute()
+        val lastRow = response.getValues()?.size ?: startRowIndex
+
+        val request = Request()
+            .setInsertDimension(InsertDimensionRequest()
+                .setRange(DimensionRange()
+                    .setSheetId(sheetId)
+                    .setDimension("ROWS")
+                    .setStartIndex(lastRow)
+                    .setEndIndex(lastRow + numberOfRows))
+            )
+
+        val batchUpdate = service.spreadsheets().batchUpdate(spreadsheetId, BatchUpdateSpreadsheetRequest().setRequests(listOf(request)))
+        batchUpdate.execute()
+    }
 }
 
-data class UpdateRequest (val cellAddress: String, val data: String)
+data class CellContentUpdateRequest (val cellAddress: String, val data: String)
+
+data class FormatUpdateRequest (val range: GridRange, val format: CellFormat)

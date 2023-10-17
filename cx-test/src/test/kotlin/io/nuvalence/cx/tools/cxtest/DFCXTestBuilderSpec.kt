@@ -2,9 +2,9 @@ package io.nuvalence.cx.tools.cxtest
 
 import com.google.cloud.dialogflow.cx.v3.*
 import io.nuvalence.cx.tools.cxtest.extension.DFCXTestBuilderExtension
-import io.nuvalence.cx.tools.cxtest.model.DFCXTestBuilderResult
-import io.nuvalence.cx.tools.cxtest.model.DFCXTestBuilderResultStep
-import io.nuvalence.cx.tools.cxtest.model.ResultLabel
+import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
+import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResultStep
+import io.nuvalence.cx.tools.cxtest.model.test.ResultLabel
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.extension.ExtendWith
@@ -29,7 +29,7 @@ class DFCXTestBuilderSpec {
             testCaseId = testCase.name,
             testCaseName = testCase.displayName,
             tags = testCase.tagsList.map { tag -> tag.toString() },
-            note = testCase.notes
+            notes = testCase.notes
         )
         formattedResult.set(testBuilderResult)
 
@@ -45,40 +45,24 @@ class DFCXTestBuilderSpec {
                     responseMessage.textList.reduce { acc, text -> acc + text }
                 },
                 expectedPage = testCase.testCaseConversationTurnsList[index].virtualAgentOutput.currentPage.displayName,
-                actualPage = turn.virtualAgentOutput.currentPage.displayName
+                actualPage = turn.virtualAgentOutput.currentPage.displayName,
+                diffs = turn.virtualAgentOutput.differencesList
             )
 
-            val isStepWarn = turn.virtualAgentOutput.differencesList.any { diff ->
-                diff.type == TestRunDifference.DiffType.UTTERANCE
-            }
-
-            val isStepError = turn.virtualAgentOutput.differencesList.any { diff ->
-                diff.type == TestRunDifference.DiffType.PAGE
-            }
-
-            if (isStepError) {
+            if (turn.virtualAgentOutput.differencesList.any { diff ->
+                diff.type == TestRunDifference.DiffType.PAGE || diff.type == TestRunDifference.DiffType.UTTERANCE
+            }) {
                 resultStep.result = ResultLabel.FAIL
-            } else if (isStepWarn) {
-                resultStep.result = ResultLabel.WARN
             }
 
             testBuilderResult.resultSteps.add(resultStep)
         }
 
-        val isTestWarn = testBuilderResult.resultSteps.any { resultStep ->
-            resultStep.result == ResultLabel.WARN
-        }
-
-        val isTestError = testBuilderResult.resultSteps.any { resultStep ->
+        if(testBuilderResult.resultSteps.any { resultStep ->
             resultStep.result == ResultLabel.FAIL
-        }
-
-        if (isTestError) {
+        }) {
             testBuilderResult.result = ResultLabel.FAIL
-        } else if (isTestWarn) {
-            testBuilderResult.result = ResultLabel.WARN
         }
-
 
         if (testCaseResult.testResult == TestResult.FAILED) {
             testBuilderResult.result = ResultLabel.FAIL

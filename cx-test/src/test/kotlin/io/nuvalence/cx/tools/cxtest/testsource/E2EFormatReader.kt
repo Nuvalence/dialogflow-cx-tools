@@ -1,7 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.testsource
 
-import io.nuvalence.cx.tools.cxtest.model.TestScenario
-import io.nuvalence.cx.tools.cxtest.model.TestStep
+import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
+import io.nuvalence.cx.tools.cxtest.model.test.TestStep
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import io.nuvalence.cx.tools.shared.SheetReader
 import java.net.URL
@@ -55,16 +55,19 @@ class E2EFormatReader {
                     }
                     currentTitle = row[TEST_CASE_TITLE]
                     currentLineNumber = index + rowSkip
-                    testSteps = mutableListOf(TestStep(
+                    testSteps = mutableListOf(
+                        TestStep(
                         input = row[USER_INPUT],
                         expectedResponse = row[EXPECTED_RESULT],
                         sourceLocator = currentLineNumber)
                     )
                 } else {
-                    testSteps.add(TestStep(
+                    testSteps.add(
+                        TestStep(
                         input = row[USER_INPUT],
                         expectedResponse = row[EXPECTED_RESULT],
-                        sourceLocator = currentLineNumber))
+                        sourceLocator = currentLineNumber)
+                    )
                     if (index == rows.size - rowSkip) {
                         acc.add(createTestScenario(
                             testSteps = testSteps,
