@@ -1,6 +1,6 @@
 package io.nuvalence.cx.tools.cxtest.orchestrator
 
-import io.nuvalence.cx.tools.cxtest.model.TestScenario
+import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 
 data class ExecutionPath(val path: List<Int>) {

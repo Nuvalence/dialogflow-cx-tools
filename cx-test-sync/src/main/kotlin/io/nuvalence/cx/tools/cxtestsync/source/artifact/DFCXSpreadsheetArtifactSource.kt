@@ -33,7 +33,7 @@ class DFCXSpreadsheetArtifactSource {
         var currentNotes = ""
         var testSteps = mutableListOf<DFCXTestStep>()
 
-        val startingRow = 2
+        val startingRow = 3
 
         // If test case found
             // If test steps are empty, it's probably the first step
@@ -46,17 +46,17 @@ class DFCXSpreadsheetArtifactSource {
             // Probably EOF
                 // Persist current test case + steps
 
-        val scenarios = rows.drop(1).foldIndexed(mutableListOf<DFCXTest>()) { index, acc, row ->
+        val scenarios = rows.drop(2).foldIndexed(mutableListOf<DFCXTest>()) { index, acc, row ->
             fun getRowElement(colName: String): String {
                 return row[cols[colName]!!]
             }
 
             fun processTags(tags: String): List<String> {
-                return tags.split(",").map { it.trim() }
+                return tags.split("\n").map { it.trim() }
             }
 
-            // is empty or EOF
             if (row.isEmpty() || index >= rows.size - startingRow) {
+                // is empty or EOF
                 acc.add(
                     DFCXTest(
                         currentTestCaseId,
@@ -67,33 +67,31 @@ class DFCXSpreadsheetArtifactSource {
                     )
                 )
                 testSteps = mutableListOf()
-            } else {
+            } else if (getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME).isNotEmpty()) {
                 // is test case
-                if (getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME).isNotEmpty()) {
-                    if (testSteps.isNotEmpty()) {
-                        acc.add(
-                            DFCXTest(
-                                currentTestCaseId,
-                                currentTestCaseName,
-                                processTags(currentTags),
-                                currentNotes,
-                                testSteps
-                            )
+                if (testSteps.isNotEmpty()) {
+                    acc.add(
+                        DFCXTest(
+                            currentTestCaseId,
+                            currentTestCaseName,
+                            processTags(currentTags),
+                            currentNotes,
+                            testSteps
                         )
-                        testSteps = mutableListOf()
-                    }
-                    currentTestCaseName = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME)
-                    currentTestCaseId = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_ID)
-                    currentTags = getRowElement(DFCXTestSpreadsheetModel.TAGS)
-                    currentNotes = getRowElement(DFCXTestSpreadsheetModel.NOTES)
+                    )
+                    testSteps = mutableListOf()
                 }
-
+                currentTestCaseName = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME)
+                currentTestCaseId = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_ID)
+                currentTags = getRowElement(DFCXTestSpreadsheetModel.TAGS)
+                currentNotes = getRowElement(DFCXTestSpreadsheetModel.NOTES)
+            } else {
                 // is test step
                 testSteps.add(
                     DFCXTestStep(
                         getRowElement(DFCXTestSpreadsheetModel.USER_INPUT),
                         getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT),
-                        ResultLabel.valueOf(getRowElement(DFCXTestSpreadsheetModel.STATUS))
+                        ResultLabel.valueOf(getRowElement(DFCXTestSpreadsheetModel.TEST_RESULT))
                     )
                 )
             }

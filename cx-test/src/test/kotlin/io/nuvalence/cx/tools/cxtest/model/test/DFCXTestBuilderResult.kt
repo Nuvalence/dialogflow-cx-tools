@@ -1,6 +1,8 @@
-package io.nuvalence.cx.tools.cxtest.model
+package io.nuvalence.cx.tools.cxtest.model.test
 
-enum class ResultLabel(private val value: String) {
+import com.google.cloud.dialogflow.cx.v3.TestRunDifference
+
+enum class ResultLabel(val value: String) {
     PASS("PASS"),
     WARN("WARN"),
     FAIL("FAIL");
@@ -16,10 +18,11 @@ data class DFCXTestBuilderResultStep(
     val actualAgentOutput: String,
     val expectedPage: String,
     val actualPage: String,
-    var result: ResultLabel
+    var result: ResultLabel,
+    val diffs: List<TestRunDifference>
 ) {
-    constructor (userInput: String, expectedAgentOutput: String, actualAgentOutput: String, expectedPage: String, actualPage: String):
-        this(userInput, expectedAgentOutput, actualAgentOutput, expectedPage, actualPage, ResultLabel.PASS)
+    constructor (userInput: String, expectedAgentOutput: String, actualAgentOutput: String, expectedPage: String, actualPage: String, diffs: List<TestRunDifference>):
+        this(userInput, expectedAgentOutput, actualAgentOutput, expectedPage, actualPage, ResultLabel.PASS, diffs)
 
     override fun toString(): String {
         return "Step result: $result\nUser Input: $userInput \nExpected Agent Output: $expectedAgentOutput\nActual Agent Output: $actualAgentOutput\nExpected Page: $expectedPage\nActual Page: $actualPage\n"
@@ -30,12 +33,12 @@ data class DFCXTestBuilderResult(
     val testCaseId: String,
     val testCaseName: String,
     val tags: List<String>,
-    val note: String,
+    val notes: String,
     var result: ResultLabel,
     val resultSteps: MutableList<DFCXTestBuilderResultStep>
 ) {
-    constructor (testCaseId: String, testCaseName: String, tags: List<String>, note: String) :
-        this(testCaseId, testCaseName, tags, note,
+    constructor (testCaseId: String, testCaseName: String, tags: List<String>, notes: String) :
+        this(testCaseId, testCaseName, tags, notes,
             ResultLabel.PASS, mutableListOf<DFCXTestBuilderResultStep>())
 
     override fun toString(): String {

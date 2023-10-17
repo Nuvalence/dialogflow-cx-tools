@@ -7,7 +7,7 @@ import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import io.nuvalence.cx.tools.shared.SheetCopier
 import io.nuvalence.cx.tools.shared.SheetReader
 import io.nuvalence.cx.tools.shared.SheetWriter
-import io.nuvalence.cx.tools.shared.UpdateRequest
+import io.nuvalence.cx.tools.shared.CellContentUpdateRequest
 import java.net.URL
 
 class SpreadsheetArtifact {
@@ -24,10 +24,10 @@ class SpreadsheetArtifact {
     }
 
     fun writeArtifact(spreadsheetId: String, requestData: Map<String, String>) {
-        val updateRequests = requestData.map { (k, v) ->
-            UpdateRequest(k, v)
+        val cellContentUpdateRequests = requestData.map { (k, v) ->
+            CellContentUpdateRequest(k, v)
         }
-        return SheetWriter(URL(url), spreadsheetId).batchUpdateCells(updateRequests)
+        return SheetWriter(URL(url), spreadsheetId).batchUpdateCellContents(cellContentUpdateRequests)
     }
 
     private fun updateInfoSheet(destinationSpreadsheetId: String) {
@@ -40,9 +40,9 @@ class SpreadsheetArtifact {
             )))
 
         val updateCellRequests = listOf(
-            UpdateRequest("${title}!A1", "Agent path"),
-            UpdateRequest("${title}!B1", agentPath)
+            CellContentUpdateRequest("${title}!A1", "Agent path"),
+            CellContentUpdateRequest("${title}!B1", agentPath)
         )
-        sheetWriter.batchUpdateCells(updateCellRequests)
+        sheetWriter.batchUpdateCellContents(updateCellRequests)
     }
 }
