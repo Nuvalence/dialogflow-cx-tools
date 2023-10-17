@@ -90,8 +90,7 @@ class DFCXSpreadsheetArtifactSource {
                 testSteps.add(
                     DFCXTestStep(
                         getRowElement(DFCXTestSpreadsheetModel.USER_INPUT),
-                        getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT),
-                        ResultLabel.valueOf(getRowElement(DFCXTestSpreadsheetModel.TEST_RESULT))
+                        getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT)
                     )
                 )
             }

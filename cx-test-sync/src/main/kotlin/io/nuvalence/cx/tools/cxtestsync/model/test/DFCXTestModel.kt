@@ -16,13 +16,13 @@ data class DFCXTestStep(
     val actualAgentOutput: String,
     val expectedPage: String,
     val actualPage: String,
-    var result: ResultLabel
+    var result: ResultLabel?
 ) {
     constructor (userInput: String, expectedAgentOutput: String, actualAgentOutput: String, expectedPage: String, actualPage: String):
             this(userInput, expectedAgentOutput, actualAgentOutput, expectedPage, actualPage, ResultLabel.PASS)
 
-    constructor (userInput: String, expectedAgentOutput: String, result: ResultLabel):
-            this(userInput, expectedAgentOutput, "", "", "", result)
+    constructor (userInput: String, expectedAgentOutput: String):
+            this(userInput, expectedAgentOutput, "", "", "")
 
     override fun toString(): String {
         return "Step result: $result\nUser Input: $userInput \nExpected Agent Output: $expectedAgentOutput\nActual Agent Output: $actualAgentOutput\nExpected Page: $expectedPage\nActual Page: $actualPage\n"
@@ -34,7 +34,7 @@ data class DFCXTest(
     val testCaseName: String,
     val tags: List<String>,
     val notes: String,
-    var result: ResultLabel,
+    var result: ResultLabel?,
     val resultSteps: MutableList<DFCXTestStep>
 ) {
     constructor (testCaseId: String, testCaseName: String, tags: List<String>, note: String) :

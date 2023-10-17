@@ -73,11 +73,28 @@ class SpreadsheetProcessor () {
         val agentTests = testSource.getTestScenarios().sortedBy { it.testCaseId }
 
         val diffs = spreadsheetTests.fold(mutableListOf<DFCXTestDiff>()) { acc, spreadsheetTest ->
-            val agentTest = agentTests.find { it.testCaseId == spreadsheetTest.testCaseId }!!
-            val testDiff = getTestDiff(spreadsheetTest, agentTest)
-            if (testDiff !== null) acc.add(testDiff)
+            val agentTest = agentTests.find { it.testCaseId == spreadsheetTest.testCaseId }
+            if (agentTest != null) {
+                val testDiff = getTestDiff(spreadsheetTest, agentTest)
+                if (testDiff !== null) acc.add(testDiff)
+            }
             acc
         }
+
+        val spreadsheetTestIds = spreadsheetTests.map {it.testCaseId}
+        val agentTestIds = agentTests.map {it.testCaseId}
+
+        val spreadsheetExclusives = spreadsheetTestIds.minus(agentTestIds.toSet())
+        if (spreadsheetExclusives.isNotEmpty()) {
+            println("The following tests are missing from the agent:\n${spreadsheetExclusives.joinToString("\n")}")
+        }
+
+        val agentExclusives = agentTestIds.minus(spreadsheetTestIds.toSet())
+        if (agentExclusives.isNotEmpty()) {
+            println("The following tests are missing from the spreadsheet:\n${agentExclusives.joinToString("\n")}")
+        }
+
+        println("Diffs:\n${diffs.joinToString("\n")}")
 
         testSource.applyDiffs(diffs)
 
