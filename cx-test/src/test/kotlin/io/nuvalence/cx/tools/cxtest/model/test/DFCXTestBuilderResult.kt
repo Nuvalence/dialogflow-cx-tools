@@ -1,4 +1,6 @@
-package io.nuvalence.cx.tools.cxtest.model
+package io.nuvalence.cx.tools.cxtest.model.test
+
+import com.google.cloud.dialogflow.cx.v3.TestRunDifference
 
 enum class ResultLabel(val value: String) {
     PASS("PASS"),
@@ -16,10 +18,11 @@ data class DFCXTestBuilderResultStep(
     val actualAgentOutput: String,
     val expectedPage: String,
     val actualPage: String,
-    var result: ResultLabel
+    var result: ResultLabel,
+    val diffs: List<TestRunDifference>
 ) {
-    constructor (userInput: String, expectedAgentOutput: String, actualAgentOutput: String, expectedPage: String, actualPage: String):
-        this(userInput, expectedAgentOutput, actualAgentOutput, expectedPage, actualPage, ResultLabel.PASS)
+    constructor (userInput: String, expectedAgentOutput: String, actualAgentOutput: String, expectedPage: String, actualPage: String, diffs: List<TestRunDifference>):
+        this(userInput, expectedAgentOutput, actualAgentOutput, expectedPage, actualPage, ResultLabel.PASS, diffs)
 
     override fun toString(): String {
         return "Step result: $result\nUser Input: $userInput \nExpected Agent Output: $expectedAgentOutput\nActual Agent Output: $actualAgentOutput\nExpected Page: $expectedPage\nActual Page: $actualPage\n"

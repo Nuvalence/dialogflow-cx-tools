@@ -1,7 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.testsource
 
-import io.nuvalence.cx.tools.cxtest.model.TestScenario
-import io.nuvalence.cx.tools.cxtest.model.TestStep
+import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
+import io.nuvalence.cx.tools.cxtest.model.test.TestStep
 import io.nuvalence.cx.tools.cxtest.util.ACTION_MAPPINGS
 import io.nuvalence.cx.tools.cxtest.util.LANGUAGE_MAPPINGS
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES

@@ -3,7 +3,7 @@ package io.nuvalence.cx.tools.cxtest.extension
 import com.google.cloud.dialogflow.cx.v3.*
 import io.nuvalence.cx.tools.cxtest.DFCXTestBuilderSpec
 import io.nuvalence.cx.tools.cxtest.artifact.DFCXSpreadsheetArtifact
-import io.nuvalence.cx.tools.cxtest.model.DFCXTestBuilderResult
+import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
 import io.nuvalence.cx.tools.cxtest.testsource.DFCXTestBuilderTestSource
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
 import org.junit.jupiter.api.extension.AfterAllCallback

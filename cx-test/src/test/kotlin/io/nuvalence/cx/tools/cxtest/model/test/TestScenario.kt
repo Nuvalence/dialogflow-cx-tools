@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.cxtest.model
+package io.nuvalence.cx.tools.cxtest.model.test
 
 data class TestStep(
     val input: List<String>, val expectedResponse: String, val sourceLocator: Any?

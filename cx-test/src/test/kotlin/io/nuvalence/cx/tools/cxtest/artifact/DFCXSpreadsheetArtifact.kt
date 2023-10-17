@@ -1,41 +1,31 @@
 package io.nuvalence.cx.tools.cxtest.artifact
 
-import com.google.api.services.sheets.v4.model.Request
-import com.google.api.services.sheets.v4.model.SheetProperties
-import com.google.api.services.sheets.v4.model.UpdateSheetPropertiesRequest
-import io.nuvalence.cx.tools.cxtest.model.DFCXTestBuilderResult
-import io.nuvalence.cx.tools.cxtest.model.ResultLabel
+import com.google.api.services.sheets.v4.model.*
+import com.google.cloud.dialogflow.cx.v3.TestRunDifference
+import io.nuvalence.cx.tools.cxtest.model.artifact.ArtifactFormat
+import io.nuvalence.cx.tools.cxtest.model.artifact.ResultDetails
+import io.nuvalence.cx.tools.cxtest.model.artifact.ResultLabelFormat
+import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
+import io.nuvalence.cx.tools.cxtest.model.test.ResultLabel
 import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
-import io.nuvalence.cx.tools.shared.SheetCreator
-import io.nuvalence.cx.tools.shared.SheetReader
-import io.nuvalence.cx.tools.shared.SheetWriter
-import io.nuvalence.cx.tools.shared.UpdateRequest
+import io.nuvalence.cx.tools.shared.*
 import java.net.URL
 import kotlin.properties.Delegates
 
 class DFCXSpreadsheetArtifact {
     companion object {
         val url = PROPERTIES.CREDENTIALS_URL.get()!!
-
-        const val sheetTitle = "Test Results"
         var sheetId by Delegates.notNull<Int>()
 
-        private const val TEST_CASE_NAME = "Test Case Name"
-        private const val TEST_CASE_ID = "Test Case ID"
-        private const val TAGS = "Tags"
-        private const val NOTES = "Notes"
-        private const val USER_INPUT = "User Input"
-        private const val AGENT_OUTPUT = "Agent Output"
-        private const val STATUS = "Status"
-        private const val ERROR_DETAILS = "Error Details"
+        const val sheetTitle = "Test Results"
 
-        val colNames = listOf(TEST_CASE_NAME, TEST_CASE_ID, TAGS, NOTES, USER_INPUT, AGENT_OUTPUT, STATUS, ERROR_DETAILS)
+        private const val DATA_START_ROW = 2
     }
 
     fun createArtifact(title: String) : String {
         val spreadsheetId = SheetCreator(URL(url)).createNewSpreadsheet(title)
         sheetId = SheetReader(URL(url), spreadsheetId, "").getSheets().firstOrNull()?.properties?.sheetId!!
-        updateResultsSheet(spreadsheetId)
+        initializeResultsSheet(spreadsheetId)
         return spreadsheetId
     }
 
@@ -44,56 +34,202 @@ class DFCXSpreadsheetArtifact {
 
         // Gather total rows
         val totalRowCount = formattedResultsList.fold(0) { acc, result -> acc + result.resultSteps.size }
-        sheetWriter.addEmptyRows(totalRowCount+1, spreadsheetId, sheetTitle, sheetId)
+        sheetWriter.addEmptyRows(totalRowCount+1, spreadsheetId, sheetTitle, sheetId, DATA_START_ROW)
 
         // Header row
-        val requestData = colNames.withIndex().associate { e ->
+        val requestData = ArtifactFormat.values().map { it.headerName }.withIndex().associate { e ->
             "${sheetTitle}!${'A' + e.index}1" to e.value
         }.toMutableMap()
 
-
-        var rowCounter = 2;
+        val resultDetails = mutableListOf<ResultDetails>()
+        var rowCounter = DATA_START_ROW + 1;
         // For each test
         formattedResultsList.forEach { result ->
             // Add display name, tags, notes
-            requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(TEST_CASE_NAME)}${rowCounter}", result.testCaseName)
-            requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(TEST_CASE_ID)}${rowCounter}", result.testCaseId)
-            requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(TAGS)}${rowCounter}", result.tags.reduce { acc, tag -> "$acc,$tag"})
-            requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(NOTES)}${rowCounter}", result.notes)
+            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_NAME.ordinal}${rowCounter}", result.testCaseName)
+            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_ID.ordinal}${rowCounter}", result.testCaseId)
+            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TAGS.ordinal}${rowCounter}", result.tags.joinToString("\n"))
+            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.NOTES.ordinal}${rowCounter}", result.notes)
+            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", result.result.value)
+
+            rowCounter++
 
             // For each step
             // Add user input, agent output, status, error details
             result.resultSteps.forEach { resultStep ->
-                requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(USER_INPUT)}${rowCounter}", resultStep.userInput)
-                requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(AGENT_OUTPUT)}${rowCounter}", resultStep.actualAgentOutput)
-                requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(STATUS)}${rowCounter}", resultStep.result.value)
+                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.USER_INPUT.ordinal}${rowCounter}", resultStep.userInput)
+                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.AGENT_OUTPUT.ordinal}${rowCounter}", resultStep.actualAgentOutput)
+                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", resultStep.result.value)
 
-                if (resultStep.result == ResultLabel.WARN) {
-                    val message = "Mismatch with expected agent output: ${resultStep.expectedAgentOutput}"
-                    requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(ERROR_DETAILS)}${rowCounter}", message)
-                } else if (resultStep.result == ResultLabel.FAIL) {
-                    val message = "Mismatch with expected agent output: ${resultStep.expectedAgentOutput}\n| Expected to be on page ${resultStep.expectedPage} but ended on ${resultStep.actualPage}"
-                    requestData += Pair("${sheetTitle}!${'A' + colNames.indexOf(ERROR_DETAILS)}${rowCounter}", message)
+                if (resultStep.result == ResultLabel.FAIL) {
+                    val message = resultStep.diffs.joinToString("\n-----\n") {
+                        when (it.type) {
+                            TestRunDifference.DiffType.UTTERANCE -> "${it.description}: ${resultStep.actualAgentOutput}"
+                            else -> it.description
+                        }
+                    }
+                    requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT_DETAILS.ordinal}${rowCounter}", message)
+                    resultDetails.add(ResultDetails(message, rowCounter-1, ArtifactFormat.TEST_RESULT_DETAILS.ordinal))
                 }
 
                 rowCounter++
             }
         }
 
-
-        val updateRequests = requestData.map { (k, v) ->
-            UpdateRequest(k, v)
+        val cellContentUpdateRequests = requestData.map { (k, v) ->
+            CellContentUpdateRequest(k, v)
         }
-        return sheetWriter.batchUpdateCells(updateRequests)
+
+        sheetWriter.batchUpdateCellContents(cellContentUpdateRequests)
+
+        // TODO: format test result details
+        boldResultDetails(sheetWriter, resultDetails)
     }
 
-    private fun updateResultsSheet(destinationSpreadsheetId: String) {
+    private fun boldResultDetails(sheetWriter: SheetWriter, resultDetails: List<ResultDetails>) {
+        val pageMismatchSubstring = "Page mismatch:"
+        val agentResponseMismatchSubstring = "Agent response mismatch:"
+
+        val substrings = listOf(pageMismatchSubstring, agentResponseMismatchSubstring)
+
+        val requests = mutableListOf<Request>()
+        resultDetails.forEach { resultDetail ->
+            val formatRuns = mutableListOf<TextFormatRun>()
+            for (substring in substrings) {
+                var index = 0
+                while (index < resultDetail.message.length) {
+                    val foundIndex = resultDetail.message.indexOf(substring, index)
+                    if (foundIndex == -1) break
+                    formatRuns.add(
+                        TextFormatRun()
+                            .setStartIndex(foundIndex)
+                            .setFormat(TextFormat().setBold(true))
+                    )
+                    index = foundIndex + substring.length
+                    formatRuns.add(
+                        TextFormatRun()
+                            .setStartIndex(index)
+                            .setFormat(TextFormat().setBold(false))
+                    )
+                }
+            }
+            // Set the formatted value
+            val cellData = CellData()
+                .setUserEnteredValue(ExtendedValue().setStringValue(resultDetail.message))
+                .setTextFormatRuns(formatRuns)
+
+            val gridCoordinate = GridCoordinate()
+                .setSheetId(sheetId)
+                .setRowIndex(resultDetail.row)
+                .setColumnIndex(resultDetail.column)
+
+            requests.add(Request()
+                .setUpdateCells(
+                    UpdateCellsRequest()
+                        .setStart(gridCoordinate)
+                        .setRows(listOf(RowData().setValues(listOf(cellData))))
+                        .setFields("userEnteredValue,textFormatRuns")
+                )
+            )
+        }
+
+        sheetWriter.batchUpdateSheets(requests)
+    }
+
+    private fun initializeResultsSheet(destinationSpreadsheetId: String) {
         val sheetWriter = SheetWriter(URL(url), destinationSpreadsheetId)
+
+        // Update sheet name
         sheetWriter.batchUpdateSheets(listOf(
             Request().setUpdateSheetProperties(
                 UpdateSheetPropertiesRequest().setProperties(SheetProperties().setSheetId(sheetId).setTitle(
                     sheetTitle)).setFields("title")
             )))
+
+        // Format sheet
+        val headerFormat = CellFormat()
+            .setBackgroundColor(Color().setRed(0.8f).setGreen(0.8f).setBlue(0.8f))
+            .setTextFormat(TextFormat().setBold(true))
+        val headerRange = GridRange().setSheetId(sheetId)
+            .setStartRowIndex(0).setEndRowIndex(1)
+            .setStartColumnIndex(0).setEndColumnIndex(ArtifactFormat.values().size)
+        val headerRequest = FormatUpdateRequest(headerRange, headerFormat)
+
+        val separatorFormat = CellFormat().setBackgroundColor(Color().setRed(0.8f).setGreen(1.0f).setBlue(0.8f))
+        val separatorRange = GridRange().setSheetId(sheetId)
+            .setStartRowIndex(1).setEndRowIndex(DATA_START_ROW)
+            .setStartColumnIndex(0).setEndColumnIndex(ArtifactFormat.values().size)
+        val separatorRequest = FormatUpdateRequest(separatorRange, separatorFormat)
+
+        val dataFormatRequests = mutableListOf<FormatUpdateRequest>()
+        val dataCellDimensionRequests = mutableListOf<Request>()
+
+        ArtifactFormat.values().forEach { format ->
+            val dataFormat = CellFormat()
+                .setWrapStrategy(format.wrapStrategy)
+                .setVerticalAlignment("TOP")
+            if (format.isMetadata) {
+                dataFormat.textFormat = TextFormat().setBold(true)
+            }
+
+            val dataRange = GridRange().setSheetId(sheetId)
+                .setStartRowIndex(DATA_START_ROW).setEndRowIndex(null)
+                .setStartColumnIndex(format.ordinal).setEndColumnIndex(format.ordinal + 1)
+
+            val dataCellDimensionRequest = Request().setUpdateDimensionProperties(
+                UpdateDimensionPropertiesRequest()
+                    .setRange(DimensionRange()
+                        .setSheetId(sheetId)
+                        .setDimension("COLUMNS")
+                        .setStartIndex(format.ordinal)
+                        .setEndIndex(format.ordinal + 1)
+                    )
+                    .setProperties(DimensionProperties().setPixelSize(format.width))
+                    .setFields("pixelSize")
+            )
+
+            dataFormatRequests.add(FormatUpdateRequest(dataRange, dataFormat))
+            dataCellDimensionRequests.add(dataCellDimensionRequest)
+        }
+
+        // Format dropdowns
+        val dropdownRequests = mutableListOf<Request>()
+
+        val resultRange = GridRange().setSheetId(sheetId)
+            .setStartRowIndex(DATA_START_ROW).setEndRowIndex(null)
+            .setStartColumnIndex(ArtifactFormat.TEST_RESULT.ordinal).setEndColumnIndex(ArtifactFormat.TEST_RESULT.ordinal + 1)
+
+        ResultLabelFormat.values().forEach { entry ->
+            val booleanCondition = BooleanCondition()
+                .setType("TEXT_EQ")
+                .setValues(listOf(ConditionValue().setUserEnteredValue(entry.data.value)))
+
+            val booleanRule = BooleanRule()
+                .setCondition(booleanCondition)
+                .setFormat(CellFormat().setBackgroundColor(entry.color))
+
+            val dropdownFormatRequest = Request().setAddConditionalFormatRule(AddConditionalFormatRuleRequest()
+                .setRule(ConditionalFormatRule().setBooleanRule(booleanRule).setRanges(listOf(resultRange)))
+                .setIndex(0))
+
+            dropdownRequests.add(dropdownFormatRequest)
+        }
+
+        val resultDataValidationRule = DataValidationRule()
+            .setCondition(BooleanCondition().setType("ONE_OF_LIST").setValues(ResultLabel.values().map { ConditionValue().setUserEnteredValue(it.value) }))
+            .setShowCustomUi(true)
+            .setStrict(true)
+
+        val dropdownResultRequest = Request()
+            .setSetDataValidation(SetDataValidationRequest()
+                .setRange(resultRange)
+                .setRule(resultDataValidationRule))
+
+        dropdownRequests.add(dropdownResultRequest)
+
+        sheetWriter.batchUpdateCellFormats(listOf(headerRequest, separatorRequest, *dataFormatRequests.toTypedArray()))
+        sheetWriter.batchUpdateSheets(dataCellDimensionRequests)
+        sheetWriter.batchUpdateSheets(dropdownRequests)
     }
 
 }
