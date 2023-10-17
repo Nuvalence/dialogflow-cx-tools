@@ -35,17 +35,6 @@ class DFCXSpreadsheetArtifactSource {
 
         val startingRow = 3
 
-        // If test case found
-            // If test steps are empty, it's probably the first step
-                // Keep row in current
-            // If test steps are NOT empty, it's probably a new test case
-                // Persist current test case + steps
-        // If test step found
-            // Create new test step
-        // If empty row found
-            // Probably EOF
-                // Persist current test case + steps
-
         val scenarios = rows.drop(2).foldIndexed(mutableListOf<DFCXTest>()) { index, acc, row ->
             fun getRowElement(colName: String): String {
                 return row[cols[colName]!!]
