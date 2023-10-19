@@ -44,7 +44,7 @@ class DFCXSpreadsheetArtifact {
         val resultDetails = mutableListOf<ResultDetails>()
         var rowCounter = DATA_START_ROW + 1;
         // For each test
-        formattedResultsList.forEach { result ->
+        formattedResultsList.sortedBy { result -> result.testCaseId } .forEach { result ->
             // Add display name, tags, notes
             requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_NAME.ordinal}${rowCounter}", result.testCaseName)
             requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_ID.ordinal}${rowCounter}", result.testCaseId.split("/")[7])
