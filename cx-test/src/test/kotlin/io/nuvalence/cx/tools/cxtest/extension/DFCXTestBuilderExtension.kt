@@ -31,7 +31,7 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
                 Date()
             )}")
         context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("artifactSpreadsheetId", artifactSpreadsheetId)
-        println("Created spreadsheet $artifactSpreadsheetId")
+        println("Created spreadsheet https://docs.google.com/spreadsheets/d/$artifactSpreadsheetId")
 
         testClient = TestCasesClient.create(
             TestCasesSettings.newBuilder()

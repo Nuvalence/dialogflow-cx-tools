@@ -10,6 +10,7 @@ enum class DFCXTestBuilderResultArtifactFormat(val headerName: String, val width
     TEST_RESULT("Test Result", 100, "WRAP"),
     TEST_RESULT_DETAILS("Test Result Details", 300, "WRAP"),
     TEST_PAYLOADS("Test Payloads", 300, "WRAP"),
+    TEST_SSN("Test SSN", 100, "WRAP"),
     COMMENTS("Comments", 300, "WRAP");
 
     data class ResultDetails(val message: String, val row: Int, val column: Int)

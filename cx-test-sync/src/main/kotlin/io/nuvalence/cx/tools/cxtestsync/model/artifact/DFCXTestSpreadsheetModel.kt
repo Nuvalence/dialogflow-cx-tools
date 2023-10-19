@@ -13,8 +13,9 @@ class DFCXTestSpreadsheetModel {
         const val TEST_RESULT = "Test Result"
         const val TEST_RESULT_DETAILS = "Test Result Details"
         const val TEST_PAYLOADS = "Test Payloads"
+        const val TEST_SSN = "Test SSN"
         const val COMMENTS = "Comments"
 
-        val colNames = listOf(TEST_CASE_NAME, TEST_CASE_ID, TAGS, NOTES, USER_INPUT, AGENT_OUTPUT, TEST_RESULT, TEST_RESULT_DETAILS, TEST_PAYLOADS, COMMENTS)
+        val colNames = listOf(TEST_CASE_NAME, TEST_CASE_ID, TAGS, NOTES, USER_INPUT, AGENT_OUTPUT, TEST_RESULT, TEST_RESULT_DETAILS, TEST_PAYLOADS, TEST_SSN, COMMENTS)
     }
 }
