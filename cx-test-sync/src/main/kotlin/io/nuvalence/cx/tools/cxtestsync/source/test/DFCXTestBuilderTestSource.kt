@@ -1,7 +1,10 @@
 package io.nuvalence.cx.tools.cxtestsync.source.test
 
 import com.google.cloud.dialogflow.cx.v3.*
+import com.google.protobuf.Descriptors.Descriptor
+import com.google.protobuf.Descriptors.FieldDescriptor
 import com.google.protobuf.FieldMask
+import com.google.protobuf.Value
 import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTestStep
@@ -60,23 +63,31 @@ class DFCXTestBuilderTestSource {
     private fun updateSsn(testCase: TestCase.Builder, diff: DFCXTestDiff) {
         if (diff.ssn != null) {
             testCase.testCaseConversationTurnsList?.forEachIndexed { index, turn ->
+                val updatedTurn = turn.toBuilder()
+                var isUpdated = false
+
                 if (index > 0 && testCase.testCaseConversationTurnsList!![index - 1].virtualAgentOutput.sessionParameters.fieldsMap["data-collection-type"]?.stringValue == "ssn" &&
                     turn.userInput.input.text.text.matches(Regex(".*\\d{9}.*"))) {
-                    val updatedTurn = turn.toBuilder()
-                        .setUserInput(
-                            turn.userInput?.toBuilder()!!.setInput(
-                                QueryInput.newBuilder().setText(
-                                    TextInput.newBuilder().setText(diff.ssn).build()
-                                )
-                            ).build()
+                    println("Updating SSN in utterance")
+                    updatedTurn.userInput = turn.userInput?.toBuilder()!!.setInput(
+                        QueryInput.newBuilder().setText(
+                            TextInput.newBuilder().setText(diff.ssn).build()
                         )
-                        /*
-                        .setVirtualAgentOutput(originalStep.virtualAgentOutput?.toBuilder()!!.setSessionParameters(
-                            originalStep.virtualAgentOutput.sessionParameters.toBuilder()!!.fieldsMap["ssn"] = "987654321"
-                        ))
-                        */
-                        .build()
+                    ).build()
+                    isUpdated = true
+                }
 
+                if (turn.virtualAgentOutput?.hasSessionParameters() == true && turn.virtualAgentOutput?.sessionParameters?.fieldsMap?.get("ssn") != null) {
+                    println("Updating SSN in params")
+                    val updatedSessionParameters = turn.virtualAgentOutput?.sessionParameters?.toBuilder()!!
+                    updatedSessionParameters.putFields("ssn", Value.newBuilder().setStringValue(diff.ssn).build())
+                    updatedTurn.virtualAgentOutput = turn.virtualAgentOutput?.toBuilder()!!
+                        .setSessionParameters(updatedSessionParameters.build())
+                        .build()
+                    isUpdated = true
+                }
+
+                if (isUpdated) {
                     testCase.setTestCaseConversationTurns(index, updatedTurn)
                 }
             }
