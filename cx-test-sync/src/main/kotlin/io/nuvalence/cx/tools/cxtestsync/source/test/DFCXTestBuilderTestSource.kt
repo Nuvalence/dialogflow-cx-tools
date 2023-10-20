@@ -68,7 +68,6 @@ class DFCXTestBuilderTestSource {
 
                 if (index > 0 && testCase.testCaseConversationTurnsList!![index - 1].virtualAgentOutput.sessionParameters.fieldsMap["data-collection-type"]?.stringValue == "ssn" &&
                     turn.userInput.input.text.text.matches(Regex(".*\\d{9}.*"))) {
-                    println("Updating SSN in utterance")
                     updatedTurn.userInput = turn.userInput?.toBuilder()!!.setInput(
                         QueryInput.newBuilder().setText(
                             TextInput.newBuilder().setText(diff.ssn).build()
@@ -78,7 +77,6 @@ class DFCXTestBuilderTestSource {
                 }
 
                 if (turn.virtualAgentOutput?.hasSessionParameters() == true && turn.virtualAgentOutput?.sessionParameters?.fieldsMap?.get("ssn") != null) {
-                    println("Updating SSN in params")
                     val updatedSessionParameters = turn.virtualAgentOutput?.sessionParameters?.toBuilder()!!
                     updatedSessionParameters.putFields("ssn", Value.newBuilder().setStringValue(diff.ssn).build())
                     updatedTurn.virtualAgentOutput = turn.virtualAgentOutput?.toBuilder()!!
