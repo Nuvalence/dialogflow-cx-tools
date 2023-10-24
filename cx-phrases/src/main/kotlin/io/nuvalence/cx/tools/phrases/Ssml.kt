@@ -199,7 +199,7 @@ fun processPercentage(number: String) =
 fun processPhone(number: String) =
     START_PROSODY_RATE + // Pause and talk slowly
         """<say-as interpret-as="telephone" google:style="zero-as-zero">""" +
-            number + END_SAY + END_PROSODY_RATE
+            number.trimEnd() + END_SAY + END_PROSODY_RATE + " "
 
 /**
  * Splits a URL in its basic components, including the separators (e.g. . or /)
