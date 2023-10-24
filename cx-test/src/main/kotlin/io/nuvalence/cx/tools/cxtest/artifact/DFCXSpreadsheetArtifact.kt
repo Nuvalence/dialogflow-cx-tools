@@ -7,14 +7,13 @@ import io.nuvalence.cx.tools.cxtest.model.artifact.ResultDetails
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultLabelFormat
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
 import io.nuvalence.cx.tools.cxtest.model.test.ResultLabel
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import io.nuvalence.cx.tools.shared.*
-import java.net.URL
 import kotlin.properties.Delegates
 
 class DFCXSpreadsheetArtifact {
     companion object {
-        val url = PROPERTIES.CREDENTIALS_URL.get()!!
+        val url = Properties.CREDENTIALS_URL
         var sheetId by Delegates.notNull<Int>()
 
         const val sheetTitle = "Test Results"
@@ -23,14 +22,14 @@ class DFCXSpreadsheetArtifact {
     }
 
     fun createArtifact(title: String) : String {
-        val spreadsheetId = SheetCreator(URL(url)).createNewSpreadsheet(title)
-        sheetId = SheetReader(URL(url), spreadsheetId, "").getSheets().firstOrNull()?.properties?.sheetId!!
+        val spreadsheetId = SheetCreator(url).createNewSpreadsheet(title)
+        sheetId = SheetReader(url, spreadsheetId, "").getSheets().firstOrNull()?.properties?.sheetId!!
         initializeResultsSheet(spreadsheetId)
         return spreadsheetId
     }
 
     fun writeArtifact(spreadsheetId: String, formattedResultsList: List<DFCXTestBuilderResult>) {
-        val sheetWriter = SheetWriter(URL(url), spreadsheetId)
+        val sheetWriter = SheetWriter(url, spreadsheetId)
 
         // Gather total rows
         val totalRowCount = formattedResultsList.fold(0) { acc, result -> acc + result.resultSteps.size }
@@ -136,7 +135,7 @@ class DFCXSpreadsheetArtifact {
     }
 
     private fun initializeResultsSheet(destinationSpreadsheetId: String) {
-        val sheetWriter = SheetWriter(URL(url), destinationSpreadsheetId)
+        val sheetWriter = SheetWriter(url, destinationSpreadsheetId)
 
         // Update sheet name
         sheetWriter.batchUpdateSheets(listOf(

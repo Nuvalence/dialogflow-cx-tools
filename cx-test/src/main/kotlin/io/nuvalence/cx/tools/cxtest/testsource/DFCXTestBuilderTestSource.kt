@@ -3,13 +3,13 @@ package io.nuvalence.cx.tools.cxtest.testsource
 import com.google.cloud.dialogflow.cx.v3.ListTestCasesRequest
 import com.google.cloud.dialogflow.cx.v3.TestCase
 import io.nuvalence.cx.tools.cxtest.extension.DFCXTestBuilderExtension
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import java.util.*
 
 class DFCXTestBuilderTestSource {
     fun getTestScenarios(): List<TestCase> {
         val listTestCasesRequest = ListTestCasesRequest.newBuilder()
-            .setParent(PROPERTIES.AGENT_PATH.get())
+            .setParent(Properties.AGENT_PATH)
             .setView(ListTestCasesRequest.TestCaseView.FULL)
             .setPageSize(20)
             .build()
@@ -22,7 +22,7 @@ class DFCXTestBuilderTestSource {
         }
         testCaseList.sortBy { testCase -> testCase.name }
 
-        val tagFilter = PROPERTIES.DFCX_TAG_FILTER.get()!!
+        val tagFilter = Properties.DFCX_TAG_FILTER
 
         if (tagFilter != "ALL") {
             val tagFilters = tagFilter.split(',')

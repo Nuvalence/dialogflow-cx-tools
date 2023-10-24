@@ -3,7 +3,7 @@ package io.nuvalence.cx.tools.cxtest.artifact
 import com.google.api.services.sheets.v4.model.Request
 import com.google.api.services.sheets.v4.model.SheetProperties
 import com.google.api.services.sheets.v4.model.UpdateSheetPropertiesRequest
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import io.nuvalence.cx.tools.shared.SheetCopier
 import io.nuvalence.cx.tools.shared.SheetReader
 import io.nuvalence.cx.tools.shared.SheetWriter
@@ -12,13 +12,13 @@ import java.net.URL
 
 class SpreadsheetArtifact {
     companion object {
-        val url = PROPERTIES.CREDENTIALS_URL.get()!!
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()!!
-        val agentPath = PROPERTIES.AGENT_PATH.get()!!
+        val url = Properties.CREDENTIALS_URL
+        val spreadsheetId = Properties.SPREADSHEET_ID
+        val agentPath = Properties.AGENT_PATH
     }
 
     fun createArtifact(destinationTitle: String) : String {
-        val destinationSpreadsheetId = SheetCopier(URL(url), spreadsheetId).copySpreadsheet(destinationTitle)
+        val destinationSpreadsheetId = SheetCopier(url, spreadsheetId).copySpreadsheet(destinationTitle)
         updateInfoSheet(destinationSpreadsheetId)
         return destinationSpreadsheetId
     }
@@ -27,13 +27,13 @@ class SpreadsheetArtifact {
         val cellContentUpdateRequests = requestData.map { (k, v) ->
             CellContentUpdateRequest(k, v)
         }
-        return SheetWriter(URL(url), spreadsheetId).batchUpdateCellContents(cellContentUpdateRequests)
+        return SheetWriter(url, spreadsheetId).batchUpdateCellContents(cellContentUpdateRequests)
     }
 
     private fun updateInfoSheet(destinationSpreadsheetId: String) {
         val title = "Test info"
-        val firstSheetId = SheetReader(URL(url), destinationSpreadsheetId, "").getSheets().firstOrNull()?.properties?.sheetId
-        val sheetWriter = SheetWriter(URL(url), destinationSpreadsheetId)
+        val firstSheetId = SheetReader(url, destinationSpreadsheetId, "").getSheets().firstOrNull()?.properties?.sheetId
+        val sheetWriter = SheetWriter(url, destinationSpreadsheetId)
         sheetWriter.batchUpdateSheets(listOf(
             Request().setUpdateSheetProperties(
                 UpdateSheetPropertiesRequest().setProperties(SheetProperties().setSheetId(firstSheetId).setTitle(title)).setFields("title")

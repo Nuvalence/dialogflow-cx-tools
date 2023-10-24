@@ -1,7 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.orchestrator
 
 import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 
 data class ExecutionPath(val path: List<Int>) {
     operator fun get(index: Int): Int {
@@ -52,7 +52,7 @@ enum class TestOrchestrationMode(val value: String) {
 
 class OrchestratedTestMap(private val testMap: Map<TestScenario, List<ExecutionPath>>) {
     constructor(testScenarios: List<TestScenario>) : this(
-        TestOrchestrationMode.from(PROPERTIES.ORCHESTRATION_MODE.get()).generateExecutionPaths(testScenarios)
+        TestOrchestrationMode.from(Properties.ORCHESTRATION_MODE).generateExecutionPaths(testScenarios)
     )
 
     constructor(testScenarios: List<TestScenario>, orchestrationMode: String) : this(

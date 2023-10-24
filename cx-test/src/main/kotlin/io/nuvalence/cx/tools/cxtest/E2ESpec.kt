@@ -3,7 +3,7 @@ package io.nuvalence.cx.tools.cxtest
 import com.google.cloud.dialogflow.cx.v3beta1.*
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
 import io.nuvalence.cx.tools.cxtest.testsource.E2EFormatReader
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import io.nuvalence.cx.tools.cxtest.assertion.assertFuzzyMatch
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Tag
@@ -30,14 +30,14 @@ class E2ESpec {
 
     private val sessionClient: SessionsClient = SessionsClient.create(
         SessionsSettings.newBuilder()
-        .setEndpoint(PROPERTIES.DFCX_ENDPOINT.get())
+        .setEndpoint(Properties.DFCX_ENDPOINT)
         .build()
     )
 
     @TestFactory
     fun testCases(): List<DynamicTest> {
-        println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
-        val agentPath = PROPERTIES.AGENT_PATH.get()!!
+        println("Matching mode: ${Properties.MATCHING_MODE}")
+        val agentPath = Properties.AGENT_PATH
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
         return e2eSheets.map { sheet ->
             OrchestratedTestMap(E2EFormatReader().read(sheet.key, sheet.value)).generatePairs()

@@ -5,7 +5,7 @@ import io.nuvalence.cx.tools.cxtest.DFCXTestBuilderSpec
 import io.nuvalence.cx.tools.cxtest.artifact.DFCXSpreadsheetArtifact
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
 import io.nuvalence.cx.tools.cxtest.testsource.DFCXTestBuilderTestSource
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
@@ -23,8 +23,8 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
     }
 
     override fun beforeAll(context: ExtensionContext?) {
-        println("Agent: ${PROPERTIES.AGENT_PATH.get()}")
-        println("Creds URL: ${PROPERTIES.CREDENTIALS_URL.get()}")
+        println("Agent: ${Properties.AGENT_PATH}")
+        println("Creds URL: ${Properties.CREDENTIALS_URL}")
 
         val artifactSpreadsheetId = artifact.createArtifact("DFCX Test Builder Spreadsheet ${
             SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
@@ -35,13 +35,13 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
 
         testClient = TestCasesClient.create(
             TestCasesSettings.newBuilder()
-                .setEndpoint(PROPERTIES.DFCX_ENDPOINT.get())
+                .setEndpoint(Properties.DFCX_ENDPOINT)
                 .build())
 
         val testCaseList = DFCXTestBuilderTestSource().getTestScenarios()
 
         val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
-            .setParent(PROPERTIES.AGENT_PATH.get())
+            .setParent(Properties.AGENT_PATH)
             .addAllTestCases(testCaseList.map { testCase -> testCase.name })
             .build()
 

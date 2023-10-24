@@ -6,7 +6,7 @@ import io.nuvalence.cx.tools.cxtest.artifact.SpreadsheetArtifact
 import io.nuvalence.cx.tools.cxtest.assertion.ContextAwareAssertionError
 import io.nuvalence.cx.tools.cxtest.orchestrator.OrchestratedTestMap
 import io.nuvalence.cx.tools.cxtest.testsource.SmokeFormatReader
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.params.provider.Arguments
@@ -16,15 +16,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.stream.Stream
 
-class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCallback {
+class SmokeTestExtension : ArgumentsProvider, BeforeAllCallback, AfterAllCallback {
     companion object {
         val artifact = SpreadsheetArtifact()
         var sessionClient: SessionsClient? = null
     }
 
     override fun beforeAll(context: ExtensionContext?) {
-        println("Agent: ${PROPERTIES.AGENT_PATH.get()}")
-        println("Matching mode: ${PROPERTIES.MATCHING_MODE.get()}")
+        println("Agent: ${Properties.AGENT_PATH}")
+        println("Matching mode: ${Properties.MATCHING_MODE}")
 
         val artifactSpreadsheetId = artifact.createArtifact("Smoke Spreadsheet ${
             SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
@@ -35,7 +35,7 @@ class SmokeTestExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCall
 
         sessionClient = SessionsClient.create(
             SessionsSettings.newBuilder()
-                .setEndpoint(PROPERTIES.DFCX_ENDPOINT.get())
+                .setEndpoint(Properties.DFCX_ENDPOINT)
                 .build())
     }
 

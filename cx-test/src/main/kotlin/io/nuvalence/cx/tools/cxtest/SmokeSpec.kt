@@ -7,7 +7,7 @@ import io.nuvalence.cx.tools.cxtest.extension.SmokeTestExtension
 import io.nuvalence.cx.tools.cxtest.listener.DynamicTestListener
 import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
 import io.nuvalence.cx.tools.cxtest.orchestrator.ExecutionPath
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.parallel.Execution
@@ -24,7 +24,7 @@ class SmokeSpec {
     @ParameterizedTest(name = "{0}")
     @ArgumentsSource(SmokeTestExtension::class)
     fun testCases(testScenario: TestScenario, executionPath: ExecutionPath) {
-        val agentPath = PROPERTIES.AGENT_PATH.get()!!
+        val agentPath = Properties.AGENT_PATH
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
         val sessionPath =
             SessionName.format(projectId, location, agentId, "test-session-" + UUID.randomUUID())
