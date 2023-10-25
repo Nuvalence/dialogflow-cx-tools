@@ -1,6 +1,5 @@
 package io.nuvalence.cx.tools.cxtest
 
-import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.launcher.EngineFilter
 import org.junit.platform.launcher.LauncherDiscoveryRequest
@@ -13,15 +12,20 @@ class Launcher {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
+            val clazz = Class.forName("gov.ny.dol.ui.ccai.dfcx.domain.util.Properties")
+            val companionField = clazz.getDeclaredField("Companion")
+            companionField.isAccessible = true
+            val companionInstance = companionField.get(null)
+            val method = companionField.type.getDeclaredMethod("init", String::class.java)
             if (args.isEmpty()) {
-                Properties.init("default.properties")
+                method.invoke(companionInstance, "default.properties")
             } else {
-                Properties.init(args[0])
+                method.invoke(companionInstance, args[0])
             }
 
             val request: LauncherDiscoveryRequest = LauncherDiscoveryRequestBuilder.request()
                 .filters(EngineFilter.includeEngines("junit-jupiter"))
-                .selectors(selectClass(DFCXTestBuilderSpec::class.java))
+                .selectors(selectClass("gov.ny.dol.ui.ccai.dfcx.domain.DFCXTestBuilderSpec"))
                 .configurationParameter("junit.jupiter.execution.parallel.enabled", "true")
                 .configurationParameter("junit.jupiter.execution.parallel.config.strategy", "fixed")
                 .configurationParameter("junit.jupiter.execution.parallel.config.fixed.parallelism", "4")

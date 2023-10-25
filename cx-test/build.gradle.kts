@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":cx-shared"))
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
+    implementation("io.nuvalence.cx-tools:dol-ui-ccai-domain:0.0.1")
 
     implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     implementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
