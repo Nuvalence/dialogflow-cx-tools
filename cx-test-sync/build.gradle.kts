@@ -1,6 +1,8 @@
 plugins {
     kotlin("jvm") version "1.7.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
+    application
 }
 
 repositories {
@@ -29,11 +31,16 @@ tasks.register("setup") {
     }
 }
 
-tasks.register<JavaExec>("run") {
-    val properties = listOf("spreadsheetId", "credentialsUrl", "agentPath", "dfcxEndpoint")
-    systemProperties(project.properties.filter { (key, _) -> key in properties })
 
-    group = "application"
+application {
     mainClass.set("io.nuvalence.cx.tools.cxtestsync.Main")
-    classpath = sourceSets["main"].runtimeClasspath
 }
+
+tasks.shadowJar {
+    manifest {
+        attributes["Main-Class"] = application.mainClass.get()
+    }
+
+    mergeServiceFiles()
+}
+

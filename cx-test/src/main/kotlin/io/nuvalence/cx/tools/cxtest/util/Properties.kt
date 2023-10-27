@@ -1,5 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.util
 
+import java.io.File
+import java.io.FileInputStream
 import java.net.URL
 import javax.naming.ConfigurationException
 import kotlin.properties.ReadWriteProperty
@@ -47,8 +49,9 @@ class Properties {
                 }
             }
             properties = java.util.Properties(defaultProperties)
-            val loader = Thread.currentThread().contextClassLoader
-            val stream = loader.getResourceAsStream(path)
+
+            val file = File(path)
+            val stream = FileInputStream(file)
             properties.load(stream)
             validateProps()
             setProps()

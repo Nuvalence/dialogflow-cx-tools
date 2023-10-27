@@ -13,11 +13,7 @@ class Launcher {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            if (args.isEmpty()) {
-                Properties.init("default.properties")
-            } else {
-                Properties.init(args[0])
-            }
+            Properties.init(args[0])
 
             val request: LauncherDiscoveryRequest = LauncherDiscoveryRequestBuilder.request()
                 .filters(EngineFilter.includeEngines("junit-jupiter"))

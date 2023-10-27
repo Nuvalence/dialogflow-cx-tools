@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "1.7.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
     application
 }
 
@@ -29,14 +30,14 @@ dependencies {
 
 val reportDestinationPath = "$buildDir/reports/tests"
 
-tasks.register<JavaExec>("runTests") {
-    val properties = listOf("agentPath", "spreadsheetId", "dfcxTagFilter", "credentialsUrl", "orchestrationMode", "matchingMode", "matchingRatio", "dfcxEndpoint")
-    systemProperties(project.properties.filter { (key, _) -> key in properties })
-
-    group = "application"
+application {
     mainClass.set("io.nuvalence.cx.tools.cxtest.Launcher")
-    classpath = sourceSets["main"].runtimeClasspath
-    //args = listOf("arg1", "arg2") // If you have any arguments
+}
 
-    outputs.upToDateWhen { false }
+tasks.shadowJar {
+    manifest {
+        attributes["Main-Class"] = "io.nuvalence.cx.tools.cxtest.Launcher"
+    }
+
+    mergeServiceFiles()
 }
