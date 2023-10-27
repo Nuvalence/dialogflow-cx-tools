@@ -3,17 +3,18 @@ package gov.ny.dol.ui.ccai.dfcx.domain.artifact
 import com.google.api.services.sheets.v4.model.Request
 import com.google.api.services.sheets.v4.model.SheetProperties
 import com.google.api.services.sheets.v4.model.UpdateSheetPropertiesRequest
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.shared.SheetCopier
 import io.nuvalence.cx.tools.shared.SheetReader
 import io.nuvalence.cx.tools.shared.SheetWriter
 import io.nuvalence.cx.tools.shared.CellContentUpdateRequest
+import java.net.URL
 
 class SpreadsheetArtifact {
     companion object {
-        val url = Properties.CREDENTIALS_URL
-        val spreadsheetId = Properties.SPREADSHEET_ID
-        val agentPath = Properties.AGENT_PATH
+        val url = Properties.getProperty<URL>("credentialsUrl")
+        val spreadsheetId = Properties.getProperty<String>("spreadsheetId")
+        val agentPath = Properties.getProperty<String>("agentPath")
     }
 
     fun createArtifact(destinationTitle: String) : String {

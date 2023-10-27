@@ -1,17 +1,18 @@
 package gov.ny.dol.ui.ccai.dfcx.domain.extension
 
 import com.google.cloud.dialogflow.cx.v3.*
-import gov.ny.dol.ui.ccai.dfcx.domain.DFCXTestBuilderSpec
+import gov.ny.dol.ui.ccai.dfcx.domain.test.spec.DFCXTestBuilderSpec
 import gov.ny.dol.ui.ccai.dfcx.domain.artifact.DFCXSpreadsheetArtifact
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResult
 import gov.ny.dol.ui.ccai.dfcx.domain.testsource.DFCXTestBuilderTestSource
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.ArgumentsProvider
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.stream.Stream
@@ -23,8 +24,8 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
     }
 
     override fun beforeAll(context: ExtensionContext?) {
-        println("Agent: ${Properties.AGENT_PATH}")
-        println("Creds URL: ${Properties.CREDENTIALS_URL}")
+        println("Agent: ${Properties.getProperty<String>("agentPath")}")
+        println("Creds URL: ${Properties.getProperty<URL>("credentialsUrl")}")
 
         val artifactSpreadsheetId = artifact.createArtifact("DFCX Test Builder Spreadsheet ${
             SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
@@ -35,14 +36,14 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
 
         testClient = TestCasesClient.create(
             TestCasesSettings.newBuilder()
-                .setEndpoint(Properties.DFCX_ENDPOINT)
+                .setEndpoint(Properties.getProperty<String>("dfcxEndpoint"))
                 .build())
 
         val testCaseList = DFCXTestBuilderTestSource().getTestScenarios()
 
         if (testCaseList.isNotEmpty()) {
             val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
-                .setParent(Properties.AGENT_PATH)
+                .setParent(Properties.getProperty<String>("agentPath"))
                 .addAllTestCases(testCaseList.map { testCase -> testCase.name })
                 .build()
 

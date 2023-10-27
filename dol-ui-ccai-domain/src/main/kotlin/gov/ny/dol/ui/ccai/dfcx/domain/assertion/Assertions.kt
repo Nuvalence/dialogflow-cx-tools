@@ -1,7 +1,7 @@
 package gov.ny.dol.ui.ccai.dfcx.domain.assertion
 
 import com.google.cloud.dialogflow.cx.v3beta1.ResponseMessage
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.junit.jupiter.api.Assertions
 
@@ -35,8 +35,8 @@ enum class MatchingMode(val value: String) {
 }
 
 fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessage>) {
-    val matchingMode = MatchingMode.from(Properties.MATCHING_MODE)
-    val expectedRatio = Properties.MATCHING_RATIO
+    val matchingMode = MatchingMode.from(Properties.getProperty<String>("matchingMode"))
+    val expectedRatio = Properties.getProperty<Int>("matchingRatio")
 
     val newActual = actual.joinToString("\n") { responseMessage ->
         if (responseMessage.outputAudioText.hasSsml()) responseMessage.outputAudioText.ssml; else ""

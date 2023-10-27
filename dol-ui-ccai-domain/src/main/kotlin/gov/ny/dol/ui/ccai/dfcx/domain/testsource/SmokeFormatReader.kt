@@ -4,8 +4,9 @@ import gov.ny.dol.ui.ccai.dfcx.domain.model.test.TestScenario
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.TestStep
 import gov.ny.dol.ui.ccai.dfcx.domain.util.ACTION_MAPPINGS
 import gov.ny.dol.ui.ccai.dfcx.domain.util.LANGUAGE_MAPPINGS
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.shared.SheetReader
+import java.net.URL
 
 class SmokeFormatReader : FormatReader {
     companion object {
@@ -17,8 +18,8 @@ class SmokeFormatReader : FormatReader {
         const val STEP_STATUS = "Step Status"
         const val COMMENTS = "Comments"
 
-        val url = Properties.CREDENTIALS_URL
-        val spreadsheetId = Properties.SPREADSHEET_ID
+        val url = Properties.getProperty<URL>("credentialsUrl")
+        val spreadsheetId = Properties.getProperty<String>("spreadsheetId")
 
         val colNames = listOf(TEST_CASE_ID, TEST_CASE_LANGUAGE, TEST_CASE_TITLE, USER_INPUT, EXPECTED_RESULT, STEP_STATUS, COMMENTS)
         lateinit var cols : Map<String, Int>

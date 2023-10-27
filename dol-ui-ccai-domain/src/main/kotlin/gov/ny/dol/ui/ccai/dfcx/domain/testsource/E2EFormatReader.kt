@@ -2,8 +2,9 @@ package gov.ny.dol.ui.ccai.dfcx.domain.testsource
 
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.TestScenario
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.TestStep
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.shared.SheetReader
+import java.net.URL
 
 class E2EFormatReader {
     companion object {
@@ -25,8 +26,8 @@ class E2EFormatReader {
     }
 
     fun read(range: String, languageCode: String): List<TestScenario> {
-        val url = Properties.CREDENTIALS_URL
-        val spreadsheetId = Properties.SPREADSHEET_ID
+        val url = Properties.getProperty<URL>("credentialsUrl")
+        val spreadsheetId = Properties.getProperty<String>("spreadsheetId")
         val rows = SheetReader(
             url, spreadsheetId, range
         ).read()

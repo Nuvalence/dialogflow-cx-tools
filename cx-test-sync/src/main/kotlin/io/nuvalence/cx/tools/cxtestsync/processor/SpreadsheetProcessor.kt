@@ -1,22 +1,24 @@
 package io.nuvalence.cx.tools.cxtestsync.processor
 
 import com.google.api.services.sheets.v4.model.*
-import io.nuvalence.cx.tools.cxtestsync.model.artifact.DFCXTestSpreadsheetModel
+import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.DFCXTestBuilderResultArtifactFormat as Model
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
 import io.nuvalence.cx.tools.cxtestsync.source.artifact.DFCXSpreadsheetArtifactSource
 import io.nuvalence.cx.tools.cxtestsync.source.test.DFCXTestBuilderTestSource
-import io.nuvalence.cx.tools.cxtestsync.util.Properties
 import io.nuvalence.cx.tools.shared.SheetCopier
 import io.nuvalence.cx.tools.shared.SheetReader
 import io.nuvalence.cx.tools.shared.SheetWriter
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
-class SpreadsheetProcessor () {
+class SpreadsheetProcessor {
     companion object {
-        val url = Properties.CREDENTIALS_URL
-        val spreadsheetId = Properties.SPREADSHEET_ID
+        val url = Properties.getProperty<URL>("credentialsUrl")
+        val spreadsheetId = Properties.getProperty<String>("spreadsheetId")
+        lateinit var cols: Map<String, Int>
     }
 
     private fun createArtifact(destinationTitle: String) : String {
@@ -27,7 +29,8 @@ class SpreadsheetProcessor () {
     }
 
     private fun clearResults(spreadsheetId: String) {
-        SheetWriter(url, spreadsheetId).deleteCellRange("${'A' + DFCXTestSpreadsheetModel.colNames.indexOf(DFCXTestSpreadsheetModel.TEST_RESULT)}2:${'A' + DFCXTestSpreadsheetModel.colNames.indexOf(DFCXTestSpreadsheetModel.TEST_RESULT_DETAILS)}")
+        cols = DFCXSpreadsheetArtifactSource.cols
+        SheetWriter(url, spreadsheetId).deleteCellRange("${'A' + cols[Model.TEST_RESULT.headerName]!!}2:${'A' + cols[Model.TEST_RESULT_DETAILS.headerName]!!}")
     }
 
     private fun deleteFirstSheet(destinationSpreadsheetId: String) {
@@ -62,13 +65,13 @@ class SpreadsheetProcessor () {
     }
 
     fun process () {
+        val artifactSource = DFCXSpreadsheetArtifactSource()
+        val testSource = DFCXTestBuilderTestSource()
+
         val destinationSpreadsheetId = createArtifact("DFCX Synced Test Spreadsheet ${
             SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
                 Date()
             )}")
-
-        val artifactSource = DFCXSpreadsheetArtifactSource()
-        val testSource = DFCXTestBuilderTestSource()
 
         val spreadsheetTests = artifactSource.getTestScenarios().sortedBy { it.testCaseId }
         val agentTests = testSource.getTestScenarios().sortedBy { it.testCaseId }

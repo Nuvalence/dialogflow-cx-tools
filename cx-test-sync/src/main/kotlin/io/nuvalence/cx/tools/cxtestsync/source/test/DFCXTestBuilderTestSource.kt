@@ -1,21 +1,19 @@
 package io.nuvalence.cx.tools.cxtestsync.source.test
 
 import com.google.cloud.dialogflow.cx.v3.*
-import com.google.protobuf.Descriptors.Descriptor
-import com.google.protobuf.Descriptors.FieldDescriptor
 import com.google.protobuf.FieldMask
 import com.google.protobuf.Value
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTestStep
-import io.nuvalence.cx.tools.cxtestsync.util.Properties
 import java.util.*
 
 class DFCXTestBuilderTestSource {
     companion object {
         val testClient: TestCasesClient = TestCasesClient.create(
             TestCasesSettings.newBuilder()
-                .setEndpoint(Properties.DFCX_ENDPOINT)
+                .setEndpoint(Properties.getProperty<String>("dfcxEndpoint"))
                 .build())
 
         val dfcxTestCases = Collections.synchronizedList(mutableListOf<TestCase>())
@@ -45,7 +43,7 @@ class DFCXTestBuilderTestSource {
         }
 
         val listTestCasesRequest = ListTestCasesRequest.newBuilder()
-            .setParent(Properties.AGENT_PATH)
+            .setParent(Properties.getProperty<String>("agentPath"))
             .setView(ListTestCasesRequest.TestCaseView.FULL)
             .setPageSize(20)
             .build()

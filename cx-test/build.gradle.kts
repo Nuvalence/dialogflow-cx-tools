@@ -1,7 +1,9 @@
+group = "io.nuvalence.cx-tools"
+version = "0.0.1"
+
 plugins {
     kotlin("jvm") version "1.7.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
-    application
 }
 
 repositories {
@@ -14,7 +16,9 @@ dependencies {
     implementation(project(":cx-shared"))
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
-    implementation("io.nuvalence.cx-tools:dol-ui-ccai-domain:0.0.1")
+
+    implementation("gov.ny.dol:dol-ui-ccai-domain:0.0.1")
+    implementation("io.nuvalence.cx-tools:cx-test-core:0.0.1")
 
     implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     implementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
@@ -30,14 +34,13 @@ dependencies {
 
 val reportDestinationPath = "$buildDir/reports/tests"
 
-tasks.register<JavaExec>("runTests") {
+tasks.register<JavaExec>("run") {
     val properties = listOf("agentPath", "spreadsheetId", "dfcxTagFilter", "credentialsUrl", "orchestrationMode", "matchingMode", "matchingRatio", "dfcxEndpoint")
     systemProperties(project.properties.filter { (key, _) -> key in properties })
 
     group = "application"
     mainClass.set("io.nuvalence.cx.tools.cxtest.Launcher")
     classpath = sourceSets["main"].runtimeClasspath
-    //args = listOf("arg1", "arg2") // If you have any arguments
 
     outputs.upToDateWhen { false }
 }

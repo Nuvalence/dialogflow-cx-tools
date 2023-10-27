@@ -1,13 +1,16 @@
-package gov.ny.dol.ui.ccai.dfcx.domain
+package gov.ny.dol.ui.ccai.dfcx.domain.test.spec
 
-import com.google.cloud.dialogflow.cx.v3beta1.*
+import com.google.cloud.dialogflow.cx.v3beta1.DetectIntentRequest
+import com.google.cloud.dialogflow.cx.v3beta1.QueryInput
+import com.google.cloud.dialogflow.cx.v3beta1.SessionName
+import com.google.cloud.dialogflow.cx.v3beta1.TextInput
 import gov.ny.dol.ui.ccai.dfcx.domain.assertion.ContextAwareAssertionError
 import gov.ny.dol.ui.ccai.dfcx.domain.assertion.assertFuzzyMatch
 import gov.ny.dol.ui.ccai.dfcx.domain.extension.SmokeTestExtension
 import gov.ny.dol.ui.ccai.dfcx.domain.listener.DynamicTestListener
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.TestScenario
 import gov.ny.dol.ui.ccai.dfcx.domain.orchestrator.ExecutionPath
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.parallel.Execution
@@ -16,7 +19,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ArgumentsSource
 import java.util.*
 
-
 @Execution(ExecutionMode.CONCURRENT)
 @Tag("smoke")
 @ExtendWith(DynamicTestListener::class, SmokeTestExtension::class)
@@ -24,7 +26,7 @@ class SmokeSpec {
     @ParameterizedTest(name = "{0}")
     @ArgumentsSource(SmokeTestExtension::class)
     fun testCases(testScenario: TestScenario, executionPath: ExecutionPath) {
-        val agentPath = Properties.AGENT_PATH
+        val agentPath = Properties.getProperty<String>("agentPath")
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
         val sessionPath =
             SessionName.format(projectId, location, agentId, "test-session-" + UUID.randomUUID())

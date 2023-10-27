@@ -1,6 +1,9 @@
-package gov.ny.dol.ui.ccai.dfcx.domain
+package gov.ny.dol.ui.ccai.dfcx.domain.test.spec
 
-import com.google.cloud.dialogflow.cx.v3.*
+import com.google.cloud.dialogflow.cx.v3.TestCase
+import com.google.cloud.dialogflow.cx.v3.TestCaseResult
+import com.google.cloud.dialogflow.cx.v3.TestResult
+import com.google.cloud.dialogflow.cx.v3.TestRunDifference
 import gov.ny.dol.ui.ccai.dfcx.domain.extension.DFCXTestBuilderExtension
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResult
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResultStep
@@ -37,7 +40,9 @@ class DFCXTestBuilderSpec {
         fullResult.conversationTurnsList.forEachIndexed { index, turn ->
             val resultStep = DFCXTestBuilderResultStep(
                 userInput = turn.userInput.input.text.text,
-                expectedAgentOutput = testCase.testCaseConversationTurnsList[index].virtualAgentOutput.textResponsesList.joinToString("\n") { responseMessage ->
+                expectedAgentOutput = testCase.testCaseConversationTurnsList[index].virtualAgentOutput.textResponsesList.joinToString(
+                    "\n"
+                ) { responseMessage ->
                     responseMessage.textList.reduce { acc, text -> acc + text }
                 },
                 actualAgentOutput = turn.virtualAgentOutput.textResponsesList.joinToString("\n") { responseMessage ->

@@ -1,31 +1,43 @@
 package io.nuvalence.cx.tools.cxtestsync.source.artifact
 
+import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.DFCXTestBuilderResultArtifactFormat as Model
+import gov.ny.dol.ui.ccai.dfcx.domain.artifact.DFCXSpreadsheetArtifact
 import io.nuvalence.cx.tools.shared.SheetReader
-import io.nuvalence.cx.tools.cxtestsync.model.artifact.DFCXTestSpreadsheetModel
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.cxtestsync.model.test.*
-import io.nuvalence.cx.tools.cxtestsync.util.Properties
+import java.net.URL
 
 class DFCXSpreadsheetArtifactSource {
     companion object {
-        val url = Properties.CREDENTIALS_URL
-        val spreadsheetId = Properties.SPREADSHEET_ID
-        val agentPath = Properties.AGENT_PATH
+        val url = Properties.getProperty<URL>("credentialsUrl")
+        val spreadsheetId = Properties.getProperty<String>("spreadsheetId")
+        val agentPath = Properties.getProperty<String>("agentPath")
 
-        lateinit var cols : Map<String, Int>
+        val rows : List<List<String>> = SheetReader(
+            url, spreadsheetId, DFCXSpreadsheetArtifact.sheetTitle
+        ).read()
+        val cols : Map<String, Int>
+
+        init {
+            val headerRow = rows[0].map { item -> item.trim() }
+            cols = Model.values().map{ it.headerName }.associateWith { colName -> headerRow.indexOf(colName) }
+            cols.forEach { (colName, value) ->
+                if(value == -1)
+                    throw Error("Column $colName could not be found in the spreadsheet")
+            }
+        }
+
+        fun getRowElement(colName: String, row: List<String>): String {
+            val rowIndex = cols[colName]!!
+            return if (rowIndex >= row.size) "" else row[rowIndex]
+        }
+
+        fun getRowElement(colName: Model, row: List<String>): String {
+            return getRowElement(colName.headerName, row)
+        }
     }
 
     fun getTestScenarios(): List<DFCXInjectableTest> {
-        val rows = SheetReader(
-            url, spreadsheetId, DFCXTestSpreadsheetModel.sheetTitle
-        ).read()
-
-        val headerRow = rows[0].map { item -> item.trim() }
-        cols = DFCXTestSpreadsheetModel.colNames.associateWith { colName -> headerRow.indexOf(colName) }
-        cols.forEach { (colName, value) ->
-            if(value == -1)
-                throw Error("Column $colName could not be found in the spreadsheet")
-        }
-
         var currentTestCaseName = ""
         var currentTestCaseId = ""
         var currentTags = ""
@@ -36,11 +48,6 @@ class DFCXSpreadsheetArtifactSource {
         val startingRow = 3
 
         val scenarios = rows.drop(2).foldIndexed(mutableListOf<DFCXInjectableTest>()) { index, acc, row ->
-            fun getRowElement(colName: String): String {
-                val rowIndex = cols[colName]!!
-                return if (rowIndex >= row.size) "" else row[rowIndex]
-            }
-
             fun processTags(tags: String): List<String> {
                 return tags.split("\n").map { it.trim() }
             }
@@ -58,7 +65,7 @@ class DFCXSpreadsheetArtifactSource {
                     )
                 )
                 testSteps = mutableListOf()
-            } else if (getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME).isNotEmpty()) {
+            } else if (getRowElement(Model.TEST_CASE_NAME, row).isNotEmpty()) {
                 // is test case
                 if (testSteps.isNotEmpty()) {
                     acc.add(
@@ -73,17 +80,17 @@ class DFCXSpreadsheetArtifactSource {
                     )
                     testSteps = mutableListOf()
                 }
-                currentTestCaseName = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME)
-                currentTestCaseId = "${agentPath}/testCases/${getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_ID)}"
-                currentTags = getRowElement(DFCXTestSpreadsheetModel.TAGS)
-                currentNotes = getRowElement(DFCXTestSpreadsheetModel.NOTES)
-                currentSsn = getRowElement(DFCXTestSpreadsheetModel.TEST_SSN)
+                currentTestCaseName = getRowElement(Model.TEST_CASE_NAME, row)
+                currentTestCaseId = "${agentPath}/testCases/${getRowElement(Model.TEST_CASE_ID, row)}"
+                currentTags = getRowElement(Model.TAGS, row)
+                currentNotes = getRowElement(Model.NOTES, row)
+                currentSsn = getRowElement(Model.TEST_SSN, row)
             } else {
                 // is test step
                 testSteps.add(
                     DFCXInjectableTestStep(
-                        getRowElement(DFCXTestSpreadsheetModel.USER_INPUT),
-                        getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT),
+                        getRowElement(Model.USER_INPUT, row),
+                        getRowElement(Model.AGENT_OUTPUT, row),
                         mapOf("" to "") // TODO: implement payload parsing
                     )
                 )

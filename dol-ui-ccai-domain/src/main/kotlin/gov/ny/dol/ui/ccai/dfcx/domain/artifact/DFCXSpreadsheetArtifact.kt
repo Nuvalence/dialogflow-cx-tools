@@ -7,13 +7,14 @@ import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.ResultDetails
 import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.ResultLabelFormat
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResult
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.ResultLabel
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.shared.*
+import java.net.URL
 import kotlin.properties.Delegates
 
 class DFCXSpreadsheetArtifact {
     companion object {
-        val url = Properties.CREDENTIALS_URL
+        val url = Properties.getProperty<URL>("credentialsUrl")
         var sheetId by Delegates.notNull<Int>()
 
         const val sheetTitle = "Test Results"

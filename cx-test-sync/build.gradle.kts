@@ -1,3 +1,6 @@
+group = "io.nuvalence.cx-tools"
+version = "0.0.1"
+
 plugins {
     kotlin("jvm") version "1.7.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
@@ -13,6 +16,9 @@ dependencies {
     implementation(project(":cx-shared"))
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
+
+    implementation("gov.ny.dol:dol-ui-ccai-domain:0.0.1")
+    implementation("io.nuvalence.cx-tools:cx-test-core:0.0.1")
 
     implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
     implementation("com.google.cloud:google-cloud-dialogflow-cx:0.25.0")

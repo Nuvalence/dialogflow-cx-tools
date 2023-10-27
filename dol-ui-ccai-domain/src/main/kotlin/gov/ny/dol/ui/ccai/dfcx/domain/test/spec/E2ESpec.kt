@@ -1,17 +1,16 @@
-package gov.ny.dol.ui.ccai.dfcx.domain
+package gov.ny.dol.ui.ccai.dfcx.domain.test.spec
 
 import com.google.cloud.dialogflow.cx.v3beta1.*
+import gov.ny.dol.ui.ccai.dfcx.domain.assertion.assertFuzzyMatch
 import gov.ny.dol.ui.ccai.dfcx.domain.orchestrator.OrchestratedTestMap
 import gov.ny.dol.ui.ccai.dfcx.domain.testsource.E2EFormatReader
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
-import gov.ny.dol.ui.ccai.dfcx.domain.assertion.assertFuzzyMatch
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import java.util.*
-
 
 @Execution(ExecutionMode.CONCURRENT)
 @Tag("e2e")
@@ -30,14 +29,14 @@ class E2ESpec {
 
     private val sessionClient: SessionsClient = SessionsClient.create(
         SessionsSettings.newBuilder()
-        .setEndpoint(Properties.DFCX_ENDPOINT)
-        .build()
+            .setEndpoint(Properties.getProperty<String>("dfcxEndpoint"))
+            .build()
     )
 
     @TestFactory
     fun testCases(): List<DynamicTest> {
-        println("Matching mode: ${Properties.MATCHING_MODE}")
-        val agentPath = Properties.AGENT_PATH
+        println("Matching mode: ${Properties.getProperty<String>("matchingMode")}")
+        val agentPath = Properties.getProperty<String>("agentPath")
         val (_, projectId, _, location, _, agentId) = agentPath.split("/")
         return e2eSheets.map { sheet ->
             OrchestratedTestMap(E2EFormatReader().read(sheet.key, sheet.value)).generatePairs()

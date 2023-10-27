@@ -6,7 +6,7 @@ import gov.ny.dol.ui.ccai.dfcx.domain.artifact.SpreadsheetArtifact
 import gov.ny.dol.ui.ccai.dfcx.domain.assertion.ContextAwareAssertionError
 import gov.ny.dol.ui.ccai.dfcx.domain.orchestrator.OrchestratedTestMap
 import gov.ny.dol.ui.ccai.dfcx.domain.testsource.SmokeFormatReader
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.params.provider.Arguments
@@ -23,8 +23,8 @@ class SmokeTestExtension : ArgumentsProvider, BeforeAllCallback, AfterAllCallbac
     }
 
     override fun beforeAll(context: ExtensionContext?) {
-        println("Agent: ${Properties.AGENT_PATH}")
-        println("Matching mode: ${Properties.MATCHING_MODE}")
+        println("Agent: ${Properties.getProperty<String>("agentPath")}")
+        println("Matching mode: ${Properties.getProperty<String>("matchingMode")}")
 
         val artifactSpreadsheetId = artifact.createArtifact("Smoke Spreadsheet ${
             SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
@@ -35,7 +35,7 @@ class SmokeTestExtension : ArgumentsProvider, BeforeAllCallback, AfterAllCallbac
 
         sessionClient = SessionsClient.create(
             SessionsSettings.newBuilder()
-                .setEndpoint(Properties.DFCX_ENDPOINT)
+                .setEndpoint(Properties.getProperty<String>("dfcxEndpoint"))
                 .build())
     }
 

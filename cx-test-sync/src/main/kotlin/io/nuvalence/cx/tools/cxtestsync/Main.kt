@@ -1,8 +1,7 @@
 package io.nuvalence.cx.tools.cxtestsync
 
 import io.nuvalence.cx.tools.cxtestsync.processor.SpreadsheetProcessor
-import io.nuvalence.cx.tools.cxtestsync.util.Properties
-import javax.naming.ConfigurationException
+import io.nuvalence.cx.tools.cxtestcore.Properties
 
 class Main {
     companion object {
@@ -14,7 +13,8 @@ class Main {
                 Properties.init(args[0])
             }
 
-            SpreadsheetProcessor().process()
+            val spreadsheetProcessor = SpreadsheetProcessor()
+            spreadsheetProcessor.process()
         }
     }
 

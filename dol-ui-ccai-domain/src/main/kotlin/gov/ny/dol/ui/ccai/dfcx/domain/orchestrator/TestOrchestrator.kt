@@ -1,7 +1,7 @@
 package gov.ny.dol.ui.ccai.dfcx.domain.orchestrator
 
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.TestScenario
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 
 data class ExecutionPath(val path: List<Int>) {
     operator fun get(index: Int): Int {
@@ -52,7 +52,7 @@ enum class TestOrchestrationMode(val value: String) {
 
 class OrchestratedTestMap(private val testMap: Map<TestScenario, List<ExecutionPath>>) {
     constructor(testScenarios: List<TestScenario>) : this(
-        TestOrchestrationMode.from(Properties.ORCHESTRATION_MODE).generateExecutionPaths(testScenarios)
+        TestOrchestrationMode.from(Properties.getProperty<String>("orchestrationMode")).generateExecutionPaths(testScenarios)
     )
 
     constructor(testScenarios: List<TestScenario>, orchestrationMode: String) : this(

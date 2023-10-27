@@ -3,13 +3,13 @@ package gov.ny.dol.ui.ccai.dfcx.domain.testsource
 import com.google.cloud.dialogflow.cx.v3.ListTestCasesRequest
 import com.google.cloud.dialogflow.cx.v3.TestCase
 import gov.ny.dol.ui.ccai.dfcx.domain.extension.DFCXTestBuilderExtension
-import gov.ny.dol.ui.ccai.dfcx.domain.util.Properties
+import io.nuvalence.cx.tools.cxtestcore.Properties
 import java.util.*
 
 class DFCXTestBuilderTestSource {
     fun getTestScenarios(): List<TestCase> {
         val listTestCasesRequest = ListTestCasesRequest.newBuilder()
-            .setParent(Properties.AGENT_PATH)
+            .setParent(Properties.getProperty<String>("agentPath"))
             .setView(ListTestCasesRequest.TestCaseView.FULL)
             .setPageSize(20)
             .build()
@@ -22,7 +22,7 @@ class DFCXTestBuilderTestSource {
         }
         testCaseList.sortBy { testCase -> testCase.name }
 
-        val tagFilter = Properties.DFCX_TAG_FILTER
+        val tagFilter = Properties.getProperty<String>("dfcxTagFilter")
 
         if (tagFilter != "ALL") {
             val tagFilters = tagFilter.split(',')
