@@ -5,8 +5,8 @@ import com.google.cloud.dialogflow.cx.v3.TestCaseResult
 import com.google.cloud.dialogflow.cx.v3.TestResult
 import com.google.cloud.dialogflow.cx.v3.TestRunDifference
 import gov.ny.dol.ui.ccai.dfcx.domain.extension.DFCXTestBuilderExtension
-import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResult
-import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResultStep
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTest
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestStep
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.ResultLabel
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Tag
@@ -21,13 +21,13 @@ import org.junit.jupiter.params.provider.ArgumentsSource
 @ExtendWith(DFCXTestBuilderExtension::class)
 class DFCXTestBuilderSpec {
     companion object {
-        val formattedResult: ThreadLocal<DFCXTestBuilderResult> = ThreadLocal()
+        val formattedResult: ThreadLocal<DFCXTest<DFCXTestStep>> = ThreadLocal()
     }
 
     @ParameterizedTest(name = "{0}")
     @ArgumentsSource(DFCXTestBuilderExtension::class)
     fun testCases(displayName: String, testCase: TestCase, testCaseResult: TestCaseResult) {
-        val testBuilderResult = DFCXTestBuilderResult(
+        val testBuilderResult = DFCXTest<DFCXTestStep>(
             testCaseId = testCase.name,
             testCaseName = testCase.displayName,
             tags = testCase.tagsList.map { tag -> tag.toString() },
@@ -38,7 +38,7 @@ class DFCXTestBuilderSpec {
         val fullResult = DFCXTestBuilderExtension.testClient.getTestCaseResult(testCaseResult.name)
 
         fullResult.conversationTurnsList.forEachIndexed { index, turn ->
-            val resultStep = DFCXTestBuilderResultStep(
+            val resultStep = DFCXTestStep(
                 userInput = turn.userInput.input.text.text,
                 expectedAgentOutput = testCase.testCaseConversationTurnsList[index].virtualAgentOutput.textResponsesList.joinToString(
                     "\n"

@@ -5,7 +5,8 @@ import com.google.cloud.dialogflow.cx.v3.TestRunDifference
 import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.ArtifactFormat
 import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.ResultDetails
 import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.ResultLabelFormat
-import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResult
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTest
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestStep
 import gov.ny.dol.ui.ccai.dfcx.domain.model.test.ResultLabel
 import io.nuvalence.cx.tools.cxtestcore.Properties
 import io.nuvalence.cx.tools.shared.*
@@ -29,7 +30,7 @@ class DFCXSpreadsheetArtifact {
         return spreadsheetId
     }
 
-    fun writeArtifact(spreadsheetId: String, formattedResultsList: List<DFCXTestBuilderResult>) {
+    fun writeArtifact(spreadsheetId: String, formattedResultsList: List<DFCXTest<DFCXTestStep>>) {
         val sheetWriter = SheetWriter(url, spreadsheetId)
 
         // Gather total rows

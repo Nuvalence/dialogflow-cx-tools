@@ -1,12 +1,13 @@
-package io.nuvalence.cx.tools.cxtestsync.processor
+package gov.ny.dol.ui.ccai.dfcx.domain.sync.processor
 
 import com.google.api.services.sheets.v4.model.*
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXInjectableTest
+import gov.ny.dol.ui.ccai.dfcx.domain.sync.source.DFCXSpreadsheetArtifactSource
+import gov.ny.dol.ui.ccai.dfcx.domain.sync.source.DFCXTestBuilderTestSource
 import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.DFCXTestBuilderResultArtifactFormat as Model
+import gov.ny.dol.ui.ccai.dfcx.domain.model.diff.DFCXTestDiff
+import io.nuvalence.cx.tools.cxtestcore.Processor
 import io.nuvalence.cx.tools.cxtestcore.Properties
-import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
-import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
-import io.nuvalence.cx.tools.cxtestsync.source.artifact.DFCXSpreadsheetArtifactSource
-import io.nuvalence.cx.tools.cxtestsync.source.test.DFCXTestBuilderTestSource
 import io.nuvalence.cx.tools.shared.SheetCopier
 import io.nuvalence.cx.tools.shared.SheetReader
 import io.nuvalence.cx.tools.shared.SheetWriter
@@ -14,7 +15,7 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 
-class SpreadsheetProcessor {
+class SpreadsheetProcessor : Processor() {
     companion object {
         val url = Properties.getProperty<URL>("credentialsUrl")
         val spreadsheetId = Properties.getProperty<String>("spreadsheetId")
@@ -64,7 +65,7 @@ class SpreadsheetProcessor {
         } else null
     }
 
-    fun process () {
+    override fun process () {
         val artifactSource = DFCXSpreadsheetArtifactSource()
         val testSource = DFCXTestBuilderTestSource()
 

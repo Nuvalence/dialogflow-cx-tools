@@ -3,7 +3,8 @@ package gov.ny.dol.ui.ccai.dfcx.domain.extension
 import com.google.cloud.dialogflow.cx.v3.*
 import gov.ny.dol.ui.ccai.dfcx.domain.test.spec.DFCXTestBuilderSpec
 import gov.ny.dol.ui.ccai.dfcx.domain.artifact.DFCXSpreadsheetArtifact
-import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestBuilderResult
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTest
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXTestStep
 import gov.ny.dol.ui.ccai.dfcx.domain.testsource.DFCXTestBuilderTestSource
 import io.nuvalence.cx.tools.cxtestcore.Properties
 import org.junit.jupiter.api.extension.AfterAllCallback
@@ -51,7 +52,7 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
             val resultsList = response.resultsList.sortedBy { result -> result.name }
 
             context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("testCaseEntries", testCaseList zip resultsList)
-            context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("formattedResultList", Collections.synchronizedList(mutableListOf<DFCXTestBuilderResult>()))
+            context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("formattedResultList", Collections.synchronizedList(mutableListOf<DFCXTest<DFCXTestStep>>()))
         }
     }
 
@@ -60,7 +61,7 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
 
         if (result != null) {
             println(result)
-            val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
+            val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTest<DFCXTestStep>>
             formattedResultList.add(result)
             DFCXTestBuilderSpec.formattedResult.remove()
         }
@@ -68,7 +69,7 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
 
     override fun afterAll(context: ExtensionContext?) {
         val artifactSpreadsheetId = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("artifactSpreadsheetId") as String
-        val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
+        val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTest<DFCXTestStep>>
         artifact.writeArtifact(artifactSpreadsheetId, formattedResultList)
 
         testClient.close()

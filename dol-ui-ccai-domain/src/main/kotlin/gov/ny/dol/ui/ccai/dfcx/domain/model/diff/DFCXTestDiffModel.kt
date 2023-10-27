@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.cxtestsync.model.diff
+package gov.ny.dol.ui.ccai.dfcx.domain.model.diff
 
 class DFCXTestDiff (
     val testCaseId: String,

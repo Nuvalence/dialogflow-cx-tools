@@ -1,7 +1,8 @@
 package io.nuvalence.cx.tools.cxtestsync
 
-import io.nuvalence.cx.tools.cxtestsync.processor.SpreadsheetProcessor
+import io.nuvalence.cx.tools.cxtestcore.Processor
 import io.nuvalence.cx.tools.cxtestcore.Properties
+import kotlin.reflect.full.createInstance
 
 class Main {
     companion object {
@@ -13,9 +14,9 @@ class Main {
                 Properties.init(args[0])
             }
 
-            val spreadsheetProcessor = SpreadsheetProcessor()
-            spreadsheetProcessor.process()
+            val processorClassName = Properties.getProperty<String>("processorClassName")
+            val processor = Class.forName(processorClassName).kotlin.createInstance() as Processor
+            processor.process()
         }
     }
-
 }

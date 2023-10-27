@@ -1,10 +1,11 @@
-package io.nuvalence.cx.tools.cxtestsync.source.artifact
+package gov.ny.dol.ui.ccai.dfcx.domain.sync.source
 
 import gov.ny.dol.ui.ccai.dfcx.domain.model.artifact.DFCXTestBuilderResultArtifactFormat as Model
 import gov.ny.dol.ui.ccai.dfcx.domain.artifact.DFCXSpreadsheetArtifact
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXInjectableTest
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXInjectableTestStep
 import io.nuvalence.cx.tools.shared.SheetReader
 import io.nuvalence.cx.tools.cxtestcore.Properties
-import io.nuvalence.cx.tools.cxtestsync.model.test.*
 import java.net.URL
 
 class DFCXSpreadsheetArtifactSource {
@@ -81,7 +82,7 @@ class DFCXSpreadsheetArtifactSource {
                     testSteps = mutableListOf()
                 }
                 currentTestCaseName = getRowElement(Model.TEST_CASE_NAME, row)
-                currentTestCaseId = "${agentPath}/testCases/${getRowElement(Model.TEST_CASE_ID, row)}"
+                currentTestCaseId = "$agentPath/testCases/${getRowElement(Model.TEST_CASE_ID, row)}"
                 currentTags = getRowElement(Model.TAGS, row)
                 currentNotes = getRowElement(Model.NOTES, row)
                 currentSsn = getRowElement(Model.TEST_SSN, row)

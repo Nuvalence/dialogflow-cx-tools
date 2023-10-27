@@ -66,5 +66,6 @@ enum class CXTestSyncPropertiesDefinition(val propertyName: String, val type: KC
     CREDENTIALS_URL("credentialsUrl", URL::class,true, "file:///path/to/creds/file.json"),
     AGENT_PATH("agentPath", String::class, true, "projects/<projectName>/locations/<location>/agents/<agentId>"),
     SPREADSHEET_ID("spreadsheetId", String::class, true, "the final segment of the spreadsheet URL, e.g. \"asdf\" if your spreadsheet URL is https://docs.google.com/spreadsheets/d/asdf"),
-    DFCX_ENDPOINT("dfcxEndpoint", String::class, false, "(<region>-)dialogflow.googleapis.com:443", );
+    DFCX_ENDPOINT("dfcxEndpoint", String::class, false, "(<region>-)dialogflow.googleapis.com:443"),
+    PROCESSOR_CLASS_NAME("processorClassName", String::class, false, "fully qualified domain name of processor class, e.g. \"gov.ny.dol.ui.ccai.dfcx.domain.sync.processor.SpreadsheetProcessor\"", "gov.ny.dol.ui.ccai.dfcx.domain.sync.processor.SpreadsheetProcessor");
 }

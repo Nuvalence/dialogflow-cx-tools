@@ -1,12 +1,12 @@
-package io.nuvalence.cx.tools.cxtestsync.source.test
+package gov.ny.dol.ui.ccai.dfcx.domain.sync.source
 
 import com.google.cloud.dialogflow.cx.v3.*
 import com.google.protobuf.FieldMask
 import com.google.protobuf.Value
+import gov.ny.dol.ui.ccai.dfcx.domain.model.diff.DFCXTestDiff
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXInjectableTest
+import gov.ny.dol.ui.ccai.dfcx.domain.model.test.DFCXInjectableTestStep
 import io.nuvalence.cx.tools.cxtestcore.Properties
-import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
-import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
-import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTestStep
 import java.util.*
 
 class DFCXTestBuilderTestSource {
@@ -28,9 +28,15 @@ class DFCXTestBuilderTestSource {
         return testCaseList.map { testCase ->
             val test = DFCXInjectableTest(testCase.name, testCase.displayName, testCase.tagsList, testCase.notes, "")
             val testSteps = testCase.testCaseConversationTurnsList.map { turn ->
-                DFCXInjectableTestStep(turn.userInput.input.text.text, turn.virtualAgentOutput.textResponsesList.joinToString("\n") { responseMessage ->
-                    responseMessage.textList.reduce { acc, text -> acc + text }
-                }, "", turn.virtualAgentOutput.currentPage.displayName, "", mapOf("" to ""))
+                DFCXInjectableTestStep(
+                    turn.userInput.input.text.text,
+                    turn.virtualAgentOutput.textResponsesList.joinToString("\n") { responseMessage -> responseMessage.textList.reduce { acc, text -> acc + text } },
+                    "",
+                    turn.virtualAgentOutput.currentPage.displayName,
+                    "",
+                    listOf(),
+                    mapOf("" to "")
+                )
             }
             test.resultSteps.addAll(testSteps)
             test
