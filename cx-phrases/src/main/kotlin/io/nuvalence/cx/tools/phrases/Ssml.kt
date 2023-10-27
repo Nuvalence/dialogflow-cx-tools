@@ -179,7 +179,7 @@ fun processUrl(url: String) =
 
 fun processNumber(number: String) =
     // if a number has more than 3 digits, say one digit at a time, and make sure we say "zero", not "oh"
-    (if (number.length > 3)
+    (if (number.length > 4)
         START_PROSODY_RATE + START_SAY_VERBATIM + number + END_SAY_VERBATIM + END_PROSODY_RATE
     else
         number
