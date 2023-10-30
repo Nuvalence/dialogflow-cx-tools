@@ -42,7 +42,7 @@ class DFCXSpreadsheetArtifactSource {
             }
 
             fun processTags(tags: String): List<String> {
-                return tags.split("\n").map { it.trim() }
+                return tags.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
             }
 
             if (row.isEmpty() || index >= rows.size - startingRow) {
