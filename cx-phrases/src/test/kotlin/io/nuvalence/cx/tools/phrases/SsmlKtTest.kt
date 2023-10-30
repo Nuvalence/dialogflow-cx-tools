@@ -90,8 +90,8 @@ Call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" g
     fun testProcessNumber() {
         var ssmlNumber = """<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim">123450</say-as></s></prosody><break time="300ms"/>"""
         assertEquals(ssmlNumber, processNumber("123450"))
-        var ssmlNumberNormal = """<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim">1564</say-as></s></prosody><break time="300ms"/>"""
-        assertEquals(ssmlNumberNormal, processNumber("1564"))
+        var ssmlNumberNormal = """<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim">15645</say-as></s></prosody><break time="300ms"/>"""
+        assertEquals(ssmlNumberNormal, processNumber("15645"))
         assertEquals("800", processNumber("800"))
     }
 
