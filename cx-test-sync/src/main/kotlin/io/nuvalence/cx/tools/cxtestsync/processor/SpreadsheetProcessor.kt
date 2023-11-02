@@ -2,8 +2,8 @@ package io.nuvalence.cx.tools.cxtestsync.processor
 
 import com.google.api.services.sheets.v4.model.*
 import io.nuvalence.cx.tools.cxtestsync.model.artifact.DFCXTestSpreadsheetModel
-import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTest
 import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
+import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
 import io.nuvalence.cx.tools.cxtestsync.source.artifact.DFCXSpreadsheetArtifactSource
 import io.nuvalence.cx.tools.cxtestsync.source.test.DFCXTestBuilderTestSource
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
@@ -44,18 +44,19 @@ class SpreadsheetProcessor () {
     }
 
 
-    private fun getTestDiff(sourceTest: DFCXTest, destinationTest: DFCXTest): DFCXTestDiff? {
+    private fun getTestDiff(sourceTest: DFCXInjectableTest, destinationTest: DFCXInjectableTest): DFCXTestDiff? {
         val testCaseNameDiff = sourceTest.testCaseName != destinationTest.testCaseName
         val tagsDiff = sourceTest.tags != destinationTest.tags
         val notesDiff = sourceTest.notes != destinationTest.notes
+        val ssnDiff = sourceTest.ssn.isNotEmpty()
 
-        return if (testCaseNameDiff || tagsDiff || notesDiff) {
-
+        return if (testCaseNameDiff || tagsDiff || notesDiff || ssnDiff) {
             DFCXTestDiff(
                 testCaseId = destinationTest.testCaseId,
                 testCaseName = if (testCaseNameDiff) { sourceTest.testCaseName } else null,
                 tags = if (tagsDiff) { sourceTest.tags } else null,
-                notes = if (notesDiff) { sourceTest.notes } else null
+                notes = if (notesDiff) { sourceTest.notes } else null,
+                ssn = if (ssnDiff) { sourceTest.ssn } else null
             )
         } else null
     }
@@ -76,7 +77,7 @@ class SpreadsheetProcessor () {
             val agentTest = agentTests.find { it.testCaseId == spreadsheetTest.testCaseId }
             if (agentTest != null) {
                 val testDiff = getTestDiff(spreadsheetTest, agentTest)
-                if (testDiff !== null) acc.add(testDiff)
+                if (testDiff != null) acc.add(testDiff)
             }
             acc
         }
@@ -94,10 +95,12 @@ class SpreadsheetProcessor () {
             println("The following tests are missing from the spreadsheet:\n${agentExclusives.joinToString("\n")}")
         }
 
-        println("Diffs:\n${diffs.joinToString("\n")}")
+        if (diffs.isNotEmpty()) {
+            println("Diffs:\n${diffs.joinToString("\n")}")
+        }
 
         testSource.applyDiffs(diffs)
 
-        println("Clean spreadsheet created, ID: $destinationSpreadsheetId")
+        println("Clean spreadsheet created, available at https://docs.google.com/spreadsheets/d/$destinationSpreadsheetId")
     }
 }

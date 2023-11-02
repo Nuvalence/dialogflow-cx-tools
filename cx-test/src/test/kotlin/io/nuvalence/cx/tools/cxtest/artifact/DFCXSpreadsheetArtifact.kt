@@ -44,10 +44,10 @@ class DFCXSpreadsheetArtifact {
         val resultDetails = mutableListOf<ResultDetails>()
         var rowCounter = DATA_START_ROW + 1;
         // For each test
-        formattedResultsList.forEach { result ->
+        formattedResultsList.sortedBy { result -> result.testCaseId } .forEach { result ->
             // Add display name, tags, notes
             requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_NAME.ordinal}${rowCounter}", result.testCaseName)
-            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_ID.ordinal}${rowCounter}", result.testCaseId)
+            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_ID.ordinal}${rowCounter}", result.testCaseId.split("/")[7])
             requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TAGS.ordinal}${rowCounter}", result.tags.joinToString("\n"))
             requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.NOTES.ordinal}${rowCounter}", result.notes)
             requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", result.result.value)
@@ -58,7 +58,7 @@ class DFCXSpreadsheetArtifact {
             // Add user input, agent output, status, error details
             result.resultSteps.forEach { resultStep ->
                 requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.USER_INPUT.ordinal}${rowCounter}", resultStep.userInput)
-                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.AGENT_OUTPUT.ordinal}${rowCounter}", resultStep.actualAgentOutput)
+                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.AGENT_OUTPUT.ordinal}${rowCounter}", resultStep.expectedAgentOutput)
                 requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", resultStep.result.value)
 
                 if (resultStep.result == ResultLabel.FAIL) {
@@ -82,7 +82,6 @@ class DFCXSpreadsheetArtifact {
 
         sheetWriter.batchUpdateCellContents(cellContentUpdateRequests)
 
-        // TODO: format test result details
         boldResultDetails(sheetWriter, resultDetails)
     }
 

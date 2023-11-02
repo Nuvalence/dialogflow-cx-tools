@@ -1,21 +1,20 @@
 package io.nuvalence.cx.tools.cxtestsync.source.artifact
 
 import io.nuvalence.cx.tools.shared.SheetReader
-import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTest
 import io.nuvalence.cx.tools.cxtestsync.model.artifact.DFCXTestSpreadsheetModel
-import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXTestStep
-import io.nuvalence.cx.tools.cxtestsync.model.test.ResultLabel
+import io.nuvalence.cx.tools.cxtestsync.model.test.*
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
 
 class DFCXSpreadsheetArtifactSource {
     companion object {
         val url = Properties.CREDENTIALS_URL
         val spreadsheetId = Properties.SPREADSHEET_ID
+        val agentPath = Properties.AGENT_PATH
 
         lateinit var cols : Map<String, Int>
     }
 
-    fun getTestScenarios(): List<DFCXTest> {
+    fun getTestScenarios(): List<DFCXInjectableTest> {
         val rows = SheetReader(
             url, spreadsheetId, DFCXTestSpreadsheetModel.sheetTitle
         ).read()
@@ -31,13 +30,15 @@ class DFCXSpreadsheetArtifactSource {
         var currentTestCaseId = ""
         var currentTags = ""
         var currentNotes = ""
-        var testSteps = mutableListOf<DFCXTestStep>()
+        var currentSsn = ""
+        var testSteps = mutableListOf<DFCXInjectableTestStep>()
 
         val startingRow = 3
 
-        val scenarios = rows.drop(2).foldIndexed(mutableListOf<DFCXTest>()) { index, acc, row ->
+        val scenarios = rows.drop(2).foldIndexed(mutableListOf<DFCXInjectableTest>()) { index, acc, row ->
             fun getRowElement(colName: String): String {
-                return row[cols[colName]!!]
+                val rowIndex = cols[colName]!!
+                return if (rowIndex >= row.size) "" else row[rowIndex]
             }
 
             fun processTags(tags: String): List<String> {
@@ -47,12 +48,13 @@ class DFCXSpreadsheetArtifactSource {
             if (row.isEmpty() || index >= rows.size - startingRow) {
                 // is empty or EOF
                 acc.add(
-                    DFCXTest(
+                    DFCXInjectableTest(
                         currentTestCaseId,
                         currentTestCaseName,
                         processTags(currentTags),
                         currentNotes,
-                        testSteps
+                        testSteps,
+                        currentSsn
                     )
                 )
                 testSteps = mutableListOf()
@@ -60,26 +62,29 @@ class DFCXSpreadsheetArtifactSource {
                 // is test case
                 if (testSteps.isNotEmpty()) {
                     acc.add(
-                        DFCXTest(
+                        DFCXInjectableTest(
                             currentTestCaseId,
                             currentTestCaseName,
                             processTags(currentTags),
                             currentNotes,
-                            testSteps
+                            testSteps,
+                            currentSsn
                         )
                     )
                     testSteps = mutableListOf()
                 }
                 currentTestCaseName = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_NAME)
-                currentTestCaseId = getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_ID)
+                currentTestCaseId = "${agentPath}/testCases/${getRowElement(DFCXTestSpreadsheetModel.TEST_CASE_ID)}"
                 currentTags = getRowElement(DFCXTestSpreadsheetModel.TAGS)
                 currentNotes = getRowElement(DFCXTestSpreadsheetModel.NOTES)
+                currentSsn = getRowElement(DFCXTestSpreadsheetModel.TEST_SSN)
             } else {
                 // is test step
                 testSteps.add(
-                    DFCXTestStep(
+                    DFCXInjectableTestStep(
                         getRowElement(DFCXTestSpreadsheetModel.USER_INPUT),
-                        getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT)
+                        getRowElement(DFCXTestSpreadsheetModel.AGENT_OUTPUT),
+                        mapOf("" to "") // TODO: implement payload parsing
                     )
                 )
             }
