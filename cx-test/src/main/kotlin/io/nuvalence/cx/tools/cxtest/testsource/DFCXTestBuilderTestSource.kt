@@ -32,7 +32,7 @@ class DFCXTestBuilderTestSource {
             println("Tag filters: $tagFilters")
 
             val filteredTestCaseList = testCaseList.filter { testCase ->
-                testCase.tagsList.containsAll(tagFilters)
+                tagFilters.isEmpty() || testCase.tagsList.containsAll(tagFilters)
             }.filter { testCase ->
                 !testCase.tagsList.any { tag -> tagExclusions.contains(tag) }
             }
