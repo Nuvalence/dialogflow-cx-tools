@@ -2,7 +2,7 @@ package io.nuvalence.cx.tools.cxtest.artifact
 
 import com.google.api.services.sheets.v4.model.*
 import com.google.cloud.dialogflow.cx.v3.TestRunDifference
-import io.nuvalence.cx.tools.cxtest.model.artifact.ArtifactFormat
+import io.nuvalence.cx.tools.cxtest.model.artifact.ResultArtifactFormat
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultDetails
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultLabelFormat
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
@@ -14,17 +14,22 @@ import kotlin.properties.Delegates
 class DFCXSpreadsheetArtifact {
     companion object {
         val url = Properties.CREDENTIALS_URL
-        var sheetId by Delegates.notNull<Int>()
+        var resultSheetId by Delegates.notNull<Int>()
+        var summarySheetId by Delegates.notNull<Int>()
 
-        const val sheetTitle = "Test Results"
+        const val resultSheetTitle = "Test Results"
+        const val summarySheetTitle = "Summary"
 
         private const val DATA_START_ROW = 2
     }
 
     fun createArtifact(title: String) : String {
         val spreadsheetId = SheetCreator(url).createNewSpreadsheet(title)
-        sheetId = SheetReader(url, spreadsheetId, "").getSheets().firstOrNull()?.properties?.sheetId!!
-        initializeResultsSheet(spreadsheetId)
+        SheetWriter(url, spreadsheetId).addTab(summarySheetTitle)
+        val sheets = SheetReader(url, spreadsheetId, "").getSheets()
+        resultSheetId = sheets.firstOrNull()?.properties?.sheetId!!
+        summarySheetId = sheets.lastOrNull()?.properties?.sheetId!!
+        initializeSheets(spreadsheetId)
         return spreadsheetId
     }
 
@@ -33,11 +38,11 @@ class DFCXSpreadsheetArtifact {
 
         // Gather total rows
         val totalRowCount = formattedResultsList.fold(0) { acc, result -> acc + result.resultSteps.size }
-        sheetWriter.addEmptyRows(totalRowCount+1, spreadsheetId, sheetTitle, sheetId, DATA_START_ROW)
+        sheetWriter.addEmptyRows(totalRowCount+1, spreadsheetId, resultSheetTitle, resultSheetId, DATA_START_ROW)
 
         // Header row
-        val requestData = ArtifactFormat.values().map { it.headerName }.withIndex().associate { e ->
-            "${sheetTitle}!${'A' + e.index}1" to e.value
+        val requestData = ResultArtifactFormat.values().map { it.headerName }.withIndex().associate { e ->
+            "${resultSheetTitle}!${'A' + e.index}1" to e.value
         }.toMutableMap()
 
         val resultDetails = mutableListOf<ResultDetails>()
@@ -45,20 +50,20 @@ class DFCXSpreadsheetArtifact {
         // For each test
         formattedResultsList.sortedBy { result -> result.testCaseId } .forEach { result ->
             // Add display name, tags, notes
-            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_NAME.ordinal}${rowCounter}", result.testCaseName)
-            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_CASE_ID.ordinal}${rowCounter}", result.testCaseId.split("/")[7])
-            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TAGS.ordinal}${rowCounter}", result.tags.joinToString("\n"))
-            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.NOTES.ordinal}${rowCounter}", result.notes)
-            requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", result.result.value)
+            requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.TEST_CASE_NAME.ordinal}${rowCounter}", result.testCaseName)
+            requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.TEST_CASE_ID.ordinal}${rowCounter}", result.testCaseId.split("/")[7])
+            requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.TAGS.ordinal}${rowCounter}", result.tags.joinToString("\n"))
+            requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.NOTES.ordinal}${rowCounter}", result.notes)
+            requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", result.result.value)
 
             rowCounter++
 
             // For each step
             // Add user input, agent output, status, error details
             result.resultSteps.forEach { resultStep ->
-                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.USER_INPUT.ordinal}${rowCounter}", resultStep.userInput)
-                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.AGENT_OUTPUT.ordinal}${rowCounter}", resultStep.expectedAgentOutput)
-                requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", resultStep.result.value)
+                requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.USER_INPUT.ordinal}${rowCounter}", resultStep.userInput)
+                requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.AGENT_OUTPUT.ordinal}${rowCounter}", resultStep.expectedAgentOutput)
+                requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.TEST_RESULT.ordinal}${rowCounter}", resultStep.result.value)
 
                 if (resultStep.result == ResultLabel.FAIL) {
                     val message = resultStep.diffs.joinToString("\n-----\n") {
@@ -67,8 +72,8 @@ class DFCXSpreadsheetArtifact {
                             else -> it.description
                         }
                     }
-                    requestData += Pair("${sheetTitle}!${'A' + ArtifactFormat.TEST_RESULT_DETAILS.ordinal}${rowCounter}", message)
-                    resultDetails.add(ResultDetails(message, rowCounter-1, ArtifactFormat.TEST_RESULT_DETAILS.ordinal))
+                    requestData += Pair("${resultSheetTitle}!${'A' + ResultArtifactFormat.TEST_RESULT_DETAILS.ordinal}${rowCounter}", message)
+                    resultDetails.add(ResultDetails(message, rowCounter-1, ResultArtifactFormat.TEST_RESULT_DETAILS.ordinal))
                 }
 
                 rowCounter++
@@ -117,7 +122,7 @@ class DFCXSpreadsheetArtifact {
                 .setTextFormatRuns(formatRuns)
 
             val gridCoordinate = GridCoordinate()
-                .setSheetId(sheetId)
+                .setSheetId(resultSheetId)
                 .setRowIndex(resultDetail.row)
                 .setColumnIndex(resultDetail.column)
 
@@ -134,35 +139,44 @@ class DFCXSpreadsheetArtifact {
         sheetWriter.batchUpdateSheets(requests)
     }
 
-    private fun initializeResultsSheet(destinationSpreadsheetId: String) {
+    private fun initializeSheets(destinationSpreadsheetId: String) {
         val sheetWriter = SheetWriter(url, destinationSpreadsheetId)
 
-        // Update sheet name
+        initializeResultSheet(sheetWriter)
+        initializeSummarySheet(sheetWriter)
+    }
+
+    private fun initializeSummarySheet(sheetWriter: SheetWriter) {
+
+    }
+
+    private fun initializeResultSheet(sheetWriter: SheetWriter) {
+        // Update result sheet name
         sheetWriter.batchUpdateSheets(listOf(
             Request().setUpdateSheetProperties(
-                UpdateSheetPropertiesRequest().setProperties(SheetProperties().setSheetId(sheetId).setTitle(
-                    sheetTitle)).setFields("title")
+                UpdateSheetPropertiesRequest().setProperties(SheetProperties().setSheetId(resultSheetId).setTitle(
+                    resultSheetTitle)).setFields("title")
             )))
 
-        // Format sheet
+        // Format result sheet
         val headerFormat = CellFormat()
             .setBackgroundColor(Color().setRed(0.8f).setGreen(0.8f).setBlue(0.8f))
             .setTextFormat(TextFormat().setBold(true))
-        val headerRange = GridRange().setSheetId(sheetId)
+        val headerRange = GridRange().setSheetId(resultSheetId)
             .setStartRowIndex(0).setEndRowIndex(1)
-            .setStartColumnIndex(0).setEndColumnIndex(ArtifactFormat.values().size)
+            .setStartColumnIndex(0).setEndColumnIndex(ResultArtifactFormat.values().size)
         val headerRequest = FormatUpdateRequest(headerRange, headerFormat)
 
         val separatorFormat = CellFormat().setBackgroundColor(Color().setRed(0.8f).setGreen(1.0f).setBlue(0.8f))
-        val separatorRange = GridRange().setSheetId(sheetId)
+        val separatorRange = GridRange().setSheetId(resultSheetId)
             .setStartRowIndex(1).setEndRowIndex(DATA_START_ROW)
-            .setStartColumnIndex(0).setEndColumnIndex(ArtifactFormat.values().size)
+            .setStartColumnIndex(0).setEndColumnIndex(ResultArtifactFormat.values().size)
         val separatorRequest = FormatUpdateRequest(separatorRange, separatorFormat)
 
         val dataFormatRequests = mutableListOf<FormatUpdateRequest>()
         val dataCellDimensionRequests = mutableListOf<Request>()
 
-        ArtifactFormat.values().forEach { format ->
+        ResultArtifactFormat.values().forEach { format ->
             val dataFormat = CellFormat()
                 .setWrapStrategy(format.wrapStrategy)
                 .setVerticalAlignment("TOP")
@@ -170,14 +184,14 @@ class DFCXSpreadsheetArtifact {
                 dataFormat.textFormat = TextFormat().setBold(true)
             }
 
-            val dataRange = GridRange().setSheetId(sheetId)
+            val dataRange = GridRange().setSheetId(resultSheetId)
                 .setStartRowIndex(DATA_START_ROW).setEndRowIndex(null)
                 .setStartColumnIndex(format.ordinal).setEndColumnIndex(format.ordinal + 1)
 
             val dataCellDimensionRequest = Request().setUpdateDimensionProperties(
                 UpdateDimensionPropertiesRequest()
                     .setRange(DimensionRange()
-                        .setSheetId(sheetId)
+                        .setSheetId(resultSheetId)
                         .setDimension("COLUMNS")
                         .setStartIndex(format.ordinal)
                         .setEndIndex(format.ordinal + 1)
@@ -193,9 +207,9 @@ class DFCXSpreadsheetArtifact {
         // Format dropdowns
         val dropdownRequests = mutableListOf<Request>()
 
-        val resultRange = GridRange().setSheetId(sheetId)
+        val resultRange = GridRange().setSheetId(resultSheetId)
             .setStartRowIndex(DATA_START_ROW).setEndRowIndex(null)
-            .setStartColumnIndex(ArtifactFormat.TEST_RESULT.ordinal).setEndColumnIndex(ArtifactFormat.TEST_RESULT.ordinal + 1)
+            .setStartColumnIndex(ResultArtifactFormat.TEST_RESULT.ordinal).setEndColumnIndex(ResultArtifactFormat.TEST_RESULT.ordinal + 1)
 
         ResultLabelFormat.values().forEach { entry ->
             val booleanCondition = BooleanCondition()

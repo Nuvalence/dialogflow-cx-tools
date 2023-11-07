@@ -16,5 +16,5 @@ enum class DFCXTestBuilderResultArtifactFormat(val headerName: String, val width
     data class ResultDetails(val message: String, val row: Int, val column: Int)
 }
 
-typealias ArtifactFormat = DFCXTestBuilderResultArtifactFormat
+typealias ResultArtifactFormat = DFCXTestBuilderResultArtifactFormat
 typealias ResultDetails = DFCXTestBuilderResultArtifactFormat.ResultDetails
