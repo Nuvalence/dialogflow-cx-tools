@@ -4,9 +4,8 @@ import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
 import io.nuvalence.cx.tools.cxtest.model.test.TestStep
 import io.nuvalence.cx.tools.cxtest.util.ACTION_MAPPINGS
 import io.nuvalence.cx.tools.cxtest.util.LANGUAGE_MAPPINGS
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import io.nuvalence.cx.tools.shared.SheetReader
-import java.net.URL
 
 class SmokeFormatReader : FormatReader {
     companion object {
@@ -18,8 +17,8 @@ class SmokeFormatReader : FormatReader {
         const val STEP_STATUS = "Step Status"
         const val COMMENTS = "Comments"
 
-        val url = PROPERTIES.CREDENTIALS_URL.get()!!
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()!!
+        val url = Properties.CREDENTIALS_URL
+        val spreadsheetId = Properties.SPREADSHEET_ID
 
         val colNames = listOf(TEST_CASE_ID, TEST_CASE_LANGUAGE, TEST_CASE_TITLE, USER_INPUT, EXPECTED_RESULT, STEP_STATUS, COMMENTS)
         lateinit var cols : Map<String, Int>
@@ -36,13 +35,29 @@ class SmokeFormatReader : FormatReader {
             sourceLocator = sourceLocator)
     }
 
+
+    /**
+     * Lists the sheets in the spreadsheet that start with the given prefix.
+     *
+     * @param prefix the prefix to filter the sheets by
+     * @return a list of sheet names
+     */
     fun listSheets(prefix: String): List<String> {
-        return SheetReader(URL(url), spreadsheetId, "").listSheets().filter { sheetName -> sheetName.startsWith(prefix) }
+        return SheetReader(url, spreadsheetId, "").listSheets().filter { sheetName -> sheetName.startsWith(prefix) }
     }
 
+
+    /**
+     * Reads a range of a Google Sheet and returns a list of test scenarios.
+     *
+     * @see SheetReader
+     * @param range the range of the Google Sheet to read
+     * @param languageCode the language code to use for the test scenarios
+     * @return a list of test scenarios
+     */
     override fun read(range: String): List<TestScenario> {
         val rows = SheetReader(
-            URL(url), spreadsheetId, range
+            url, spreadsheetId, range
         ).read()
 
         val headerRow = rows[0].map { item -> item.trim() }

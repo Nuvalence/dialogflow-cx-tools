@@ -1,7 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.orchestrator
 
 import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 
 data class ExecutionPath(val path: List<Int>) {
     operator fun get(index: Int): Int {
@@ -41,6 +41,14 @@ enum class TestOrchestrationMode(val value: String) {
         }
     };
 
+    /**
+     * Generates a map of test scenarios to execution paths. The execution paths are generated based on the test
+     * orchestration mode, in the order that the test scenarios are provided. Each execution path is a list of integers
+     * representing a permutation of the test steps in the test scenario based on possible inputs.
+     *
+     * @param testScenarios the list of test scenarios to generate execution paths for
+     * @return a map of test scenarios to execution paths
+     */
     abstract fun generateExecutionPaths(testScenarios: List<TestScenario>): Map<TestScenario, List<ExecutionPath>>
 
     companion object {
@@ -52,13 +60,19 @@ enum class TestOrchestrationMode(val value: String) {
 
 class OrchestratedTestMap(private val testMap: Map<TestScenario, List<ExecutionPath>>) {
     constructor(testScenarios: List<TestScenario>) : this(
-        TestOrchestrationMode.from(PROPERTIES.ORCHESTRATION_MODE.get()).generateExecutionPaths(testScenarios)
+        TestOrchestrationMode.from(Properties.ORCHESTRATION_MODE).generateExecutionPaths(testScenarios)
     )
 
     constructor(testScenarios: List<TestScenario>, orchestrationMode: String) : this(
         TestOrchestrationMode.from(orchestrationMode).generateExecutionPaths(testScenarios)
     )
 
+    /**
+     * Pairs up test scenarios with possible execution paths.
+     *
+     * @return a list of pairs of test scenarios and execution paths
+     * @see TestOrchestrationMode.generateExecutionPaths
+     */
     fun generatePairs(): List<Pair<TestScenario, ExecutionPath>> {
         return testMap.entries.map { (testScenario, executionPaths) ->
             executionPaths.map { executionPath ->

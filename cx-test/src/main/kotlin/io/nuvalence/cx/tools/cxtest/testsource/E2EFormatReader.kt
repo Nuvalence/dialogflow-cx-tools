@@ -2,9 +2,8 @@ package io.nuvalence.cx.tools.cxtest.testsource
 
 import io.nuvalence.cx.tools.cxtest.model.test.TestScenario
 import io.nuvalence.cx.tools.cxtest.model.test.TestStep
-import io.nuvalence.cx.tools.cxtest.util.PROPERTIES
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import io.nuvalence.cx.tools.shared.SheetReader
-import java.net.URL
 
 class E2EFormatReader {
     companion object {
@@ -25,11 +24,19 @@ class E2EFormatReader {
         )
     }
 
+    /**
+     * Reads a range of a Google Sheet and returns a list of test scenarios.
+     *
+     * @see SheetReader
+     * @param range the range of the Google Sheet to read
+     * @param languageCode the language code to use for the test scenarios
+     * @return a list of test scenarios
+     */
     fun read(range: String, languageCode: String): List<TestScenario> {
-        val url = PROPERTIES.CREDENTIALS_URL.get()!!
-        val spreadsheetId = PROPERTIES.SPREADSHEET_ID.get()!!
+        val url = Properties.CREDENTIALS_URL
+        val spreadsheetId = Properties.SPREADSHEET_ID
         val rows = SheetReader(
-            URL(url), spreadsheetId, range
+            url, spreadsheetId, range
         ).read()
 
         var currentSection = ""
