@@ -57,6 +57,7 @@ class Properties {
             val file = File(path)
             val stream = FileInputStream(file)
             properties.load(stream)
+            stream.close()
             validateProps()
             setProps()
         }
