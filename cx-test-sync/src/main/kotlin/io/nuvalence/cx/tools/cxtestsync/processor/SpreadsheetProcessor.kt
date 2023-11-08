@@ -61,6 +61,11 @@ class SpreadsheetProcessor () {
         } else null
     }
 
+    /**
+     * Processes the spreadsheet and test source, and outputs a copy spreadsheet with the results of the test source scrubbed.
+     * Also produces a list of diffs between the spreadsheet and test source, and updates the test source with the diffs.
+     */
+
     fun process () {
         val destinationSpreadsheetId = createArtifact("DFCX Synced Test Spreadsheet ${
             SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(

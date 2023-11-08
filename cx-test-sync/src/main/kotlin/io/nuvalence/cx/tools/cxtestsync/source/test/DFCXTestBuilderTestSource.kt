@@ -49,6 +49,13 @@ class DFCXTestBuilderTestSource {
         }
     }
 
+
+    /**
+     * Reads tests from a Dialogflow CX Agent and returns a list of test scenarios.
+     * The agent is derived from the agent path, supplied by the user via the properties file.
+     *
+     * @return a list of test scenarios
+     */
     fun getTestScenarios(): List<DFCXInjectableTest> {
         if (testScenarios.isNotEmpty()) {
             return testScenarios
@@ -113,6 +120,12 @@ class DFCXTestBuilderTestSource {
         return list
     }
 
+    /**
+     * Applies a list of diffs to the test source.
+     * The diffs are derived from the spreadsheet source.
+     *
+     * @param diffs a list of diffs
+     */
     fun applyDiffs(diffs: List<DFCXTestDiff>) {
         if (dfcxTestCases.isEmpty()) {
             getTestScenarios()

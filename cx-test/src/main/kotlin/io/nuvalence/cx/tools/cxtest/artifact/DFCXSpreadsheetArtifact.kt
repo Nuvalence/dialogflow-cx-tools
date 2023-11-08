@@ -21,6 +21,12 @@ class DFCXSpreadsheetArtifact {
         private const val DATA_START_ROW = 2
     }
 
+    /**
+     * Creates a new spreadsheet artifact and returns the spreadsheet ID
+     *
+     * @param title the title of the spreadsheet
+     * @return the spreadsheet ID
+     */
     fun createArtifact(title: String) : String {
         val spreadsheetId = SheetCreator(url).createNewSpreadsheet(title)
         sheetId = SheetReader(url, spreadsheetId, "").getSheets().firstOrNull()?.properties?.sheetId!!
@@ -28,6 +34,12 @@ class DFCXSpreadsheetArtifact {
         return spreadsheetId
     }
 
+    /**
+     * Writes the results to the spreadsheet
+     *
+     * @param spreadsheetId the ID of the spreadsheet to write to
+     * @param formattedResultsList the list of formatted results to write
+     */
     fun writeArtifact(spreadsheetId: String, formattedResultsList: List<DFCXTestBuilderResult>) {
         val sheetWriter = SheetWriter(url, spreadsheetId)
 

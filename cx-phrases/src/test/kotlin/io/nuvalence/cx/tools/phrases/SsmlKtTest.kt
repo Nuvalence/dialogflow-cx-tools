@@ -52,8 +52,12 @@ To request information or records, follow the instructions outlined at<break tim
 </speak>""", addSsmlTags("To request information or records, follow the instructions outlined at on.ny.gov/dcfaq ."))
 
         assertEquals("""<speak>
-Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">800-833-3000</say-as></prosody><break time="300ms"/>to schedule an appointment.
+Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">800-833-3000</say-as></prosody><break time="300ms"/> to schedule an appointment.
 </speak>""", addSsmlTags("Please call 800-833-3000 to schedule an appointment."))
+
+        assertEquals("""<speak>
+Call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">123-123-1234</say-as></prosody><break time="300ms"/>  or <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">""" + '$'.toString() + """flow.test-phone-number-var'</say-as></prosody><break time="300ms"/> to get in touch.
+</speak>""", addSsmlTags("Call 123-123-1234 or " + '$'.toString() + "flow.test-phone-number-var' to get in touch."))
 
         assert(!addSsmlTags("Do not process 1234567890 as a telephone number").contains("<say-as interpret-as=\"telephone\">"))
 
@@ -86,14 +90,14 @@ Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telep
     fun testProcessNumber() {
         var ssmlNumber = """<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim">123450</say-as></s></prosody><break time="300ms"/>"""
         assertEquals(ssmlNumber, processNumber("123450"))
-        var ssmlNumberNormal = """<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim">1564</say-as></s></prosody><break time="300ms"/>"""
-        assertEquals(ssmlNumberNormal, processNumber("1564"))
+        var ssmlNumberNormal = """<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim">15645</say-as></s></prosody><break time="300ms"/>"""
+        assertEquals(ssmlNumberNormal, processNumber("15645"))
         assertEquals("800", processNumber("800"))
     }
 
     @Test
     fun testProcessPhone() {
-        var ssmlPhone = """<break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">123-456-7890</say-as></prosody><break time="300ms"/>"""
+        var ssmlPhone = """<break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">123-456-7890</say-as></prosody><break time="300ms"/> """
         assertEquals(ssmlPhone, processPhone("123-456-7890"))
     }
 
