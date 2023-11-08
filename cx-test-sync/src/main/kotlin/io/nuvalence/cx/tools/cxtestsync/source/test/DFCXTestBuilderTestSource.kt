@@ -1,8 +1,6 @@
 package io.nuvalence.cx.tools.cxtestsync.source.test
 
 import com.google.cloud.dialogflow.cx.v3.*
-import com.google.protobuf.Descriptors.Descriptor
-import com.google.protobuf.Descriptors.FieldDescriptor
 import com.google.protobuf.FieldMask
 import com.google.protobuf.Value
 import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
@@ -27,10 +25,22 @@ class DFCXTestBuilderTestSource {
     }
 
     private fun convertTestScenarios(testCaseList: List<TestCase>): List<DFCXInjectableTest> {
+        fun getInput (turn: ConversationTurn): String {
+            return if (turn.userInput.input.dtmf.digits.isNotEmpty()) {
+                "[DTMF] ${turn.userInput.input.dtmf.digits}${if (turn.userInput.input.dtmf.finishDigit.isNotEmpty()) "|${turn.userInput.input.dtmf.finishDigit}" else ""}"
+            } else if (turn.userInput.input.event.event.isNotEmpty()) {
+                "[EVENT] ${turn.userInput.input.event.event}"
+            } else {
+                turn.userInput.input.text.text
+            }
+        }
+
         return testCaseList.map { testCase ->
             val test = DFCXInjectableTest(testCase.name, testCase.displayName, testCase.tagsList, testCase.notes, "")
             val testSteps = testCase.testCaseConversationTurnsList.map { turn ->
-                DFCXInjectableTestStep(turn.userInput.input.text.text, turn.virtualAgentOutput.textResponsesList.joinToString("\n") { responseMessage ->
+                val input = getInput(turn)
+
+                DFCXInjectableTestStep(input, turn.virtualAgentOutput.textResponsesList.joinToString("\n") { responseMessage ->
                     responseMessage.textList.reduce { acc, text -> acc + text }
                 }, "", turn.virtualAgentOutput.currentPage.displayName, "", mapOf("" to ""))
             }

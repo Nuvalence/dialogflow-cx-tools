@@ -34,9 +34,20 @@ class DFCXTestBuilderSpec {
 
         val fullResult = DFCXTestBuilderExtension.testClient.getTestCaseResult(testCaseResult.name)
 
+        fun getInput (turn: ConversationTurn): String {
+            return if (turn.userInput.input.dtmf.digits.isNotEmpty()) {
+                "[DTMF] ${turn.userInput.input.dtmf.digits}${if (turn.userInput.input.dtmf.finishDigit.isNotEmpty()) "|${turn.userInput.input.dtmf.finishDigit}" else ""}"
+            } else if (turn.userInput.input.event.event.isNotEmpty()) {
+                "[EVENT] ${turn.userInput.input.event.event}"
+            } else {
+                turn.userInput.input.text.text
+            }
+        }
+
         fullResult.conversationTurnsList.forEachIndexed { index, turn ->
+            val input = getInput(turn)
             val resultStep = DFCXTestBuilderResultStep(
-                userInput = turn.userInput.input.text.text,
+                userInput = input,
                 expectedAgentOutput = testCase.testCaseConversationTurnsList[index].virtualAgentOutput.textResponsesList.joinToString("\n") { responseMessage ->
                     responseMessage.textList.reduce { acc, text -> acc + text }
                 },
