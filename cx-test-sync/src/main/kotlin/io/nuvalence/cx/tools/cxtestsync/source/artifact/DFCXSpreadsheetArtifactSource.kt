@@ -14,6 +14,12 @@ class DFCXSpreadsheetArtifactSource {
         lateinit var cols : Map<String, Int>
     }
 
+    /**
+     * Reads tests from a Google Sheet and returns a list of test scenarios.
+     * The Google Sheet is derived from the spreadsheet ID and the sheet title, supplied by the user via the properties file.
+     *
+     * @return a list of test scenarios
+     */
     fun getTestScenarios(): List<DFCXInjectableTest> {
         val rows = SheetReader(
             url, spreadsheetId, DFCXTestSpreadsheetModel.sheetTitle
@@ -42,7 +48,7 @@ class DFCXSpreadsheetArtifactSource {
             }
 
             fun processTags(tags: String): List<String> {
-                return tags.split("\n").map { it.trim() }
+                return tags.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
             }
 
             if (row.isEmpty() || index >= rows.size - startingRow) {

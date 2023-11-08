@@ -17,12 +17,24 @@ class SpreadsheetArtifact {
         val agentPath = Properties.AGENT_PATH
     }
 
+    /**
+     * Creates a copy of the spreadsheet and updates the info sheet with the agent path.
+     *
+     * @param destinationTitle the title of the new spreadsheet
+     * @return the ID of the new spreadsheet
+     */
     fun createArtifact(destinationTitle: String) : String {
         val destinationSpreadsheetId = SheetCopier(url, spreadsheetId).copySpreadsheet(destinationTitle)
         updateInfoSheet(destinationSpreadsheetId)
         return destinationSpreadsheetId
     }
 
+    /**
+     * Writes result data to a spreadsheet.
+     *
+     * @param spreadsheetId the ID of the spreadsheet to write to
+     * @param requestData a map of cell names to values
+     */
     fun writeArtifact(spreadsheetId: String, requestData: Map<String, String>) {
         val cellContentUpdateRequests = requestData.map { (k, v) ->
             CellContentUpdateRequest(k, v)
