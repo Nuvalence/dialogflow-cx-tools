@@ -1,6 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.artifact
 
 import com.google.api.services.sheets.v4.model.*
+import com.google.cloud.dialogflow.cx.v3.AgentsClient
 import com.google.cloud.dialogflow.cx.v3.TestRunDifference
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultArtifactFormat
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultDetails
@@ -27,18 +28,40 @@ class DFCXSpreadsheetArtifact {
     }
 
     data class SummaryInfo(val agentPath: String) {
-        lateinit var agentName: String
+        val agentName: String
         lateinit var testTimestamp: String
         lateinit var tagsIncluded: String
         lateinit var tagsExcluded: String
         var testsRun by Delegates.notNull<Int>()
         var testsPassed by Delegates.notNull<Int>()
         var testsFailed by Delegates.notNull<Int>()
-        lateinit var transitions: String
-        lateinit var intents: String
-        lateinit var routeGroups: String
-    }
+        lateinit var transitionsCoverage: String
+        lateinit var intentsCoverage: String
+        lateinit var routeGroupsCoverage: String
 
+        init {
+            agentName = AgentsClient.create().use { agentsClient ->
+                val agent = agentsClient.getAgent(Properties.AGENT_PATH)
+                agent.displayName
+            }
+        }
+
+        fun getMap() : Map<String, String> {
+            return mapOf(
+                "Agent Path" to agentPath,
+                "Agent Name" to agentName,
+                "Test Timestamp" to testTimestamp,
+                "Tags Included" to tagsIncluded,
+                "Tags Excluded" to tagsExcluded,
+                "Tests Run" to testsRun.toString(),
+                "Tests Passed" to testsPassed.toString(),
+                "Tests Failed" to testsFailed.toString(),
+                "Transitions" to transitionsCoverage,
+                "Intents" to intentsCoverage,
+                "Route Groups" to routeGroupsCoverage
+            )
+        }
+    }
 
     /**
      * Creates a new spreadsheet artifact and returns the spreadsheet ID
@@ -65,6 +88,15 @@ class DFCXSpreadsheetArtifact {
     fun writeArtifact(spreadsheetId: String, formattedResultsList: List<DFCXTestBuilderResult>) {
         val sheetWriter = SheetWriter(url, spreadsheetId)
 
+        try {
+            writeArtifactResults(sheetWriter, spreadsheetId, formattedResultsList)
+            writeArtifactSummary(sheetWriter)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun writeArtifactResults(sheetWriter: SheetWriter, spreadsheetId: String, formattedResultsList: List<DFCXTestBuilderResult>) {
         // Gather total rows
         val totalRowCount = formattedResultsList.fold(0) { acc, result -> acc + result.resultSteps.size }
         sheetWriter.addEmptyRows(totalRowCount+1, spreadsheetId, resultSheetTitle, resultSheetId, RESULT_DATA_START_ROW)
@@ -116,6 +148,31 @@ class DFCXSpreadsheetArtifact {
         sheetWriter.batchUpdateCellContents(cellContentUpdateRequests)
 
         boldResultDetails(sheetWriter, resultDetails)
+    }
+
+    private fun writeArtifactSummary(sheetWriter: SheetWriter) {
+        // Header row
+        val requestData = SummaryArtifactFormat.values().map { it.categoryName }.withIndex().associate { e ->
+            "${summarySheetTitle}!${'A' + e.index * 2}1" to e.value
+        }.toMutableMap()
+
+        // Data column labels
+        SummaryArtifactFormat.values().forEach { category ->
+            category.dataPoints.forEachIndexed { index, dataPoint ->
+                // Data label
+                requestData += Pair("${summarySheetTitle}!${'A' + category.ordinal * 2}${SUMMARY_DATA_START_ROW + index + 1}", dataPoint.labelName)
+
+                // Data
+                val data = summaryInfo.getMap().getValue(dataPoint.labelName)
+                requestData += Pair("${summarySheetTitle}!${'A' + category.ordinal * 2 + 1}${SUMMARY_DATA_START_ROW + index + 1}", data)
+            }
+        }
+
+        val cellContentUpdateRequests = requestData.map { (k, v) ->
+            CellContentUpdateRequest(k, v)
+        }
+
+        sheetWriter.batchUpdateCellContents(cellContentUpdateRequests)
     }
 
     private fun boldResultDetails(sheetWriter: SheetWriter, resultDetails: List<ResultDetails>) {

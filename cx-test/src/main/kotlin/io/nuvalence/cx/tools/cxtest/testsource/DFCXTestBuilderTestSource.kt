@@ -2,6 +2,7 @@ package io.nuvalence.cx.tools.cxtest.testsource
 
 import com.google.cloud.dialogflow.cx.v3.ListTestCasesRequest
 import com.google.cloud.dialogflow.cx.v3.TestCase
+import io.nuvalence.cx.tools.cxtest.artifact.DFCXSpreadsheetArtifact
 import io.nuvalence.cx.tools.cxtest.extension.DFCXTestBuilderExtension
 import io.nuvalence.cx.tools.cxtest.util.Properties
 import java.util.*
@@ -39,6 +40,9 @@ class DFCXTestBuilderTestSource {
             println("Found ${filteredTestCaseList.size} tests")
             return filteredTestCaseList
         }
+
+        DFCXSpreadsheetArtifact.summaryInfo.tagsIncluded = ""
+        DFCXSpreadsheetArtifact.summaryInfo.tagsExcluded = ""
 
         println("Found ${testCaseList.size} tests")
         return testCaseList

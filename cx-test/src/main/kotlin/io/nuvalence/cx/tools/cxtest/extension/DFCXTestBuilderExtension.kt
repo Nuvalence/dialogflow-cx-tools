@@ -45,16 +45,22 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
         DFCXSpreadsheetArtifact.summaryInfo.testsPassed = 0
         DFCXSpreadsheetArtifact.summaryInfo.testsFailed = 0
 
-        val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
-            .setParent(Properties.AGENT_PATH)
-            .addAllTestCases(testCaseList.map { testCase -> testCase.name })
-            .build()
+        try {
+            val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
+                .setParent(Properties.AGENT_PATH)
+                .addAllTestCases(testCaseList.map { testCase -> testCase.name })
+                .build()
 
-        val response = testClient.batchRunTestCasesAsync(request).get()
-        val resultsList = response.resultsList.sortedBy { result -> result.name }
+            val response = testClient.batchRunTestCasesAsync(request).get()
+            val resultsList = response.resultsList.sortedBy { result -> result.name }
 
-        context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("testCaseEntries", testCaseList zip resultsList)
-        context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("formattedResultList", Collections.synchronizedList(mutableListOf<DFCXTestBuilderResult>()))
+            context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
+                ?.put("testCaseEntries", testCaseList zip resultsList)
+            context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
+                ?.put("formattedResultList", Collections.synchronizedList(mutableListOf<DFCXTestBuilderResult>()))
+        } catch (e: Exception) {
+            println("Error running tests: ${e.message}")
+        }
     }
 
     override fun afterTestExecution(context: ExtensionContext?) {
@@ -77,6 +83,29 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
     override fun afterAll(context: ExtensionContext?) {
         val artifactSpreadsheetId = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("artifactSpreadsheetId") as String
         val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
+        try {
+            val intentCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
+                .setAgent(Properties.AGENT_PATH)
+                .setType(CalculateCoverageRequest.CoverageType.INTENT)
+                .build())
+            DFCXSpreadsheetArtifact.summaryInfo.intentsCoverage = "${(intentCoverage.intentCoverage.coverageScore * 100)}%"
+
+            val transitionCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
+                .setAgent(Properties.AGENT_PATH)
+                .setType(CalculateCoverageRequest.CoverageType.PAGE_TRANSITION)
+                .build())
+            DFCXSpreadsheetArtifact.summaryInfo.transitionsCoverage =
+                "${(transitionCoverage.transitionCoverage.coverageScore * 100)}%"
+
+            val routeGroupsCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
+                .setAgent(Properties.AGENT_PATH)
+                .setType(CalculateCoverageRequest.CoverageType.TRANSITION_ROUTE_GROUP)
+                .build())
+            DFCXSpreadsheetArtifact.summaryInfo.routeGroupsCoverage = "${(routeGroupsCoverage.routeGroupCoverage.coverageScore * 100)}%"
+        } catch (e: Exception) {
+            println("Error calculating coverage: ${e.message}")
+        }
+
         artifact.writeArtifact(artifactSpreadsheetId, formattedResultList)
 
         testClient.close()
