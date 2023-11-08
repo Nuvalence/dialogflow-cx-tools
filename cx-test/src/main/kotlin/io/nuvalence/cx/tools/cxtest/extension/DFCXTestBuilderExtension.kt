@@ -40,10 +40,16 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
 
         val testCaseList = DFCXTestBuilderTestSource().getTestScenarios()
 
+        if (testCaseList.isEmpty()) {
+            println("No test cases found")
+            return
+        }
+
         val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
             .setParent(Properties.AGENT_PATH)
             .addAllTestCases(testCaseList.map { testCase -> testCase.name })
             .build()
+
 
         val response = testClient.batchRunTestCasesAsync(request).get()
         val resultsList = response.resultsList.sortedBy { result -> result.name }
