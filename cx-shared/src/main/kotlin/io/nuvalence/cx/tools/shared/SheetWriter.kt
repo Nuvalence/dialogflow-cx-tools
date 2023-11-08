@@ -127,12 +127,6 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
         val requests = ArrayList<Request>()
 
         updateRequests.forEach { request ->
-            if (request.format.backgroundColor != null) {
-                println(request.range.sheetId)
-                println(request.range.startRowIndex)
-                println(request.range.endRowIndex)
-                println(request.format.backgroundColor)
-            }
             val repeatCellRequest = RepeatCellRequest()
                 .setRange(request.range)
                 .setCell(CellData().setUserEnteredFormat(request.format))

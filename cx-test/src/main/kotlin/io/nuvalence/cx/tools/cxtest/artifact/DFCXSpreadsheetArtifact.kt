@@ -15,6 +15,7 @@ import kotlin.properties.Delegates
 class DFCXSpreadsheetArtifact {
     companion object {
         val url = Properties.CREDENTIALS_URL
+        val summaryInfo = SummaryInfo(Properties.AGENT_PATH)
         var resultSheetId by Delegates.notNull<Int>()
         var summarySheetId by Delegates.notNull<Int>()
 
@@ -24,6 +25,20 @@ class DFCXSpreadsheetArtifact {
         private const val RESULT_DATA_START_ROW = 2
         private const val SUMMARY_DATA_START_ROW = 1
     }
+
+    data class SummaryInfo(val agentPath: String) {
+        lateinit var agentName: String
+        lateinit var testTimestamp: String
+        lateinit var tagsIncluded: String
+        lateinit var tagsExcluded: String
+        var testsRun by Delegates.notNull<Int>()
+        var testsPassed by Delegates.notNull<Int>()
+        var testsFailed by Delegates.notNull<Int>()
+        lateinit var transitions: String
+        lateinit var intents: String
+        lateinit var routeGroups: String
+    }
+
 
     fun createArtifact(title: String) : String {
         val spreadsheetId = SheetCreator(url).createNewSpreadsheet(title)

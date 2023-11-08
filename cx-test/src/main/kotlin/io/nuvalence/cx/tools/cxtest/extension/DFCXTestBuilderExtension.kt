@@ -4,6 +4,7 @@ import com.google.cloud.dialogflow.cx.v3.*
 import io.nuvalence.cx.tools.cxtest.DFCXTestBuilderSpec
 import io.nuvalence.cx.tools.cxtest.artifact.DFCXSpreadsheetArtifact
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
+import io.nuvalence.cx.tools.cxtest.model.test.ResultLabel
 import io.nuvalence.cx.tools.cxtest.testsource.DFCXTestBuilderTestSource
 import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.jupiter.api.extension.AfterAllCallback
@@ -26,10 +27,11 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
         println("Agent: ${Properties.AGENT_PATH}")
         println("Creds URL: ${Properties.CREDENTIALS_URL}")
 
-        val artifactSpreadsheetId = artifact.createArtifact("DFCX Test Builder Spreadsheet ${
-            SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
-                Date()
-            )}")
+        val currentTimestamp = Date()
+        val timestampString = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(currentTimestamp)
+        DFCXSpreadsheetArtifact.summaryInfo.testTimestamp = timestampString
+
+        val artifactSpreadsheetId = artifact.createArtifact("DFCX Test Builder Spreadsheet $timestampString")
         context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("artifactSpreadsheetId", artifactSpreadsheetId)
         println("Created spreadsheet https://docs.google.com/spreadsheets/d/$artifactSpreadsheetId")
 
@@ -39,6 +41,9 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
                 .build())
 
         val testCaseList = DFCXTestBuilderTestSource().getTestScenarios()
+        DFCXSpreadsheetArtifact.summaryInfo.testsRun = testCaseList.size
+        DFCXSpreadsheetArtifact.summaryInfo.testsPassed = 0
+        DFCXSpreadsheetArtifact.summaryInfo.testsFailed = 0
 
         val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
             .setParent(Properties.AGENT_PATH)
@@ -56,7 +61,13 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
         val result = DFCXTestBuilderSpec.formattedResult.get()
 
         if (result != null) {
-            println(result)
+            //println(result)
+            if (result.result == ResultLabel.PASS) {
+                DFCXSpreadsheetArtifact.summaryInfo.testsPassed++
+            } else {
+                DFCXSpreadsheetArtifact.summaryInfo.testsFailed++
+            }
+
             val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
             formattedResultList.add(result)
             DFCXTestBuilderSpec.formattedResult.remove()
