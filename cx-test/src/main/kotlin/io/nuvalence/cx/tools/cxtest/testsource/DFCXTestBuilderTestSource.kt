@@ -31,17 +31,23 @@ class DFCXTestBuilderTestSource {
         val tagFilter = Properties.DFCX_TAG_FILTER
 
         if (tagFilter != "ALL") {
-            val tagFilters = tagFilter.split(',')
+            val (tagExclusionsRaw, tagFilters) = tagFilter.split(',').partition { it.startsWith('!') }
+            val tagExclusions = tagExclusionsRaw.map { it.substring(1) }
+
+            DFCXSpreadsheetArtifact.summaryInfo.tagsIncluded = tagFilters.joinToString(", ")
+            DFCXSpreadsheetArtifact.summaryInfo.tagsExcluded = tagExclusions.joinToString(", ")
 
             val filteredTestCaseList = testCaseList.filter { testCase ->
-                testCase.tagsList.containsAll(tagFilters)
+                tagFilters.isEmpty() || testCase.tagsList.containsAll(tagFilters)
+            }.filter { testCase ->
+                !testCase.tagsList.any { tag -> tagExclusions.contains(tag) }
             }
 
             println("Found ${filteredTestCaseList.size} tests")
             return filteredTestCaseList
         }
 
-        DFCXSpreadsheetArtifact.summaryInfo.tagsIncluded = ""
+        DFCXSpreadsheetArtifact.summaryInfo.tagsIncluded = "ALL"
         DFCXSpreadsheetArtifact.summaryInfo.tagsExcluded = ""
 
         println("Found ${testCaseList.size} tests")

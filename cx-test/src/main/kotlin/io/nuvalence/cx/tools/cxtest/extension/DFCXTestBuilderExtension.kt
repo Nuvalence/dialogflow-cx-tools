@@ -41,6 +41,11 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
                 .build())
 
         val testCaseList = DFCXTestBuilderTestSource().getTestScenarios()
+        if (testCaseList.isEmpty()) {
+            println("No test cases found")
+            return
+        }
+
         DFCXSpreadsheetArtifact.summaryInfo.testsRun = testCaseList.size
         DFCXSpreadsheetArtifact.summaryInfo.testsPassed = 0
         DFCXSpreadsheetArtifact.summaryInfo.testsFailed = 0
