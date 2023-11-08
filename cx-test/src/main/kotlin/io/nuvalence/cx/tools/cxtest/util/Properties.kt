@@ -46,6 +46,14 @@ class Properties {
         private val defaultProperties = java.util.Properties()
         private lateinit var properties: java.util.Properties
 
+        /**
+         * Initializes the properties from the given path.
+         *
+         * @param path the path to the properties file
+         * @throws ConfigurationException if a required property is missing
+         * @throws IllegalArgumentException if a property is not of the expected type
+         * @throws IllegalStateException if a property is set more than once, is not initialized upon access, is not mutable, or is not a member of the companion object
+         */
         fun init(path: String) {
             PropertiesDefinition.values().forEach { propertyDefinition ->
                 if (propertyDefinition.default != null) {

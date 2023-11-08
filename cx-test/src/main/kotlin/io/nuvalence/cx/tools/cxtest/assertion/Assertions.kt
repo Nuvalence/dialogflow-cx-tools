@@ -26,6 +26,14 @@ enum class MatchingMode(val value: String) {
         }
     };
 
+    /**
+     * Asserts that the actual string matches the expected string with a fuzzy match.
+     *
+     * @param input the input string
+     * @param expected the expected string
+     * @param actual the actual string
+     * @param expectedRatio the expected fuzzy match ratio
+     */
     abstract fun assertFuzzyMatchString(input: String, expected: String, actual: String, expectedRatio: Int)
 
     companion object {
@@ -34,6 +42,12 @@ enum class MatchingMode(val value: String) {
     }
 }
 
+/**
+ * Asserts that the actual string matches the expected string with a fuzzy match.
+ *
+ * @param input the input string
+ * @param expected the expected string
+ */
 fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessage>) {
     val matchingMode = MatchingMode.from(Properties.MATCHING_MODE)
     val expectedRatio = Properties.MATCHING_RATIO
@@ -45,6 +59,11 @@ fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessa
     matchingMode.assertFuzzyMatchString(input, expected, newActual, expectedRatio)
 }
 
+/**
+ * Strips SSML tags from a string.
+ *
+ * @param input the input string
+ */
 fun stripSsml(input: String): String {
     return input.replace(Regex("<.*?>"), "")
 }

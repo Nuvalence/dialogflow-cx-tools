@@ -24,6 +24,14 @@ class E2EFormatReader {
         )
     }
 
+    /**
+     * Reads a range of a Google Sheet and returns a list of test scenarios.
+     *
+     * @see SheetReader
+     * @param range the range of the Google Sheet to read
+     * @param languageCode the language code to use for the test scenarios
+     * @return a list of test scenarios
+     */
     fun read(range: String, languageCode: String): List<TestScenario> {
         val url = Properties.CREDENTIALS_URL
         val spreadsheetId = Properties.SPREADSHEET_ID
