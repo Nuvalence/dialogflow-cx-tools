@@ -15,7 +15,7 @@ import java.util.jar.JarFile
 
 class Launcher {
     companion object {
-        fun findClassesInPackage(packageName: String): List<String> {
+        private fun findClassesInPackage(packageName: String): List<String> {
             val classNames = mutableListOf<String>()
             val path = packageName.replace('.', '/')
             val resources: Enumeration<URL> = Thread.currentThread().contextClassLoader.getResources(path)
@@ -33,7 +33,7 @@ class Launcher {
             return classNames
         }
 
-        fun getClassNamesFromJar(jarPath: String, path: String): List<String> {
+        private fun getClassNamesFromJar(jarPath: String, path: String): List<String> {
             val classNames = mutableListOf<String>()
 
             JarFile(jarPath).use { jar ->
@@ -50,7 +50,7 @@ class Launcher {
             return classNames
         }
 
-        fun getClassNamesFromFile(buildDir: String, path: String): List<String> {
+        private fun getClassNamesFromFile(buildDir: String, path: String): List<String> {
             val baseDir = File(buildDir)
             return baseDir.walkTopDown()
                 .filter { it.isFile && it.extension == "class" }
