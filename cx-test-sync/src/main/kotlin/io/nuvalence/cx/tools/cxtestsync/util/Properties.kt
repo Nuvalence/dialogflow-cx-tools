@@ -37,10 +37,19 @@ class Properties {
 
         private val props = java.util.Properties()
 
+        /**
+         * Initializes the properties from the given path.
+         *
+         * @param path the path to the properties file
+         * @throws ConfigurationException if a required property is missing
+         * @throws IllegalArgumentException if a property is not of the expected type
+         * @throws IllegalStateException if a property is set more than once, is not initialized upon access, is not mutable, or is not a member of the companion object
+         */
         fun init(path: String) {
             val file = File(path)
             val stream = FileInputStream(file)
             props.load(stream)
+            stream.close()
             validateProps()
             setProps()
         }

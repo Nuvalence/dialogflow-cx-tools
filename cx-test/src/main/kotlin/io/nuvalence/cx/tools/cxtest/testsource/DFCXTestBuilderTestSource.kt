@@ -7,6 +7,11 @@ import io.nuvalence.cx.tools.cxtest.util.Properties
 import java.util.*
 
 class DFCXTestBuilderTestSource {
+    /**
+     * Get all test scenarios from the agent. Tests are filtered by the DFCX_TAG_FILTER environment variable.
+     *
+     * @return List of test scenarios
+     */
     fun getTestScenarios(): List<TestCase> {
         val listTestCasesRequest = ListTestCasesRequest.newBuilder()
             .setParent(Properties.AGENT_PATH)
