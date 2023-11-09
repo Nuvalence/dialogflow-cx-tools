@@ -68,13 +68,9 @@ class DFCXTestBuilderSpec {
             testBuilderResult.resultSteps.add(resultStep)
         }
 
-        if(testBuilderResult.resultSteps.any { resultStep ->
+        if(testCaseResult.testResult == TestResult.FAILED || testBuilderResult.resultSteps.any { resultStep ->
             resultStep.result == ResultLabel.FAIL
         }) {
-            testBuilderResult.result = ResultLabel.FAIL
-        }
-
-        if (testCaseResult.testResult == TestResult.FAILED) {
             testBuilderResult.result = ResultLabel.FAIL
             Assertions.fail<AssertionError>("Test failed")
         }

@@ -4,6 +4,7 @@ import com.google.cloud.dialogflow.cx.v3.*
 import io.nuvalence.cx.tools.cxtest.DFCXTestBuilderSpec
 import io.nuvalence.cx.tools.cxtest.artifact.DFCXSpreadsheetArtifact
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
+import io.nuvalence.cx.tools.cxtest.model.test.ResultLabel
 import io.nuvalence.cx.tools.cxtest.testsource.DFCXTestBuilderTestSource
 import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.jupiter.api.extension.AfterAllCallback
@@ -20,16 +21,18 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
     companion object {
         val artifact = DFCXSpreadsheetArtifact()
         lateinit var testClient: TestCasesClient
+        lateinit var agentsClient : AgentsClient
     }
 
     override fun beforeAll(context: ExtensionContext?) {
         println("Agent: ${Properties.AGENT_PATH}")
         println("Creds URL: ${Properties.CREDENTIALS_URL}")
 
-        val artifactSpreadsheetId = artifact.createArtifact("DFCX Test Builder Spreadsheet ${
-            SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
-                Date()
-            )}")
+        val currentTimestamp = Date()
+        val timestampString = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(currentTimestamp)
+        DFCXSpreadsheetArtifact.summaryInfo.testTimestamp = timestampString
+
+        val artifactSpreadsheetId = artifact.createArtifact("DFCX Test Builder Spreadsheet $timestampString")
         context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("artifactSpreadsheetId", artifactSpreadsheetId)
         println("Created spreadsheet https://docs.google.com/spreadsheets/d/$artifactSpreadsheetId")
 
@@ -37,32 +40,45 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
             TestCasesSettings.newBuilder()
                 .setEndpoint(Properties.DFCX_ENDPOINT)
                 .build())
+        agentsClient = AgentsClient.create(AgentsSettings.newBuilder()
+            .setEndpoint(Properties.DFCX_ENDPOINT)
+            .build())
+
+        DFCXSpreadsheetArtifact.summaryInfo.agentName = agentsClient.getAgent(Properties.AGENT_PATH).displayName
 
         val testCaseList = DFCXTestBuilderTestSource().getTestScenarios()
-
         if (testCaseList.isEmpty()) {
             println("No test cases found")
             return
         }
 
-        val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
-            .setParent(Properties.AGENT_PATH)
-            .addAllTestCases(testCaseList.map { testCase -> testCase.name })
-            .build()
+        DFCXSpreadsheetArtifact.summaryInfo.testsRun = testCaseList.size
+        DFCXSpreadsheetArtifact.summaryInfo.testsPassed = 0
+        DFCXSpreadsheetArtifact.summaryInfo.testsFailed = 0
 
+        try {
+            val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
+                .setParent(Properties.AGENT_PATH)
+                .addAllTestCases(testCaseList.map { testCase -> testCase.name })
+                .build()
 
-        val response = testClient.batchRunTestCasesAsync(request).get()
-        val resultsList = response.resultsList.sortedBy { result -> result.name }
+            val response = testClient.batchRunTestCasesAsync(request).get()
+            val resultsList = response.resultsList.sortedBy { result -> result.name }
 
-        context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("testCaseEntries", testCaseList zip resultsList)
-        context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.put("formattedResultList", Collections.synchronizedList(mutableListOf<DFCXTestBuilderResult>()))
+            context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
+                ?.put("testCaseEntries", testCaseList zip resultsList)
+            context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
+                ?.put("formattedResultList", Collections.synchronizedList(mutableListOf<DFCXTestBuilderResult>()))
+        } catch (e: Exception) {
+            println("Error running tests: ${e.message}")
+        }
     }
 
     override fun afterTestExecution(context: ExtensionContext?) {
         val result = DFCXTestBuilderSpec.formattedResult.get()
 
         if (result != null) {
-            println(result)
+            //println(result)
             val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
             formattedResultList.add(result)
             DFCXTestBuilderSpec.formattedResult.remove()
@@ -72,6 +88,33 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
     override fun afterAll(context: ExtensionContext?) {
         val artifactSpreadsheetId = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("artifactSpreadsheetId") as String
         val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
+
+        DFCXSpreadsheetArtifact.summaryInfo.testsPassed = formattedResultList.count { it.result == ResultLabel.PASS }
+        DFCXSpreadsheetArtifact.summaryInfo.testsFailed = formattedResultList.count { it.result == ResultLabel.FAIL }
+
+        try {
+            val intentCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
+                .setAgent(Properties.AGENT_PATH)
+                .setType(CalculateCoverageRequest.CoverageType.INTENT)
+                .build())
+            DFCXSpreadsheetArtifact.summaryInfo.intentsCoverage = "${(intentCoverage.intentCoverage.coverageScore * 100)}%"
+
+            val transitionCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
+                .setAgent(Properties.AGENT_PATH)
+                .setType(CalculateCoverageRequest.CoverageType.PAGE_TRANSITION)
+                .build())
+            DFCXSpreadsheetArtifact.summaryInfo.transitionsCoverage =
+                "${(transitionCoverage.transitionCoverage.coverageScore * 100)}%"
+
+            val routeGroupsCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
+                .setAgent(Properties.AGENT_PATH)
+                .setType(CalculateCoverageRequest.CoverageType.TRANSITION_ROUTE_GROUP)
+                .build())
+            DFCXSpreadsheetArtifact.summaryInfo.routeGroupsCoverage = "${(routeGroupsCoverage.routeGroupCoverage.coverageScore * 100)}%"
+        } catch (e: Exception) {
+            println("Error calculating coverage: ${e.message}")
+        }
+
         artifact.writeArtifact(artifactSpreadsheetId, formattedResultList)
 
         testClient.close()
