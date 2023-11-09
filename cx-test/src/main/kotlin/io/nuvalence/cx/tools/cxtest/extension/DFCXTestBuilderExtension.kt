@@ -21,6 +21,7 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
     companion object {
         val artifact = DFCXSpreadsheetArtifact()
         lateinit var testClient: TestCasesClient
+        lateinit var agentsClient : AgentsClient
     }
 
     override fun beforeAll(context: ExtensionContext?) {
@@ -39,6 +40,11 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
             TestCasesSettings.newBuilder()
                 .setEndpoint(Properties.DFCX_ENDPOINT)
                 .build())
+        agentsClient = AgentsClient.create(AgentsSettings.newBuilder()
+            .setEndpoint(Properties.DFCX_ENDPOINT)
+            .build())
+
+        DFCXSpreadsheetArtifact.summaryInfo.agentName = agentsClient.getAgent(Properties.AGENT_PATH).displayName
 
         val testCaseList = DFCXTestBuilderTestSource().getTestScenarios()
         if (testCaseList.isEmpty()) {

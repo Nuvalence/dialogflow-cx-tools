@@ -1,8 +1,7 @@
 package io.nuvalence.cx.tools.cxtest.artifact
 
 import com.google.api.services.sheets.v4.model.*
-import com.google.cloud.dialogflow.cx.v3.AgentsClient
-import com.google.cloud.dialogflow.cx.v3.TestRunDifference
+import com.google.cloud.dialogflow.cx.v3.*
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultArtifactFormat
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultDetails
 import io.nuvalence.cx.tools.cxtest.model.artifact.ResultLabelFormat
@@ -28,7 +27,7 @@ class DFCXSpreadsheetArtifact {
     }
 
     data class SummaryInfo(val agentPath: String) {
-        val agentName: String
+        lateinit var agentName: String
         lateinit var testTimestamp: String
         lateinit var tagsIncluded: String
         lateinit var tagsExcluded: String
@@ -38,13 +37,6 @@ class DFCXSpreadsheetArtifact {
         lateinit var transitionsCoverage: String
         lateinit var intentsCoverage: String
         lateinit var routeGroupsCoverage: String
-
-        init {
-            agentName = AgentsClient.create().use { agentsClient ->
-                val agent = agentsClient.getAgent(Properties.AGENT_PATH)
-                agent.displayName
-            }
-        }
 
         fun getMap() : Map<String, String> {
             return mapOf(
