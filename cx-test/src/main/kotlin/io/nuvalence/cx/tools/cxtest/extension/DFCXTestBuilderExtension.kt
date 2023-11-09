@@ -79,12 +79,6 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
 
         if (result != null) {
             //println(result)
-            if (result.result == ResultLabel.PASS) {
-                DFCXSpreadsheetArtifact.summaryInfo.testsPassed++
-            } else {
-                DFCXSpreadsheetArtifact.summaryInfo.testsFailed++
-            }
-
             val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
             formattedResultList.add(result)
             DFCXTestBuilderSpec.formattedResult.remove()
@@ -94,6 +88,10 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
     override fun afterAll(context: ExtensionContext?) {
         val artifactSpreadsheetId = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("artifactSpreadsheetId") as String
         val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
+
+        DFCXSpreadsheetArtifact.summaryInfo.testsPassed = formattedResultList.count { it.result == ResultLabel.PASS }
+        DFCXSpreadsheetArtifact.summaryInfo.testsFailed = formattedResultList.count { it.result == ResultLabel.FAIL }
+
         try {
             val intentCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
                 .setAgent(Properties.AGENT_PATH)
