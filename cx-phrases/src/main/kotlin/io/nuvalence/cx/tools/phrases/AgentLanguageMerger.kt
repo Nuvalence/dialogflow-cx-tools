@@ -108,7 +108,9 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     val synonymArray = JsonArray()
                     synonyms.forEach { synonym -> synonymArray.add(synonym) }
                     entity.asJsonObject.remove("synonyms")
+                    entity.asJsonObject.remove("languageCode")
                     entity.asJsonObject.add("synonyms", synonymArray)
+                    entity.asJsonObject.addProperty("languageCode", languageCode)
                 }
                 prettySave(jsonObject, "$entityPath/entities/$languageCode.json")
             }
