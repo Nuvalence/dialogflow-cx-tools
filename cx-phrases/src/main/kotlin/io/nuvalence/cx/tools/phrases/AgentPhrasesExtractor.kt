@@ -130,8 +130,18 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 // If there are entry fulfillment messages, and they are not empty, capture them.
                 jsonObject["entryFulfillment"]?.let { entryFulfillment ->
                     val messages = processMessages(entryFulfillment)
-                    if (messages != null)
-                        translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "message")), LanguagePhrases(messages))
+                    val chips = processChips(entryFulfillment)
+                    if (!messages.isNullOrEmpty()) {
+                        translationAgent.putPage(
+                            PhrasePath(listOf(flowName, pageName, "message")),
+                            LanguagePhrases(messages)
+                        )
+                    }
+                    if (!chips.isNullOrEmpty()) {
+                        translationAgent.putPage(
+                            PhrasePath(listOf(flowName, pageName, "chips")),
+                            LanguagePhrases(chips))
+                    }
                 }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
@@ -195,6 +205,30 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 text.asString
             }
             if (texts != null) languageCode to texts else null
+        }?.toMap()
+
+    /**
+     * Process customPayload fulfillment type with chips to translate the chip values. These have
+     * a languageCode and payload field with the text values; only the text values are
+     * captured in the sheet to be translated.
+     */
+    private fun processChips(jsonElement: JsonElement) =
+        jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
+            var chipsArray = emptyList<String>()
+            val languageCode = element.asJsonObject["languageCode"].asString
+            val payload = element.asJsonObject["payload"]
+            payload?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
+                outerList.asJsonArray.forEach { customElement ->
+                    val elementType = customElement.asJsonObject["type"].asString
+                    if (elementType == "chips") {
+                        val chipsValues = customElement.asJsonObject["options"].asJsonArray.map { chip ->
+                            chip.asJsonObject["text"].asString
+                        }
+                        chipsArray = chipsArray + chipsValues
+                    }
+                }
+            }
+            if (chipsArray.isNotEmpty() && chipsArray != null) languageCode to chipsArray else null
         }?.toMap()
 
     /**

@@ -28,6 +28,7 @@ fun export(args: Array<String>) {
     val translationAgent = AgentPhrasesExtractor(agentPath).process()
     val sheetWriter = SheetWriter(url, spreadsheetId)
 
+    // add intent training phrases to Training Phrases tab
     sheetWriter.deleteTab(PhraseType.Intents.title)
     sheetWriter.addTab(PhraseType.Intents.title)
     sheetWriter.addDataToTab(
@@ -37,6 +38,7 @@ fun export(args: Array<String>) {
         listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
+    // add entities to Entities tab
     sheetWriter.deleteTab(PhraseType.Entities.title)
     sheetWriter.addTab(PhraseType.Entities.title)
     sheetWriter.addDataToTab(
@@ -46,6 +48,7 @@ fun export(args: Array<String>) {
         listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
+    // add transition fulfillments to Transitions tab
     sheetWriter.deleteTab(PhraseType.Flows.title)
     sheetWriter.addTab(PhraseType.Flows.title)
     sheetWriter.addDataToTab(
@@ -55,6 +58,7 @@ fun export(args: Array<String>) {
         listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
+    // add normal page fulfillments to Fulfillments tab
     sheetWriter.deleteTab(PhraseType.Pages.title)
     sheetWriter.addTab(PhraseType.Pages.title)
     sheetWriter.addDataToTab(
