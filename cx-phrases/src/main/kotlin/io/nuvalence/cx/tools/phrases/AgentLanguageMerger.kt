@@ -180,6 +180,12 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     processParameters(entryFulfillment)
                     processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
                 }
+                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chips")))?.let { page ->
+                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
+                    replaceMessages(entryFulfillment, chipsTextToJson(page.phraseByLanguage))
+                    processParameters(entryFulfillment)
+                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
+                }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
                         translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->

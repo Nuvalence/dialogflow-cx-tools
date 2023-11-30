@@ -108,6 +108,40 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Strin
 }
 
 /**
+ * Similar functionality for languagePhrasesToJson, but instead of building the text messages
+ * json object, we build a custom payload with chips.
+ *
+ * @param phrases map associating a language to a list of chips values
+ */
+fun chipsTextToJson(textFields: Map<String, List<String>>): JsonArray {
+    val messages = JsonArray()
+    textFields.keys.forEach { languageCode ->
+        val texts = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
+        val payload = JsonObject()
+        val richContent = JsonArray()
+        val richContentInnerArray = JsonArray()
+        val richContentItem = JsonObject()
+        val options = JsonArray()
+        texts.forEach { chipText ->
+            val chip = JsonObject()
+            chip.addProperty("text", chipText)
+            options.add(chip)
+        }
+        richContentItem.add("options", options)
+        richContentItem.addProperty("type", "chips")
+        richContentInnerArray.add(richContentItem)
+        richContent.add(richContentInnerArray)
+        payload.add("richContent", richContent)
+        val message = JsonObject()
+        message.add("payload", payload)
+        message.addProperty("languageCode", languageCode)
+        message.addProperty("channel", "DF_MESSENGER")
+        messages.add(message)
+    }
+    return messages
+}
+
+/**
  * Looks for assignments to the "web-site" or "web-site-fwd" session parameters, and generate
  * the corresponding -ssml variables, adding them to the parameter assignment list. Then re-add
  * parameters so they appear in the correct order.
