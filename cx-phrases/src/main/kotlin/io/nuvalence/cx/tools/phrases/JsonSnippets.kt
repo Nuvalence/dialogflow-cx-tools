@@ -2,6 +2,7 @@ package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import java.util.*
 
@@ -91,8 +92,8 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Strin
             texts.forEach { text -> innerText.add(text) }
         outerText.add("text", innerText)
         val textBlob = JsonObject()
-        textBlob.addProperty("languageCode", languageCode)
         textBlob.add("text", outerText)
+        textBlob.addProperty("languageCode", languageCode)
         messages.add(textBlob)
         if (singleString)
             messages.add(audioMessage(languageCode, texts.joinToString("\n")))
@@ -108,10 +109,12 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Strin
 
 /**
  * Looks for assignments to the "web-site" or "web-site-fwd" session parameters, and generate
- * the corresponding -ssml variables, adding them to the parameter assignment list.
+ * the corresponding -ssml variables, adding them to the parameter assignment list. Then re-add
+ * parameters so they appear in the correct order.
  */
-fun processWebSiteParameter(jsonElement: JsonElement?) {
-    jsonElement?.asJsonArray?.let { jsonArray ->
+fun processParameters(jsonObject: JsonObject?) {
+    var parameters = jsonObject?.get("setParameterActions")
+    parameters?.asJsonArray?.let { jsonArray ->
         val toAppend = mutableMapOf<String, String?>()
         val toRemove = mutableListOf<Int>()
         jsonArray.forEachIndexed { index, element ->
@@ -130,6 +133,11 @@ fun processWebSiteParameter(jsonElement: JsonElement?) {
             newParameter.addProperty("value", value)
             jsonArray.add(newParameter)
         }
+    }
+
+    jsonObject?.remove("setParameterActions")
+    if (parameters != null && parameters !is JsonNull) {
+        jsonObject?.add("setParameterActions", parameters)
     }
 }
 
