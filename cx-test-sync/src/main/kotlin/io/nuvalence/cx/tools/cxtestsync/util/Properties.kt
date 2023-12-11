@@ -3,6 +3,7 @@ package io.nuvalence.cx.tools.cxtestsync.util
 import java.io.File
 import java.io.FileInputStream
 import java.net.URL
+import java.nio.file.Paths
 import javax.naming.ConfigurationException
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -34,8 +35,10 @@ class Properties {
         var AGENT_PATH: String by PropertyDelegate()
         var SPREADSHEET_ID: String by PropertyDelegate()
         var DFCX_ENDPOINT: String by PropertyDelegate()
+        var EXPORT_AGENT_PATH: String by PropertyDelegate()
 
-        private val props = java.util.Properties()
+        private val defaultProperties = java.util.Properties()
+        private lateinit var properties: java.util.Properties
 
         /**
          * Initializes the properties from the given path.
@@ -46,9 +49,16 @@ class Properties {
          * @throws IllegalStateException if a property is set more than once, is not initialized upon access, is not mutable, or is not a member of the companion object
          */
         fun init(path: String) {
+            PropertiesDefinition.values().forEach { propertyDefinition ->
+                if (propertyDefinition.default != null) {
+                    defaultProperties.setProperty(propertyDefinition.value, propertyDefinition.default)
+                }
+            }
+            properties = java.util.Properties(defaultProperties)
+
             val file = File(path)
             val stream = FileInputStream(file)
-            props.load(stream)
+            properties.load(stream)
             stream.close()
             validateProps()
             setProps()
@@ -56,7 +66,7 @@ class Properties {
 
         private fun validateProps () {
             val errors = PropertiesDefinition.values().fold(mutableListOf<String>()) { acc, entry ->
-                if (entry.required && (props.getProperty(entry.value) == "" || props.getProperty(entry.value) == null)) {
+                if (entry.required && (properties.getProperty(entry.value) == "" || properties.getProperty(entry.value) == null)) {
                     acc.add("${entry.value} is a required property. Example value: ${entry.example}")
                 }
                 acc
@@ -74,7 +84,7 @@ class Properties {
             val companionInstance = Properties::class.companionObjectInstance!!
 
             PropertiesDefinition.values().forEach { propDef ->
-                val baseProperty = props.getProperty(propDef.value)
+                val baseProperty = properties.getProperty(propDef.value)
                 val fieldName = propDef.name
                 val field = Companion::class.declaredMembers.find { it.name == fieldName } as? KMutableProperty1<*, *>
                     ?: throw IllegalArgumentException("No mutable property named $fieldName found")
@@ -100,9 +110,11 @@ class Properties {
     }
 }
 
-enum class PropertiesDefinition(val value: String, val type: KClass<*>, val required: Boolean = false, val example: String, val default: Any? = "") {
+enum class PropertiesDefinition(val value: String, val type: KClass<*>, val required: Boolean = false, val example: String, val default: String? = "") {
     CREDENTIALS_URL("credentialsUrl", URL::class,true, "file:///path/to/creds/file.json"),
     AGENT_PATH("agentPath", String::class, true, "projects/<projectName>/locations/<location>/agents/<agentId>"),
     SPREADSHEET_ID("spreadsheetId", String::class, true, "the final segment of the spreadsheet URL, e.g. \"asdf\" if your spreadsheet URL is https://docs.google.com/spreadsheets/d/asdf"),
-    DFCX_ENDPOINT("dfcxEndpoint", String::class, false, "(<region>-)dialogflow.googleapis.com:443", );
+    DFCX_ENDPOINT("dfcxEndpoint", String::class, false, "(<region>-)dialogflow.googleapis.com:443", "dialogflow.googleapis.com:443"),
+    EXPORT_AGENT_PATH("exportAgentPath", String::class, false, "Desired package to export agent prior to applying diffs, e.g. \"/Users/ruchichhabra/dol/dialogflow-cx-tools/cx-test-sync/src/main/export/\"", Paths.get("").toAbsolutePath().toString() + "/");
+
 }
