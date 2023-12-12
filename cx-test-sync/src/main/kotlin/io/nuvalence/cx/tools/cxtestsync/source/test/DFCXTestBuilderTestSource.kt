@@ -151,22 +151,22 @@ class DFCXTestBuilderTestSource {
     }
 
     fun exportAgentToResource() {
-        AgentsClient.create().use { agentsClient ->
-            val agentDetails = extractInfoFromPath(Properties.AGENT_PATH)
+        AgentsClient.create(AgentsSettings.newBuilder()
+            .setEndpoint(Properties.DFCX_ENDPOINT)
+            .build())
+            .use { agentsClient ->
+                val agentDetails = extractInfoFromPath(Properties.AGENT_PATH)
+                val request = ExportAgentRequest.newBuilder()
+                    .setName(AgentName.of(
+                        agentDetails["project"],
+                        agentDetails["location"],
+                        agentDetails["agentId"]).toString())
+                    .setDataFormat(ExportAgentRequest.DataFormat.JSON_PACKAGE)
+                    .build()
+                val filePath = Properties.EXPORT_AGENT_PATH + "agent.zip"
+                val response = agentsClient.exportAgentAsync(request).get()
 
-            val request = ExportAgentRequest.newBuilder()
-                .setName(AgentName.of(
-                    agentDetails["project"],
-                    agentDetails["location"],
-                    agentDetails["agentId"]).toString())
-                .setDataFormat(ExportAgentRequest.DataFormat.JSON_PACKAGE)
-                .build()
-            val filePath = Properties.EXPORT_AGENT_PATH + "agent.zip"
-
-            val response = agentsClient.exportAgentAsync(request).get()
-            // Handle the response as needed
-
-            FileOutputStream(filePath).use { fileOutputStream ->
+                FileOutputStream(filePath).use { fileOutputStream ->
                 response.agentContent.writeTo(fileOutputStream)
             }
         }
