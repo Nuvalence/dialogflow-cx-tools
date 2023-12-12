@@ -8,6 +8,8 @@ import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTestStep
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
 import java.io.FileOutputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class DFCXTestBuilderTestSource {
@@ -163,7 +165,9 @@ class DFCXTestBuilderTestSource {
                         agentDetails["agentId"]).toString())
                     .setDataFormat(ExportAgentRequest.DataFormat.JSON_PACKAGE)
                     .build()
-                val filePath = Properties.EXPORT_AGENT_PATH + "agent.zip"
+                val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"))
+                val filePath = "${Properties.EXPORT_AGENT_PATH}agent-backup-$timestamp.zip"
+
                 val response = agentsClient.exportAgentAsync(request).get()
 
                 FileOutputStream(filePath).use { fileOutputStream ->

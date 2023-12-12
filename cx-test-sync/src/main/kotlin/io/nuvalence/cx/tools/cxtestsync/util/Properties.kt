@@ -115,6 +115,6 @@ enum class PropertiesDefinition(val value: String, val type: KClass<*>, val requ
     AGENT_PATH("agentPath", String::class, true, "projects/<projectName>/locations/<location>/agents/<agentId>"),
     SPREADSHEET_ID("spreadsheetId", String::class, true, "the final segment of the spreadsheet URL, e.g. \"asdf\" if your spreadsheet URL is https://docs.google.com/spreadsheets/d/asdf"),
     DFCX_ENDPOINT("dfcxEndpoint", String::class, false, "(<region>-)dialogflow.googleapis.com:443", "dialogflow.googleapis.com:443"),
-    EXPORT_AGENT_PATH("exportAgentPath", String::class, false, "Desired package to export agent prior to applying diffs, e.g. \"/Users/ruchichhabra/dol/dialogflow-cx-tools/cx-test-sync/src/main/export/\"", Paths.get("").toAbsolutePath().toString() + "/");
+    EXPORT_AGENT_PATH("exportAgentPath", String::class, false, "Desired package to export agent prior to applying diffs, e.g. \"/Users/ruchichhabra/dol/dialogflow-cx-tools/cx-test-sync/\"", Paths.get("").toAbsolutePath().toString() + "/");
 
 }
