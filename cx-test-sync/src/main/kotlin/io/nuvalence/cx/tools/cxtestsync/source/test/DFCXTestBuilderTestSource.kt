@@ -7,6 +7,9 @@ import io.nuvalence.cx.tools.cxtestsync.model.diff.DFCXTestDiff
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTest
 import io.nuvalence.cx.tools.cxtestsync.model.test.DFCXInjectableTestStep
 import io.nuvalence.cx.tools.cxtestsync.util.Properties
+import java.io.FileOutputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class DFCXTestBuilderTestSource {
@@ -147,5 +150,46 @@ class DFCXTestBuilderTestSource {
 
             testClient.updateTestCase(updateRequest)
         }
+    }
+
+    fun exportAgentToResource() {
+        AgentsClient.create(AgentsSettings.newBuilder()
+            .setEndpoint(Properties.DFCX_ENDPOINT)
+            .build())
+            .use { agentsClient ->
+                val agentDetails = extractInfoFromPath(Properties.AGENT_PATH)
+                val request = ExportAgentRequest.newBuilder()
+                    .setName(AgentName.of(
+                        agentDetails["project"],
+                        agentDetails["location"],
+                        agentDetails["agentId"]).toString())
+                    .setDataFormat(ExportAgentRequest.DataFormat.JSON_PACKAGE)
+                    .build()
+                val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"))
+                val filePath = "${Properties.EXPORT_AGENT_PATH}agent-backup-$timestamp.zip"
+
+                val response = agentsClient.exportAgentAsync(request).get()
+
+                FileOutputStream(filePath).use { fileOutputStream ->
+                response.agentContent.writeTo(fileOutputStream)
+            }
+        }
+    }
+
+    private fun extractInfoFromPath(path: String): Map<String, String> {
+        // Define the regex pattern
+        val pattern = Regex("""projects/([^/]+)/locations/([^/]+)/agents/([^/]+)""")
+
+        // Match the pattern against the input path
+        val matchResult = pattern.find(path)
+
+        // Extract groups and create a map
+        return matchResult?.let {
+            mapOf(
+                "project" to it.groupValues[1],
+                "location" to it.groupValues[2],
+                "agentId" to it.groupValues[3]
+            )
+        } ?: emptyMap()
     }
 }

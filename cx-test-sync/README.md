@@ -101,6 +101,11 @@ The command would be:
 java -jar cx-test-sync-1.0.0-all.jar src/main/resources/default.properties
 ```
 
+## Export Agent
+
+Test execution will generate the zip file of agent before applying diffs. The zip file default will be located in project root
+as agent.zip
+
 ## Properties
 
 The following are properties that can be specified in a properties file for use by the test suite. (See: [Properties File](#properties-file)
@@ -147,3 +152,13 @@ Defaults to us-east-1 if not specified.
 - Usage: `dfcxEndpoint="<endpoint URL>"`, e.g. `dfcxEndpoint="us-east1-dialogflow.googleapis.com:443"`
 - Required: No
 - Default if not supplied: `dialogflow.googleapis.com:443`
+
+### Export Agent Path
+
+The path to export agent before applying diffs
+
+Defaults to root folder of the module
+
+- Usage: `exportAgentPath="<provide absolute path>"`, e.g. `exportAgentPath="/Users/<USERNAME>/dol/dialogflow-cx-tools/cx-test-sync/src/main/resources/export/"`
+- Required: No
+- Default if not supplied: `/Users/<USERNAME>/dol/dialogflow-cx-tools/cx-test-sync/`

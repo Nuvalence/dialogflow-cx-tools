@@ -75,6 +75,8 @@ class SpreadsheetProcessor () {
         val artifactSource = DFCXSpreadsheetArtifactSource()
         val testSource = DFCXTestBuilderTestSource()
 
+        testSource.exportAgentToResource();
+
         val spreadsheetTests = artifactSource.getTestScenarios().sortedBy { it.testCaseId }
         val agentTests = testSource.getTestScenarios().sortedBy { it.testCaseId }
 
