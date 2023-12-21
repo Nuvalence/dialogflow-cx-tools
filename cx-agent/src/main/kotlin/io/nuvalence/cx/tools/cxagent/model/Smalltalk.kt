@@ -39,12 +39,12 @@ data class Smalltalks(
         fromKey(smalltalk.smalltalkName) to smalltalk
     }
 
-    private val defaultEventHandlers = mapOf(
+    val defaultEventHandlers = mapOf(
         "sys.no-input-default" to formatEventFulfillment(NO_INPUT_DEFAULT),
         "sys.no-match-default" to formatEventFulfillment(NO_MATCH_DEFAULT)
     )
 
-    private val allEventHandlers = mapOf(
+    val allEventHandlers = mapOf(
         "sys.no-input-1" to formatEventFulfillment(NO_INPUT_1),
         "sys.no-input-2" to formatEventFulfillment(NO_INPUT_2),
         "sys.no-input-3" to formatEventFulfillment(NO_INPUT_3),
@@ -59,6 +59,8 @@ data class Smalltalks(
      * @param instance which smalltalk to retrieve
      */
     operator fun get(instance: SmalltalkInstance) = smalltalkMap[instance] ?: error("No smalltalk entry for $instance")
+
+    fun get(instance: String) = smalltalkMap[fromKey(instance)] ?: error("No smalltalk entry for $instance")
 
     /**
      * Returns the fulfillment associated with this smalltalk. Note that not all smalltalks have fulfillment, some
@@ -79,7 +81,8 @@ data class Smalltalks(
      * Given a string key, retrieves the smalltalk
      * @param key the string key (must match the SmalltalkInstance key)
      */
-    private fun fromKey(key: String) = SmalltalkInstance.values().find { it.key == key } ?: error("Cannot find SmalltalkInstance: $key")
+    private fun fromKey(key: String) = SmalltalkInstance.values().find { it.key == key }
+        ?: error("Cannot find SmalltalkInstance: $key")
 }
 
 /**
