@@ -52,34 +52,69 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      * <agent-root>/intents/phrases/<language-code>.json
      */
     private fun processIntents() {
-        File("$rootPath/intents").listFiles()?.forEach { directory ->
-            val intentPath = directory.absolutePath
-            val intentName = directory.name
-            File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
-                val language = file.name.removeSuffix(".json")
-                val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
-                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.toMutableSet()
-                val outputTrainingPhrases = JsonArray()
+        val intentsDirectory = File("$rootPath/intents")
+        if (!intentsDirectory.exists()) {
+            println("Intents directory does not exist.")
+            return
+        }
 
+        intentsDirectory.listFiles()?.forEach { directory ->
+            val intentName = directory.name
+            val intentPath = directory.absolutePath
+
+            // Ensure the trainingPhrases directory exists
+            val trainingPhrasesPath = "$intentPath/trainingPhrases"
+            val trainingPhrasesDir = File(trainingPhrasesPath)
+            if (!trainingPhrasesDir.exists()) {
+                trainingPhrasesDir.mkdirs()
+            }
+
+            // Loop through all available intents instead of files
+            val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.phraseByLanguage
+            languagePhrases?.forEach { (language, phrases) ->
+                val phrasesSet = phrases.toMutableSet()
+                val file = File(trainingPhrasesDir, "$language.json")
+
+                // Create the file if it does not exist
+                if (!file.exists()) {
+                    file.createNewFile()
+                }
+
+                val originalTrainingPhrases = if (file.readText().isNotBlank()) {
+                    JsonParser.parseString(file.readText()).asJsonObject
+                } else {
+                    JsonObject().apply { add("trainingPhrases", JsonArray()) }
+                }
+
+                val outputTrainingPhrases = JsonArray()
                 originalTrainingPhrases["trainingPhrases"].asJsonArray.forEach { phrase ->
                     val parts = phrase.asJsonObject["parts"].asJsonArray
                     val combinedText = combineParts(parts)
 
-                    if (combinedText in languagePhrases.orEmpty()) {
+                    if (combinedText in phrasesSet) {
                         outputTrainingPhrases.add(phrase)
-                        languagePhrases?.remove(combinedText)
+                        phrasesSet.remove(combinedText)
                     }
                 }
 
-                languagePhrases?.let {
-                    intentLanguage(language, it.toList()).forEach { phrase -> outputTrainingPhrases.add(phrase) }
+                // Add new phrases from the translationAgent
+                phrasesSet.forEach { phrase ->
+                    if (phrase.isNotEmpty()) {
+                        outputTrainingPhrases.addAll(intentLanguage(language, listOf(phrase)))
+                    }
                 }
 
+                // Save the updated training phrases back to the file
                 val resultJsonObject = JsonObject().apply { add("trainingPhrases", outputTrainingPhrases) }
                 prettySave(resultJsonObject, file.absolutePath)
             }
         }
     }
+
+// Assuming 'intentLanguage' is a function that converts a language and phrases into the desired JSON format
+// Assuming 'prettySave' is a function that saves the JSON object to a file in a pretty format
+
+
 
     /**
      * Combine the different parts of the training phrase to build the full phrase.
