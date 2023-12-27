@@ -130,17 +130,17 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 // If there are entry fulfillment messages, and they are not empty, capture them.
                 jsonObject["entryFulfillment"]?.let { entryFulfillment ->
                     val messages = processMessages(entryFulfillment)
-                    val chips = processChips(entryFulfillment)
+                    val chatbotElements = processChatbotElements(entryFulfillment)
                     if (!messages.isNullOrEmpty()) {
                         translationAgent.putPage(
                             PhrasePath(listOf(flowName, pageName, "message")),
                             LanguagePhrases(messages)
                         )
                     }
-                    if (!chips.isNullOrEmpty()) {
+                    if (!chatbotElements.isNullOrEmpty()) {
                         translationAgent.putPage(
-                            PhrasePath(listOf(flowName, pageName, "chips")),
-                            LanguagePhrases(chips))
+                            PhrasePath(listOf(flowName, pageName, "chatbot")),
+                            LanguagePhrases(chatbotElements))
                     }
                 }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
@@ -208,28 +208,43 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         }?.toMap()
 
     /**
-     * Process customPayload fulfillment type with chips to translate the chip values. These have
+     * Process customPayload fulfillment type with chatbot values. These have
      * a languageCode and payload field with the text values; only the text values are
      * captured in the sheet to be translated.
      */
-    private fun processChips(jsonElement: JsonElement) =
-        jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
-            var chipsArray = emptyList<String>()
+
+    private fun processChatbotElements(jsonElement: JsonElement): Map<String, List<String>> {
+        val resultMap = mutableMapOf<String, MutableList<String>>()
+
+        jsonElement.asJsonObject["messages"]?.asJsonArray?.forEach { element ->
             val languageCode = element.asJsonObject["languageCode"].asString
             val payload = element.asJsonObject["payload"]
+
             payload?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
                 outerList.asJsonArray.forEach { customElement ->
                     val elementType = customElement.asJsonObject["type"].asString
-                    if (elementType == "chips") {
-                        val chipsValues = customElement.asJsonObject["options"].asJsonArray.map { chip ->
-                            chip.asJsonObject["text"].asString
+                    when (elementType) {
+                        "chips" -> {
+                            val chipsValues = customElement.asJsonObject["options"].asJsonArray.map { chip ->
+                                chip.asJsonObject["text"].asString
+                            }
+                            resultMap.getOrPut(languageCode) { mutableListOf() }.addAll(chipsValues)
                         }
-                        chipsArray = chipsArray + chipsValues
+                        "html" -> {
+                            val htmlContent = customElement.asJsonObject["html"].asString
+                            if (htmlContent.isNotBlank()) {
+                                resultMap.getOrPut(languageCode) { mutableListOf() }.add(htmlContent)
+                            }
+                        }
                     }
                 }
             }
-            if (chipsArray.isNotEmpty() && chipsArray != null) languageCode to chipsArray else null
-        }?.toMap()
+        }
+
+        return resultMap
+    }
+
+
 
     /**
      * Process event handlers and, if they have trigger fulfillment messages, extract them. Note that
