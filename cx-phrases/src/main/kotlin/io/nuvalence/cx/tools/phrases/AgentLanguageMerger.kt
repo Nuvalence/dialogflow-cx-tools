@@ -111,11 +111,6 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         }
     }
 
-// Assuming 'intentLanguage' is a function that converts a language and phrases into the desired JSON format
-// Assuming 'prettySave' is a function that saves the JSON object to a file in a pretty format
-
-
-
     /**
      * Combine the different parts of the training phrase to build the full phrase.
      */
