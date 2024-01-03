@@ -140,27 +140,39 @@ fun chipsTextToJson(textFields: Map<String, List<String>>): JsonArray {
     return messages
 }
 
-//fun htmlTextToJson(textFields: Map<String, List<String>>): JsonArray {
-//    val messages = JsonArray()
-//    textFields.keys.forEach { languageCode ->
-//        val texts = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
-//        val payload = JsonObject()
-//        val richContent = JsonArray()
-//        val richContentInnerArray = JsonArray()
-//        val richContentItem = JsonObject()
-//        richContentItem.add("html", texts)
-//        richContentItem.addProperty("type", "chips")
-//        richContentInnerArray.add(richContentItem)
-//        richContent.add(richContentInnerArray)
-//        payload.add("richContent", richContent)
-//        val message = JsonObject()
-//        message.add("payload", payload)
-//        message.addProperty("languageCode", languageCode)
-//        message.addProperty("channel", "DF_MESSENGER")
-//        messages.add(message)
-//    }
-//    return messages
-//}
+fun htmlTextToJson(textFields: Map<String, List<String>>): JsonArray {
+    val messages = JsonArray()
+    textFields.keys.forEach { languageCode ->
+        val text = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
+
+        // Creating the richContentItem with the required HTML string.
+        val richContentItem = JsonObject()
+        richContentItem.addProperty("html", text.joinToString("\n"))
+        richContentItem.addProperty("type", "html")
+
+        // Wrapping the richContentItem in an inner array.
+        val richContentInnerArray = JsonArray()
+        richContentInnerArray.add(richContentItem)
+
+        // Adding the inner array to the richContent array.
+        val richContent = JsonArray()
+        richContent.add(richContentInnerArray)
+
+        // Creating the payload object and adding richContent to it.
+        val payload = JsonObject()
+        payload.add("richContent", richContent)
+
+        // Creating the message object and adding payload, languageCode, and channel to it.
+        val message = JsonObject()
+        message.add("payload", payload)
+        message.addProperty("languageCode", languageCode)
+        message.addProperty("channel", "DF_MESSENGER")
+
+        // Adding the message object to the messages array.
+        messages.add(message)
+    }
+    return messages
+}
 
 /**
  * Looks for assignments to the "web-site" or "web-site-fwd" session parameters, and generate

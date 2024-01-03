@@ -193,19 +193,19 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     processParameters(entryFulfillment)
                     processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
                 }
-//                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chatbot-html")))?.let { page ->
-//                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
-//                    val messages = entryFulfillment.get("messages").asJsonArray
-//                    val messagesWithChips = chipsTextToJson(page.phraseByLanguage)
-//                    messagesWithChips.forEach { message ->
-//                        if (message !in messages) {
-//                            messages.add(message)
-//                        }
-//                    }
-//                    replaceMessages(entryFulfillment, messages)
-//                    processParameters(entryFulfillment)
-//                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
-//                }
+                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chatbot-html")))?.let { page ->
+                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
+                    val messages = entryFulfillment.get("messages").asJsonArray
+                    val messagesWithHtml = htmlTextToJson(page.phraseByLanguage)
+                    messagesWithHtml.forEach { message ->
+                        if (message !in messages) {
+                            messages.add(message)
+                        }
+                    }
+                    replaceMessages(entryFulfillment, messages)
+                    processParameters(entryFulfillment)
+                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
+                }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
                         translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
