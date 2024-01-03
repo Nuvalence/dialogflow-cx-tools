@@ -1,7 +1,6 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonArray
-import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import java.util.*
@@ -140,6 +139,28 @@ fun chipsTextToJson(textFields: Map<String, List<String>>): JsonArray {
     }
     return messages
 }
+
+//fun htmlTextToJson(textFields: Map<String, List<String>>): JsonArray {
+//    val messages = JsonArray()
+//    textFields.keys.forEach { languageCode ->
+//        val texts = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
+//        val payload = JsonObject()
+//        val richContent = JsonArray()
+//        val richContentInnerArray = JsonArray()
+//        val richContentItem = JsonObject()
+//        richContentItem.add("html", texts)
+//        richContentItem.addProperty("type", "chips")
+//        richContentInnerArray.add(richContentItem)
+//        richContent.add(richContentInnerArray)
+//        payload.add("richContent", richContent)
+//        val message = JsonObject()
+//        message.add("payload", payload)
+//        message.addProperty("languageCode", languageCode)
+//        message.addProperty("channel", "DF_MESSENGER")
+//        messages.add(message)
+//    }
+//    return messages
+//}
 
 /**
  * Looks for assignments to the "web-site" or "web-site-fwd" session parameters, and generate

@@ -164,7 +164,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 val pageName = file.name.removeSuffix(".json")
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
                 processEventHandlers(jsonObject, listOf(flowName, pageName), translationAgent::getPages)
-                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "message")))?.let { page ->
+                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "messages")))?.let { page ->
                     val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
                     replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = true, page.phraseByLanguage))
                     val webhook = entryFulfillment.get("webhook")
@@ -180,7 +180,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     processParameters(entryFulfillment)
                     processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
                 }
-                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chips")))?.let { page ->
+                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chatbot-chips")))?.let { page ->
                     val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
                     val messages = entryFulfillment.get("messages").asJsonArray
                     val messagesWithChips = chipsTextToJson(page.phraseByLanguage)
@@ -193,6 +193,19 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     processParameters(entryFulfillment)
                     processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
                 }
+//                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chatbot-html")))?.let { page ->
+//                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
+//                    val messages = entryFulfillment.get("messages").asJsonArray
+//                    val messagesWithChips = chipsTextToJson(page.phraseByLanguage)
+//                    messagesWithChips.forEach { message ->
+//                        if (message !in messages) {
+//                            messages.add(message)
+//                        }
+//                    }
+//                    replaceMessages(entryFulfillment, messages)
+//                    processParameters(entryFulfillment)
+//                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
+//                }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
                         translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
