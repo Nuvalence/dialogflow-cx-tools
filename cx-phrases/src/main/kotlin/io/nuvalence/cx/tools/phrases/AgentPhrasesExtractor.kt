@@ -371,7 +371,12 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             val outerText = element.asJsonObject["text"]
             outerText?.asJsonObject?.get("text")?.asJsonArray?.mapNotNull { it.asString }?.let { texts ->
                 if (texts.isNotEmpty()) {
-                    resultMap.getOrPut("messages") { mutableMapOf() }
+                    var key = "messages"
+                    val channelElement = element.asJsonObject["channel"]
+                    if (channelElement != null && channelElement.asString.equals("DF_MESSENGER")) {
+                        key = "chatbot-messages";
+                    }
+                    resultMap.getOrPut(key) { mutableMapOf() }
                         .getOrPut(languageCode) { mutableListOf() }
                         .addAll(texts)
                 }
@@ -381,7 +386,6 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         // Convert mutable inner maps and lists to immutable ones
         return resultMap.mapValues { (_, value) -> value.mapValues { (_, list) -> list.toList() }.toMap() }
     }
-
 
     /**
      * Process event handlers and, if they have trigger fulfillment messages, extract them. Note that
