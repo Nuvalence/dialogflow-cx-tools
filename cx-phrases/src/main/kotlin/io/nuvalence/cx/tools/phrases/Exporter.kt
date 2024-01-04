@@ -54,7 +54,7 @@ fun export(args: Array<String>) {
     sheetWriter.addDataToTab(
         PhraseType.Flows.title,
         translationAgent.flattenFlows(),
-        listOf("Flow Name", "Page", "Type", "Value") + translationAgent.allLanguages,
+        listOf("Flow Name", "Page", "Type", "Channel", "Value") + translationAgent.allLanguages,
         listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
@@ -64,7 +64,7 @@ fun export(args: Array<String>) {
     sheetWriter.addDataToTab(
         PhraseType.Pages.title,
         translationAgent.flattenPages(),
-        listOf("Flow Name", "Page Name", "Type") + translationAgent.allLanguages,
+        listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages,
         listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 }
