@@ -1,6 +1,7 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.io.File
 
@@ -93,21 +94,60 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             val flowName = directory.name // The directory name is the flow name
             val jsonObject = JsonParser.parseString(File("$flowPath/$flowName.json").readText()).asJsonObject
             // Get all event handlers associated with this flow
-            processEventHandlers(jsonObject, flowName).forEach { (event, messages) ->
-                translationAgent.putFlow(PhrasePath(listOf(flowName, "", "event", event)), messages)
-            }
-            // Get all transition routes and their associated condition
-            jsonObject["transitionRoutes"].asJsonArray.forEach { route ->
-                route.asJsonObject["condition"]?.asString?.let { condition ->
-                    // If there are trigger fulfillment messages, capture them
-                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "condition", condition)), LanguagePhrases(messages))
+            processEventHandlers(jsonObject, flowName).forEach { (event, channelToLanguagesMap) ->
+                // Iterate over each channel and pass all languages to LanguagePhrases
+                channelToLanguagesMap.forEach { (channel, languagesMap) ->
+                    // Filter out any languages with empty message lists
+                    val nonEmptyLanguagesMap = languagesMap.filter { it.value.isNotEmpty() }
+
+                    // If there are languages with messages, use them
+                    if (nonEmptyLanguagesMap.isNotEmpty()) {
+                        translationAgent.putFlow(
+                            PhrasePath(listOf(flowName, "", "event", event, channel)),
+                            LanguagePhrases(nonEmptyLanguagesMap)
+                        )
                     }
                 }
+            }
+            jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
+                route.asJsonObject["condition"]?.asString?.let { condition ->
+                    // If there are transition route fulfillment messages, capture them
+                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { channelToLanguagesMap ->
+                        // Iterate over each channel and pass all languages to LanguagePhrases
+                        channelToLanguagesMap.forEach { (channel, languagesMap) ->
+                            // Check the condition to potentially update the channel
+                            val updatedChannel = if (condition.contains("is-chatbot-interaction = true")) "DF_MESSENGER" else channel
+
+                            // Filter out any languages with empty message lists
+                            val nonEmptyLanguagesMap = languagesMap.filter { it.value.isNotEmpty() }
+
+                            // If there are languages with messages, use them
+                            if (nonEmptyLanguagesMap.isNotEmpty()) {
+                                translationAgent.putFlow(
+                                    PhrasePath(listOf(flowName, "", "condition", condition, updatedChannel)),
+                                    LanguagePhrases(nonEmptyLanguagesMap)
+                                )
+                            }
+                        }
+                    }
+                }
+                // Get all transition routes and their associated condition
                 route.asJsonObject["intent"]?.asString?.let { intent ->
                     // If there are trigger fulfillment messages, capture them
-                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "intent", intent)), LanguagePhrases(messages))
+                    processMessages(route.asJsonObject["triggerFulfillment"])?.let { channelToLanguagesMap ->
+                        // Now, iterate over each channel and pass all languages to LanguagePhrases
+                        channelToLanguagesMap.forEach { (channel, languagesMap) ->
+                            // Filter out any languages with empty message lists
+                            val nonEmptyLanguagesMap = languagesMap.filter { it.value.isNotEmpty() }
+
+                            // If there are languages with messages, use them
+                            if (nonEmptyLanguagesMap.isNotEmpty()) {
+                                translationAgent.putFlow(
+                                    PhrasePath(listOf(flowName, "", "intent", intent, channel)),
+                                    LanguagePhrases(nonEmptyLanguagesMap)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -119,88 +159,110 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * belong to a flow.
      */
     private fun processPages(translationAgent: TranslationAgent) {
-        // Walk all directories under the "flows" directory
         File("$rootPath/flows").listFiles()?.forEach { directory ->
-            val flowPath = directory.absolutePath
-            val flowName = directory.name // The directory name is the flow name
-            // Walk all files under the "pages" directory
-            File("$flowPath/pages").listFiles()?.forEach { file ->
-                val pageName = file.name.removeSuffix(".json") // as in <page-name>.json minus .json
+            val flowName = directory.name
+            File("${directory.absolutePath}/pages").listFiles()?.forEach { file ->
+                val pageName = file.name.removeSuffix(".json")
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
-                // If there are entry fulfillment messages, and they are not empty, capture them.
-                jsonObject["entryFulfillment"]?.let { entryFulfillment ->
-                    val messages = processMessages_new(entryFulfillment)
-                    val chips = processChips_new(entryFulfillment)
-                    if (!messages.isNullOrEmpty()) {
-                        messages.forEach { (language, channelMap) ->
-                            channelMap.forEach { (channel, phrases) ->
-                                if (!phrases.isNullOrEmpty()) {
-                                    translationAgent.putPage(
-                                        PhrasePath(listOf(flowName, pageName, "message", channel)),
-                                        LanguagePhrases(mapOf(language to phrases))
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    if (!chips.isNullOrEmpty()) {
-                        chips.forEach { (language, channelMap) ->
-                            channelMap.forEach { (channel, chipList) ->
-                                if (!chipList.isNullOrEmpty()) {
-                                    translationAgent.putPage(
-                                        PhrasePath(listOf(flowName, pageName, "chips", channel)),
-                                        LanguagePhrases(mapOf(language to chipList))
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
-                    route.asJsonObject["condition"]?.asString?.let { condition ->
-                        // If there are transition route fulfillment messages, capture them
-                        processMessages_new(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                            messages.forEach { (language, channelMap) ->
-                                channelMap.forEach { (channel, messageList) ->
-                                    if (!messageList.isNullOrEmpty()) {
-                                        translationAgent.putFlow(
-                                            PhrasePath(listOf(flowName, pageName, "condition", condition, channel)),
-                                            LanguagePhrases(mapOf(language to messageList))
-                                        )
-                                    }
-                                }
-                            }
+
+                jsonObject["entryFulfillment"]?.let { processMessagesAndTranslate(it, flowName, pageName, translationAgent) }
+                processTransitionRoutes(jsonObject, flowName, pageName, translationAgent)
+                processForm(jsonObject, flowName, pageName, translationAgent)
+                processEventHandlers(jsonObject, flowName, pageName, translationAgent)
+            }
+        }
+    }
+
+    private fun processMessagesAndTranslate(entryFulfillment: JsonElement, flowName: String, pageName: String, translationAgent: TranslationAgent) {
+        val messages = processMessages(entryFulfillment)
+        messages?.forEach { (channel, languagesMap) ->
+            languagesMap.filter { it.value.isNotEmpty() }.takeIf { it.isNotEmpty() }?.let {
+                translationAgent.putPage(
+                    PhrasePath(listOf(flowName, pageName, "message", channel)),
+                    LanguagePhrases(it)
+                )
+            }
+        }
+    }
+
+    private fun processTransitionRoutes(jsonObject: JsonObject, flowName: String, pageName: String, translationAgent: TranslationAgent) {
+        jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
+            route.asJsonObject["condition"]?.asString?.let { condition ->
+                processMessages(route.asJsonObject["triggerFulfillment"])?.let { channelToLanguagesMap ->
+                    channelToLanguagesMap.forEach { (originalChannel, languagesMap) ->
+                        val updatedChannel = if (condition.contains("is-chatbot-interaction = true")) "DF_MESSENGER" else originalChannel
+                        languagesMap.filter { it.value.isNotEmpty() }.takeIf { it.isNotEmpty() }?.let {
+                            translationAgent.putFlow(
+                                PhrasePath(listOf(flowName, pageName, "condition", condition, updatedChannel)),
+                                LanguagePhrases(it)
+                            )
                         }
                     }
                 }
-//                jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
-//                    route.asJsonObject["condition"]?.asString?.let { condition ->
-//                        // If there are transition route fulfillment messages, capture them
-//                        processMessages_new(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-//                            translationAgent.putFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)), LanguagePhrases(messages))
-//                        }
-//                    }
-//                }
-                jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
-                    val parameter = parameterElement.asJsonObject
-                    val displayName = parameter["displayName"].asString
-                    parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
-                        fillBehavior["initialPromptFulfillment"]?.let { initialPrompt ->
-                            val messages = processMessages(initialPrompt)
-                            if (!messages.isNullOrEmpty())
-                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguagePhrases(messages))
-                        }
-                        fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { event ->
-                            val messages = processMessages(event.asJsonObject["triggerFulfillment"])
-                            val eventName = event.asJsonObject["event"].asString
-                            if (!messages.isNullOrEmpty())
-                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguagePhrases(messages))
-                        }
+            }
+        }
+    }
+
+    private fun processForm(jsonObject: JsonObject, flowName: String, pageName: String, translationAgent: TranslationAgent) {
+        jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
+            val parameter = parameterElement.asJsonObject
+            val displayName = parameter["displayName"].asString
+
+            processInitialPrompts(parameter, displayName, flowName, pageName, translationAgent)
+            processRepromptEventHandlers(parameter, displayName, flowName, pageName, translationAgent)
+        }
+    }
+
+    private fun processInitialPrompts(parameter: JsonObject, displayName: String, flowName: String, pageName: String, translationAgent: TranslationAgent) {
+        parameter["fillBehavior"]?.asJsonObject?.get("initialPromptFulfillment")?.let { initialPrompt ->
+            val messages = processMessages(initialPrompt)
+            if (!messages.isNullOrEmpty()) {
+                messages.forEach { (channel, languagesMap) ->
+                    languagesMap.filter { it.value.isNotEmpty() }.takeIf { it.isNotEmpty() }?.let {
+                        translationAgent.putPage(
+                            PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment", channel)),
+                            LanguagePhrases(it)
+                        )
                     }
                 }
-                // If the page has event handlers with fulfillment messages, capture them
-                processEventHandlers(jsonObject, flowName).forEach { (event, messages) ->
-                    translationAgent.putPage(PhrasePath(listOf(flowName, pageName, event)), messages)
+            }
+        }
+    }
+
+    private fun processRepromptEventHandlers(parameter: JsonObject, displayName: String, flowName: String, pageName: String, translationAgent: TranslationAgent) {
+        parameter["fillBehavior"]?.asJsonObject?.get("repromptEventHandlers")?.asJsonArray?.forEach { event ->
+            val messages = processMessages(event.asJsonObject["triggerFulfillment"])
+            val eventName = event.asJsonObject["event"].asString
+            if (!messages.isNullOrEmpty()) {
+                messages.forEach { (channel, languagesMap) ->
+                    languagesMap.filter { it.value.isNotEmpty() }.takeIf { it.isNotEmpty() }?.let {
+                        translationAgent.putPage(
+                            PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName", channel)),
+                            LanguagePhrases(it)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun processEventHandlers(jsonObject: JsonObject, flowName: String, pageName: String, translationAgent: TranslationAgent) {
+        jsonObject["eventHandlers"]?.asJsonArray?.forEach { eventHandlerElement ->
+            val eventHandler = eventHandlerElement.asJsonObject
+            val eventName = eventHandler["event"].asString
+
+            processMessages(eventHandler["triggerFulfillment"])?.let { channelToLanguagesMap ->
+                channelToLanguagesMap.forEach { (channel, languagesMap) ->
+                    // Filter out any languages with empty message lists
+                    val nonEmptyLanguagesMap = languagesMap.filter { it.value.isNotEmpty() }
+
+                    // If there are languages with messages, use them
+                    if (nonEmptyLanguagesMap.isNotEmpty()) {
+                        translationAgent.putPage(
+                            PhrasePath(listOf(flowName, pageName, eventName, channel)),
+                            LanguagePhrases(nonEmptyLanguagesMap)
+                        )
+                    }
                 }
             }
         }
@@ -227,78 +289,39 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * and a text field; under it, you find a list of text messages. Unlike for intents,
      * fulfillment messages do not have references to parameters.
      */
-    private fun processMessages_new(jsonElement: JsonElement): Map<String, Map<String, List<String>>> {
-        return jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
-            val languageCode = element.asJsonObject["languageCode"]?.asString ?: return@mapNotNull null
-            val channel = element.asJsonObject["channel"]?.asString ?: "audio"
-            val outerText = element.asJsonObject["text"]
-            val texts = outerText?.asJsonObject?.get("text")?.asJsonArray?.mapNotNull { text ->
-                text.asString
-            } ?: return@mapNotNull null
+    private fun processMessages(jsonElement: JsonElement): Map<String, Map<String, List<String>>> {
+        val messagesJsonArray = jsonElement.asJsonObject["messages"]?.asJsonArray ?: return emptyMap()
 
-            Triple(languageCode, channel, texts)
-        }?.groupBy({ it.first }, { Pair(it.second, it.third) })
-            ?.mapValues { entry ->
-                entry.value.groupBy({ it.first }, { it.second }).mapValues { it.value.flatten() }
-            } ?: emptyMap()
+        return messagesJsonArray.flatMap { element ->
+            val jsonObject = element.asJsonObject
+            val languageCode = jsonObject["languageCode"]?.asString ?: return@flatMap emptyList()
+            val channel = jsonObject["channel"]?.asString ?: "audio"
+
+            val messages = extractTextMessages(jsonObject) + extractPayloadMessages(jsonObject)
+            if (messages.isNotEmpty()) listOf(Triple(channel, languageCode, messages)) else emptyList()
+        }.groupBy({ it.first }, { Pair(it.second, it.third) })
+            .mapValues { (_, pairs) ->
+                pairs.groupBy({ it.first }, { it.second })
+                    .mapValues { (_, messagesList) -> messagesList.flatten() }  // Ensure this returns List<String>
+            }
     }
 
+    private fun extractTextMessages(jsonObject: JsonObject): List<String> =
+        jsonObject["text"]?.asJsonObject?.get("text")?.asJsonArray?.mapNotNull { it.asString } ?: emptyList()
 
-    private fun processMessages(jsonElement: JsonElement) =
-        jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
-            val languageCode = element.asJsonObject["languageCode"].asString
-            val channel = if (element.asJsonObject["channel"] != null) element.asJsonObject["channel"].asString else "audio"
-            val outerText = element.asJsonObject["text"]
-            val texts = outerText?.asJsonObject?.get("text")?.asJsonArray?.map { text ->
-                text.asString
-            }
-            if (texts != null) languageCode to texts else null
-        }?.toMap()
-
-    /**
-     * Process customPayload fulfillment type with chips to translate the chip values. These have
-     * a languageCode and payload field with the text values; only the text values are
-     * captured in the sheet to be translated.
-     */
-    private fun processChips_new(jsonElement: JsonElement): Map<String, Map<String, List<String>>> {
-        return jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
-            var chipsArray = emptyList<String>()
-            val languageCode = element.asJsonObject["languageCode"]?.asString ?: return@mapNotNull null
-            val payload = element.asJsonObject["payload"]
-            payload?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
-                outerList.asJsonArray.forEach { customElement ->
-                    val elementType = customElement.asJsonObject["type"]?.asString ?: return@forEach
-                    if (elementType == "chips") {
-                        val chipsValues = customElement.asJsonObject["options"]?.asJsonArray?.mapNotNull { chip ->
-                            chip.asJsonObject["text"]?.asString
-                        } ?: return@forEach
-                        chipsArray = chipsArray + chipsValues
+    private fun extractPayloadMessages(jsonObject: JsonObject): List<String> =
+        jsonObject["payload"]?.asJsonObject?.get("richContent")?.asJsonArray?.flatMap { innerArray ->
+            innerArray.asJsonArray.mapNotNull { contentItem ->
+                when (contentItem.asJsonObject["type"]?.asString) {
+                    "html" -> contentItem.asJsonObject["html"].asString
+                    "chips" -> contentItem.asJsonObject["options"]?.asJsonArray?.joinToString("\n") { option ->
+                        option.asJsonObject["text"]?.asString ?: ""
                     }
+                    else -> null
                 }
             }
-            if (chipsArray.isNotEmpty()) languageCode to mapOf("DF_MESSENGER" to chipsArray) else null
-        }?.toMap() ?: emptyMap()
-    }
+        } ?: emptyList()
 
-
-    private fun processChips(jsonElement: JsonElement) =
-        jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
-            var chipsArray = emptyList<String>()
-            val languageCode = element.asJsonObject["languageCode"].asString
-            val payload = element.asJsonObject["payload"]
-            payload?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
-                outerList.asJsonArray.forEach { customElement ->
-                    val elementType = customElement.asJsonObject["type"].asString
-                    if (elementType == "chips") {
-                        val chipsValues = customElement.asJsonObject["options"].asJsonArray.map { chip ->
-                            chip.asJsonObject["text"].asString
-                        }
-                        chipsArray = chipsArray + chipsValues
-                    }
-                }
-            }
-            if (chipsArray.isNotEmpty() && chipsArray != null) languageCode to chipsArray else null
-        }?.toMap()
 
     /**
      * Process event handlers and, if they have trigger fulfillment messages, extract them. Note that
@@ -306,15 +329,14 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * those for the Default Start Flow only, since we will reuse their fulfillment messages everywhere
      * when we import the agent.
      */
-    private fun processEventHandlers(jsonElement: JsonElement, flowName: String) =
+    private fun processEventHandlers(jsonElement: JsonElement, flowName: String): Map<String, Map<String, Map<String, List<String>>>> =
         jsonElement.asJsonObject["eventHandlers"]?.asJsonArray?.mapNotNull { handler ->
             val event = handler.asJsonObject["event"].asString
             val messages = processMessages(handler.asJsonObject["triggerFulfillment"])
             if (messages != null && (flowName == "Default Start Flow" ||
                         event != "sys.no-match-default" && event != "sys.no-input-default")
-            )
-                event to LanguagePhrases(messages)
-            else null
+            ) {
+                event to messages
+            } else null
         }?.toMap() ?: mapOf()
-
 }
