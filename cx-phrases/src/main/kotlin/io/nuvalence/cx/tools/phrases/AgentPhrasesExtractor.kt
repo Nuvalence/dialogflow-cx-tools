@@ -289,6 +289,48 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * and a text field; under it, you find a list of text messages. Unlike for intents,
      * fulfillment messages do not have references to parameters.
      */
+    data class Fulfillment(val language: String, val phrases: List<String>, val channel: String? = null, val type: String? = null)
+
+    private fun processMessages_new(jsonElement: JsonElement): List<Fulfillment> {
+        val messagesJsonArray = jsonElement.asJsonObject["messages"]?.asJsonArray ?: return emptyList()
+
+        return messagesJsonArray.mapNotNull { element ->
+            val jsonObject = element.asJsonObject
+            val languageCode = jsonObject["languageCode"]?.asString ?: return@mapNotNull null
+            val channel = jsonObject["channel"]?.asString ?: "audio"
+
+            // Determine the type based on the jsonObject
+            when {
+                jsonObject.has("text") -> {
+                    val phrases = extractTextMessages(jsonObject)
+                    if (phrases.isNotEmpty()) Fulfillment(languageCode, phrases, channel, "message") else null
+                }
+                jsonObject.has("payload") -> {
+                    val payload = jsonObject["payload"].asJsonObject
+                    val richContent = payload["richContent"]?.asJsonArray?.firstOrNull()?.asJsonArray?.firstOrNull()?.asJsonObject
+                    val type = richContent?.get("type")?.asString
+                    val phrases = when (type) {
+                        "html" -> listOf(richContent["html"].asString)
+                        "chips" -> extractChipsMessages(richContent)
+                        else -> null
+                    }
+                    phrases?.let { Fulfillment(languageCode, it, channel, type ?: "unknown") }
+                }
+                else -> null  // Ignore if it has "outputAudioText" at the top level or unrecognized type
+            }
+        }
+    }
+
+    private fun extractTextMessages_new(jsonObject: JsonObject): List<String> =
+        jsonObject["text"]?.asJsonObject?.get("text")?.asJsonArray?.mapNotNull { it.asString } ?: emptyList()
+
+    private fun extractChipsMessages(jsonObject: JsonObject): List<String> =
+        jsonObject["options"]?.asJsonArray?.mapNotNull { it.asJsonObject["text"]?.asString } ?: emptyList()
+
+
+
+
+    // OLD CODE BELOW
     private fun processMessages(jsonElement: JsonElement): Map<String, Map<String, List<String>>> {
         val messagesJsonArray = jsonElement.asJsonObject["messages"]?.asJsonArray ?: return emptyMap()
 
@@ -321,7 +363,6 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 }
             }
         } ?: emptyList()
-
 
     /**
      * Process event handlers and, if they have trigger fulfillment messages, extract them. Note that
