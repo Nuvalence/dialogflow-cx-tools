@@ -14,7 +14,7 @@ enum class PhraseType(val title: String) {
 /**
  * Holds a list of phrases for the supported languages
  */
-data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
+data class LanguagePhrasesOld(val phraseByLanguage: Map<String, List<String>>) {
     /**
      * Given an order for the languages (we like the default one to be first),
      * flattens the associated strings into a single newline separated string.
@@ -24,6 +24,31 @@ data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
             phraseByLanguage[language]?.joinToString("\n") ?: ""
         }
     operator fun get(languageCode: String) = phraseByLanguage[languageCode]
+}
+data class LanguagePhrases(val phraseByLanguage: List<AgentPhrasesExtractor.Fulfillment>) {
+    // Secondary constructor that accepts a Map<String, List<String>>
+    constructor(phraseByLanguage: Map<String, List<String>>) : this(
+        phraseByLanguage.map { (language, phrases) ->
+            AgentPhrasesExtractor.Fulfillment(language, phrases)
+        }
+    )
+
+    /**
+     * Given an order for the languages (we like the default one to be first),
+     * flattens the associated strings into a single newline separated string.
+     */
+    fun flatten(order: List<String>): List<String> =
+        order.map { languageCode ->
+            phraseByLanguage.filter { it.language == languageCode }
+                .flatMap { it.phrases }
+                .joinToString("\n")
+        }
+    operator fun get(languageCode: String): AgentPhrasesExtractor.Fulfillment {
+        val matchingPhrases = phraseByLanguage.filter { it.language == languageCode }
+
+        return matchingPhrases.singleOrNull()
+            ?: throw IllegalArgumentException("Expected one Fulfillment object for language $languageCode, but found ${matchingPhrases.size}")
+    }
 }
 
 /**
@@ -66,7 +91,7 @@ class TranslationEntities {
         if (phrases == null)
             entityType[value] = LanguagePhrases(mapOf(language to synonyms))
         else
-            entityType[value] = LanguagePhrases(mapOf(language to synonyms) + phrases.phraseByLanguage)
+            entityType[value] = LanguagePhrases(mapOf(language to synonyms) + phrases.phraseByLanguage.map { it.language to it.phrases }.toMap())
     }
 
     fun flatten(order: List<String>) =

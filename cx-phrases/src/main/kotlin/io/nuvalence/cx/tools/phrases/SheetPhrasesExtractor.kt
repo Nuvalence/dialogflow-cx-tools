@@ -76,18 +76,54 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
      * @param pathSize how many columns represent the path
      * @param put function that stores the processed phrase
      */
+//    private fun processRows(
+//        translationAgent: TranslationAgent,
+//        rows: List<List<String>>,
+//        pathSize: Int,
+//        put: (PhrasePath, LanguagePhrases) -> Unit
+//    ) =
+//        rows.drop(1).forEach { row ->
+//            val path = row.take(pathSize)
+//            val phrases = translationAgent.allLanguages.zip(row.drop(pathSize)).associate { (language, texts) ->
+//                val phrases = texts.split('\n')
+//                language to phrases
+//            }
+//            put(PhrasePath(path), LanguagePhrases(phrases))
+//        }
+
     private fun processRows(
         translationAgent: TranslationAgent,
         rows: List<List<String>>,
         pathSize: Int,
         put: (PhrasePath, LanguagePhrases) -> Unit
-    ) =
+    ) {
+        // Extract the headers from the first row.
+        val headers = rows.first()
+
+        // Determine the indexes of the 'Channel' and 'Type' columns if they exist.
+        val channelIndex = headers.indexOf("Channel").takeIf { it >= pathSize }
+        val typeIndex = headers.indexOf("Type")
+
+        // Calculate the start index for language columns.
+        val languageStartIndex = (channelIndex?.plus(1)) ?: pathSize
+
         rows.drop(1).forEach { row ->
             val path = row.take(pathSize)
-            val phrases = translationAgent.allLanguages.zip(row.drop(pathSize)).associate { (language, texts) ->
-                val phrases = texts.split('\n')
-                language to phrases
-            }
-            put(PhrasePath(path), LanguagePhrases(phrases))
+            val channel = channelIndex?.let { row.getOrNull(it) }
+            val type = typeIndex?.let { row.getOrNull(it) }
+
+            val languagePhrases = translationAgent.allLanguages.zip(row.drop(languageStartIndex))
+                .map { (language, texts) ->
+                    val phrases = texts.split('\n')
+                    AgentPhrasesExtractor.Fulfillment(
+                        language,
+                        phrases,
+                        channel,
+                        type
+                    )
+                }
+
+            put(PhrasePath(path), LanguagePhrases(languagePhrases))
         }
+    }
 }

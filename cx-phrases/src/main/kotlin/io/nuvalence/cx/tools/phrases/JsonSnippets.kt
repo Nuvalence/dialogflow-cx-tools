@@ -80,29 +80,37 @@ fun createIntentPart(text: String, parameter: String? = null): JsonObject {
  * @param singleString whether to return the phrases as a single string or array of strings
  * @param phrases map associating a language to a list of phrases
  */
-fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<String>>): JsonArray {
+fun languagePhrasesToJson(singleString: Boolean, fulfillments: List<AgentPhrasesExtractor.Fulfillment>): JsonArray {
     val messages = JsonArray()
-    phrases.keys.forEach { languageCode ->
-        val texts = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
+
+    // Grouping fulfillments by language to process them together
+    val groupedByLanguage = fulfillments.groupBy { it.language }
+
+    groupedByLanguage.forEach { (languageCode, fulfillmentList) ->
+        val texts = fulfillmentList.flatMap { it.phrases }
         val outerText = JsonObject()
         val innerText = JsonArray()
-        if (singleString)
+
+        if (singleString) {
             innerText.add(texts.joinToString("\n"))
-        else
+        } else {
             texts.forEach { text -> innerText.add(text) }
+        }
+
         outerText.add("text", innerText)
         val textBlob = JsonObject()
         textBlob.add("text", outerText)
         textBlob.addProperty("languageCode", languageCode)
         messages.add(textBlob)
-        if (singleString)
+
+        if (singleString) {
             messages.add(audioMessage(languageCode, texts.joinToString("\n")))
-        else
-            texts
-                .filter { it.isNotEmpty() }
+        } else {
+            texts.filter { it.isNotEmpty() }
                 .forEach { text ->
                     messages.add(audioMessage(languageCode, text))
                 }
+        }
     }
     return messages
 }

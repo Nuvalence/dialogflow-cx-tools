@@ -62,7 +62,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
                 val language = file.name.removeSuffix(".json")
                 val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
-                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.toMutableSet()
+                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.phrases?.toMutableSet()
                 val outputTrainingPhrases = JsonArray()
 
                 originalTrainingPhrases["trainingPhrases"].asJsonArray.forEach { phrase ->
@@ -109,7 +109,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
                 jsonObject["entities"]?.asJsonArray?.forEach { entity ->
                     val value = entity.asJsonObject["value"].asString
-                    val synonyms = translationAgent.getEntity(entityName, value, languageCode)
+                    val synonyms = translationAgent.getEntity(entityName, value, languageCode).phrases
                     val synonymArray = JsonArray()
                     synonyms.forEach { synonym -> synonymArray.add(synonym) }
                     entity.asJsonObject.remove("synonyms")
