@@ -1,7 +1,6 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonArray
-import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import java.util.*
@@ -80,6 +79,39 @@ fun createIntentPart(text: String, parameter: String? = null): JsonObject {
  * @param singleString whether to return the phrases as a single string or array of strings
  * @param phrases map associating a language to a list of phrases
  */
+fun languagePhrasesToJson_NEW(singleString: Boolean, phrases: Map<String, List<Message>>): JsonArray {
+    val messagesJson = JsonArray()
+    phrases.keys.forEach { languageCode ->
+        val messagesList = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
+        messagesList.filter { message: Message -> message.type == "audio" }.forEach { message: Message ->
+            val outerText = JsonObject()
+            val innerText = JsonArray()
+            if (singleString)
+                innerText.add(message.phrases?.joinToString("\n"))
+            else
+                message.phrases?.forEach { text -> innerText.add(text) }
+            outerText.add("text", innerText)
+            val textBlob = JsonObject()
+            textBlob.add("text", outerText)
+            textBlob.addProperty("languageCode", languageCode)
+            if (!message.channel.isNullOrEmpty()) {
+                textBlob.addProperty("channel", message.channel)
+            }
+            messagesJson.add(textBlob)
+            if (message.channel != "DF_MESSENGER") {
+                if (singleString)
+                    messagesJson.add(message.phrases?.joinToString("\n")?.let { audioMessage(languageCode, it) })
+                else
+                    message.phrases
+                        ?.filter { it.isNotEmpty() }
+                        ?.forEach { text ->
+                            messagesJson.add(audioMessage(languageCode, text))
+                        }
+            }
+        }
+    }
+    return messagesJson
+}
 fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<String>>): JsonArray {
     val messages = JsonArray()
     phrases.keys.forEach { languageCode ->

@@ -82,14 +82,14 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
         translationAgent: TranslationAgent,
         rows: List<List<String>>,
         pathSize: Int,
-        put: (PhrasePath, LanguagePhrases) -> Unit
+        put: (PhrasePath, LanguageMessages) -> Unit
     ) =
         rows.drop(1).forEach { row ->
             val path = row.take(pathSize)
             val phrases = translationAgent.allLanguages.zip(row.drop(pathSize)).associate { (language, texts) ->
                 val phrases = texts.split('\n')
-                language to phrases
+                language to listOf(Message(phrases))
             }
-            put(PhrasePath(path), LanguagePhrases(phrases))
+            put(PhrasePath(path), LanguageMessages(phrases))
         }
 }
