@@ -14,11 +14,13 @@ enum class PhraseType(val title: String) {
 /**
  * Holds a list of phrases for the supported languages
  */
+// TODO: Update LanguagePhrases constructor to val phraseByLanguage: Map<String, Message>
 data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
     /**
      * Given an order for the languages (we like the default one to be first),
      * flattens the associated strings into a single newline separated string.
      */
+    // TODO: Modify this to return flattened string within the Message object with type and channel to start each new line (if it isn't null)
     fun flatten(order: List<String>) =
         order.map { language ->
             phraseByLanguage[language]?.joinToString("\n") ?: ""
@@ -57,6 +59,7 @@ class TranslationPhrases {
 class TranslationEntities {
     private  val entities = mutableMapOf<String, MutableMap<String, LanguagePhrases>>()
 
+    // TODO: Modify this to return the List<String> texts
     operator fun get(displayName: String, value: String, language: String) =
         entities[displayName]?.get(value)?.get(language) ?: error("Agent structure changed: displayName = $displayName value = $value language = $language")
 
@@ -64,8 +67,10 @@ class TranslationEntities {
         val entityType = entities.getOrPut(displayName) { mutableMapOf() }
         val phrases = entityType[value]
         if (phrases == null)
+            // TODO: Update this to convert synonyms to Message objects prior to the map
             entityType[value] = LanguagePhrases(mapOf(language to synonyms))
         else
+            // TODO: Update this to convert synonyms to Message objects priot to the map
             entityType[value] = LanguagePhrases(mapOf(language to synonyms) + phrases.phraseByLanguage)
     }
 

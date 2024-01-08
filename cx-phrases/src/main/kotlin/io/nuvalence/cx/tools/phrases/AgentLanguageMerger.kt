@@ -58,6 +58,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
                 val language = file.name.removeSuffix(".json")
                 val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
+                // TODO: Modify the line below to get the List<String> from the Message object with the Message object
                 val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.toMutableSet()
                 val outputTrainingPhrases = JsonArray()
 

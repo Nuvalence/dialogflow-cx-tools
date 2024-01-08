@@ -50,6 +50,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             val messages = File("$intentPath/trainingPhrases").listFiles()?.associate { file ->
                 val language = file.nameWithoutExtension // as in es.json minus .json
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                // TODO: Modify the code below to change trainingPhrases type from List<String> to Message
                 // Training phrases are under a "trainingPhrases" JSON attribute, which is an array
                 val trainingPhrases = jsonObject["trainingPhrases"].asJsonArray.map { element ->
                     processParts(element.asJsonObject["parts"]) // Training phrases have parts
@@ -130,13 +131,16 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 // If there are entry fulfillment messages, and they are not empty, capture them.
                 jsonObject["entryFulfillment"]?.let { entryFulfillment ->
                     val messages = processMessages(entryFulfillment)
+                    // TODO: move this processChips method to be called under processMessages
                     val chips = processChips(entryFulfillment)
                     if (!messages.isNullOrEmpty()) {
+                        // TODO: Modify this path to remove "message". This is the path of a page as such, that should be all that's in the path.
                         translationAgent.putPage(
                             PhrasePath(listOf(flowName, pageName, "message")),
                             LanguagePhrases(messages)
                         )
                     }
+                    // TODO: Remove this
                     if (!chips.isNullOrEmpty()) {
                         translationAgent.putPage(
                             PhrasePath(listOf(flowName, pageName, "chips")),
@@ -197,7 +201,9 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * and a text field; under it, you find a list of text messages. Unlike for intents,
      * fulfillment messages do not have references to parameters.
      */
+    // TODO: Update this function to return Map<String, Message>. Where Message has type: String, channel: String, texts: List<String>
     private fun processMessages(jsonElement: JsonElement) =
+        // TODO: Extract this to processTextMessages
         jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
             val languageCode = element.asJsonObject["languageCode"].asString
             val outerText = element.asJsonObject["text"]
@@ -206,6 +212,8 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             }
             if (texts != null) languageCode to texts else null
         }?.toMap()
+
+    // TODO: Create method processPayload. Create sub methods processHtmlPayload, processChipsPayload
 
     /**
      * Process customPayload fulfillment type with chips to translate the chip values. These have
