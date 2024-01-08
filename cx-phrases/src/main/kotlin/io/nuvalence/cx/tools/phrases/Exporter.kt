@@ -33,7 +33,7 @@ fun export(args: Array<String>) {
     sheetWriter.addTab(PhraseType.Intents.title)
     sheetWriter.addDataToTab(
         PhraseType.Intents.title,
-        translationAgent.flattenIntents(),
+        translationAgent.flattenIntents_NEW(),
         listOf("Intent Name") + translationAgent.allLanguages,
         listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
@@ -53,18 +53,19 @@ fun export(args: Array<String>) {
     sheetWriter.addTab(PhraseType.Flows.title)
     sheetWriter.addDataToTab(
         PhraseType.Flows.title,
-        translationAgent.flattenFlows(),
-        listOf("Flow Name", "Page", "Type", "Value") + translationAgent.allLanguages,
+        translationAgent.flattenFlows_NEW(),
+        listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages,
         listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
     // add normal page fulfillments to Fulfillments tab
+    var flattenPages = translationAgent.flattenPages_NEW()
     sheetWriter.deleteTab(PhraseType.Pages.title)
     sheetWriter.addTab(PhraseType.Pages.title)
     sheetWriter.addDataToTab(
         PhraseType.Pages.title,
-        translationAgent.flattenPages(),
-        listOf("Flow Name", "Page Name", "Type") + translationAgent.allLanguages,
+        flattenPages,
+        listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages,
         listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 }
