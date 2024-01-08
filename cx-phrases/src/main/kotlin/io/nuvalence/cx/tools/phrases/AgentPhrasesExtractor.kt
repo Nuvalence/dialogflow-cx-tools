@@ -201,10 +201,61 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * and a text field; under it, you find a list of text messages. Unlike for intents,
      * fulfillment messages do not have references to parameters.
      */
+    private fun processMessages_NEW(jsonElement: JsonElement): Map<String, List<Message>>? {
+        val messagesMap = mutableMapOf<String, MutableList<Message>>()
+
+        fun addMessageToMap(languageCode: String, message: Message) {
+            val messages = messagesMap.getOrPut(languageCode) { mutableListOf() }
+            messages.add(message)
+        }
+
+        jsonElement.asJsonObject["messages"]?.asJsonArray?.forEach { element ->
+            val languageCode = element.asJsonObject["languageCode"].asString
+            val channel = element.asJsonObject["channel"]?.asString ?: "audio"
+
+            processTextMessage(element, languageCode, channel)?.let { message ->
+                addMessageToMap(languageCode, message)
+            }
+
+            processPayloadMessage(element, languageCode, channel)?.forEach { message ->
+                addMessageToMap(languageCode, message)
+            }
+        }
+
+        return messagesMap.takeIf { it.isNotEmpty() }
+    }
+
+    private fun processTextMessage(element: JsonElement, languageCode: String, channel: String): Message? {
+        return element.asJsonObject["text"]?.asJsonObject?.get("text")?.asJsonArray?.map { it.asString }?.let { texts ->
+            if (texts.isNotEmpty()) Message("message", channel, texts) else null
+        }
+    }
+
+    private fun processPayloadMessage(element: JsonElement, languageCode: String, channel: String): List<Message> {
+        val messages = mutableListOf<Message>()
+        element.asJsonObject["payload"]?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
+            outerList.asJsonArray.forEach { richContentElement ->
+                val elementType = richContentElement.asJsonObject["type"].asString
+                when (elementType) {
+                    "chips" -> {
+                        val chipsValues = richContentElement.asJsonObject["options"].asJsonArray.map { it.asJsonObject["text"].asString }
+                        messages.add(Message(elementType, channel, chipsValues))
+                    }
+                    "html" -> {
+                        val htmlText = richContentElement.asJsonObject["html"].asString
+                        messages.add(Message(elementType, channel, listOf(htmlText)))
+                    }
+                }
+            }
+        }
+        return messages
+    }
+
+
     // TODO: Update this function to return Map<String, Message>. Where Message has type: String, channel: String, texts: List<String>
-    private fun processMessages(jsonElement: JsonElement) =
+    private fun processMessages(jsonElement: JsonElement): Map<String, List<String>>? {
         // TODO: Extract this to processTextMessages
-        jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
+        val result = jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
             val languageCode = element.asJsonObject["languageCode"].asString
             val outerText = element.asJsonObject["text"]
             val texts = outerText?.asJsonObject?.get("text")?.asJsonArray?.map { text ->
@@ -212,6 +263,8 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             }
             if (texts != null) languageCode to texts else null
         }?.toMap()
+        return result
+    }
 
     // TODO: Create method processPayload. Create sub methods processHtmlPayload, processChipsPayload
 

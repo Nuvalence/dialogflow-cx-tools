@@ -11,9 +11,24 @@ enum class PhraseType(val title: String) {
     Pages("Fulfillments");
 }
 
+data class Message(val type: String, val channel: String, val phrases: List<String>) {
+//    fun flatten() = ???
+}
+
 /**
  * Holds a list of phrases for the supported languages
  */
+data class LanguageMessages(val messagesByLanguage: Map<String, List<Message>>) {
+    /**
+     * Given an order for the languages (we like the default one to be first),
+     * flattens the associated strings into a single newline separated string.
+     */
+    // TODO: Modify this to return flattened string within the Message object with type and channel to start each new line (if it isn't null)
+//    fun flatten(order: List<String>) = ???
+
+    operator fun get(languageCode: String) = messagesByLanguage[languageCode]
+}
+
 // TODO: Update LanguagePhrases constructor to val phraseByLanguage: Map<String, Message>
 data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
     /**
@@ -21,10 +36,12 @@ data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
      * flattens the associated strings into a single newline separated string.
      */
     // TODO: Modify this to return flattened string within the Message object with type and channel to start each new line (if it isn't null)
-    fun flatten(order: List<String>) =
-        order.map { language ->
+    fun flatten(order: List<String>): List<String> {
+        val result = order.map { language ->
             phraseByLanguage[language]?.joinToString("\n") ?: ""
         }
+        return result
+    }
     operator fun get(languageCode: String) = phraseByLanguage[languageCode]
 }
 
@@ -47,10 +64,20 @@ class TranslationPhrases {
      * which is convenient for exporting to a spreadsheet. Each row contains
      * the path plus one entry per language.
      */
-    fun flatten(order: List<String>) =
-        phrases.map { (path, languagePhrases) ->
+    fun flatten_NEW(order: List<String>): List<List<String>> {
+        val result = phrases.map { (path, languageMessages) ->
+            path.path + languageMessages.flatten(order)
+        }
+        // You can now debug or inspect the 'result' variable here
+        return result
+    }
+    fun flatten(order: List<String>): List<List<String>> {
+        val result = phrases.map { (path, languagePhrases) ->
             path.path + languagePhrases.flatten(order)
         }
+        // You can now debug or inspect the 'result' variable here
+        return result
+    }
 }
 
 /**
