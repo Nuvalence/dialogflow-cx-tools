@@ -144,13 +144,13 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      * Process transition by intent or by condition.
      */
     private fun processTransitionRoute(flowName: String, route: JsonElement, transitionTrigger: String) {
-//        route.asJsonObject[transitionTrigger]?.asString?.let { entry ->
-//            translationAgent.getFlow(PhrasePath(listOf(flowName, "", transitionTrigger, entry)))?.let { flow ->
-//                val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
-//                replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = false, flow.phraseByLanguage))
-//                processParameters(entryFulfillment.asJsonObject)
-//            }
-//        }
+        route.asJsonObject[transitionTrigger]?.asString?.let { entry ->
+            translationAgent.getFlow(PhrasePath(listOf(flowName, "", transitionTrigger, entry)))?.let { flow ->
+                val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
+                replaceMessages(entryFulfillment, languagePhrasesToJson_NEW(singleString = false, flow.messagesByLanguage))
+                processParameters(entryFulfillment.asJsonObject)
+            }
+        }
     }
 
     /**
@@ -159,73 +159,73 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      * <agent-root>/flows/<flow-name>/<page-name>.json
      */
     private fun processPages() {
-//        File("$rootPath/flows").listFiles()?.forEach { directory ->
-//            val flowPath = directory.absolutePath
-//            val flowName = directory.name
-//            File("$flowPath/pages").listFiles()?.forEach { file ->
-//                val pageName = file.name.removeSuffix(".json")
-//                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
-//                processEventHandlers(jsonObject, listOf(flowName, pageName), translationAgent::getPages)
-//                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "message")))?.let { page ->
-//                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
-//                    replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = true, page.phraseByLanguage))
-//                    val webhook = entryFulfillment.get("webhook")
-//                    val tags = entryFulfillment.get("tag")
-//                    entryFulfillment.remove("webhook")
-//                    entryFulfillment.remove("tag")
-//                    if (webhook != null && webhook !is JsonNull) {
-//                        entryFulfillment.add("webhook", webhook)
-//                    }
-//                    if (tags != null && tags !is JsonNull) {
-//                        entryFulfillment.add("tag", tags)
-//                    }
-//                    processParameters(entryFulfillment)
-//                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
-//                }
-//                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chips")))?.let { page ->
-//                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
-//                    val messages = entryFulfillment.get("messages").asJsonArray
-//                    val messagesWithChips = chipsTextToJson(page.phraseByLanguage)
+        File("$rootPath/flows").listFiles()?.forEach { directory ->
+            val flowPath = directory.absolutePath
+            val flowName = directory.name
+            File("$flowPath/pages").listFiles()?.forEach { file ->
+                val pageName = file.name.removeSuffix(".json")
+                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                processEventHandlers_NEW(jsonObject, listOf(flowName, pageName), translationAgent::getPages)
+                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "message")))?.let { page ->
+                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
+                    replaceMessages(entryFulfillment, languagePhrasesToJson_NEW(singleString = true, page.messagesByLanguage))
+                    val webhook = entryFulfillment.get("webhook")
+                    val tags = entryFulfillment.get("tag")
+                    entryFulfillment.remove("webhook")
+                    entryFulfillment.remove("tag")
+                    if (webhook != null && webhook !is JsonNull) {
+                        entryFulfillment.add("webhook", webhook)
+                    }
+                    if (tags != null && tags !is JsonNull) {
+                        entryFulfillment.add("tag", tags)
+                    }
+                    processParameters(entryFulfillment)
+                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
+                }
+                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chips")))?.let { page ->
+                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
+                    val messages = entryFulfillment.get("messages").asJsonArray
+//                    val messagesWithChips = chipsTextToJson(page.messagesByLanguage)
 //                    messagesWithChips.forEach { message ->
 //                        if (message !in messages) {
 //                            messages.add(message)
 //                        }
 //                    }
-//                    replaceMessages(entryFulfillment, messages)
-//                    processParameters(entryFulfillment)
-//                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
-//                }
-//                jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
-//                    route.asJsonObject["condition"]?.asString?.let { condition ->
-//                        translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
-//                            val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
-//                            replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = false, phrases.phraseByLanguage))
-//                            processParameters(entryFulfillment.asJsonObject)
-//                        }
-//                    }
-//                }
-//                jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
-//                    val parameter = parameterElement.asJsonObject
-//                    val displayName = parameter["displayName"].asString
-//                    parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
-//                        fillBehavior["initialPromptFulfillment"]?.asJsonObject?.let { initialPrompt ->
-//                            translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")))?.let { phrases ->
-//                                replaceMessages(initialPrompt, languagePhrasesToJson(singleString = true, phrases.phraseByLanguage))
-//                            }
-//                        }
-//                        fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { eventElement ->
-//                            eventElement. asJsonObject.let { event ->
-//                                val eventName = event["event"].asString
-//                                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")))?.let { phrases ->
-//                                    replaceMessages(event["triggerFulfillment"].asJsonObject, languagePhrasesToJson(singleString = false, phrases.phraseByLanguage))
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//                prettySave(jsonObject, "$flowPath/pages/$pageName.json")
-//            }
-//        }
+                    replaceMessages(entryFulfillment, messages)
+                    processParameters(entryFulfillment)
+                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
+                }
+                jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
+                    route.asJsonObject["condition"]?.asString?.let { condition ->
+                        translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
+                            val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
+                            replaceMessages(entryFulfillment, languagePhrasesToJson_NEW(singleString = false, phrases.messagesByLanguage))
+                            processParameters(entryFulfillment.asJsonObject)
+                        }
+                    }
+                }
+                jsonObject["form"]?.asJsonObject?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
+                    val parameter = parameterElement.asJsonObject
+                    val displayName = parameter["displayName"].asString
+                    parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
+                        fillBehavior["initialPromptFulfillment"]?.asJsonObject?.let { initialPrompt ->
+                            translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")))?.let { phrases ->
+                                replaceMessages(initialPrompt, languagePhrasesToJson_NEW(singleString = true, phrases.messagesByLanguage))
+                            }
+                        }
+                        fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { eventElement ->
+                            eventElement. asJsonObject.let { event ->
+                                val eventName = event["event"].asString
+                                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")))?.let { phrases ->
+                                    replaceMessages(event["triggerFulfillment"].asJsonObject, languagePhrasesToJson_NEW(singleString = false, phrases.messagesByLanguage))
+                                }
+                            }
+                        }
+                    }
+                }
+                prettySave(jsonObject, "$flowPath/pages/$pageName.json")
+            }
+        }
     }
 
     /**

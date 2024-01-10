@@ -130,26 +130,10 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
                 // If there are entry fulfillment messages, and they are not empty, capture them.
                 jsonObject["entryFulfillment"]?.let { entryFulfillment ->
-                    val messages = processMessages(entryFulfillment)
                     val messages_NEW = processMessages_NEW(entryFulfillment)
                     if (!messages_NEW.isNullOrEmpty()) {
                         translationAgent.putPage(PhrasePath(listOf(flowName, pageName)), LanguageMessages(messages_NEW))
                     }
-                    // TODO: move this processChips method to be called under processMessages
-//                    val chips = processChips(entryFulfillment)
-//                    if (!messages.isNullOrEmpty()) {
-//                        // TODO: Modify this path to remove "message". This is the path of a page as such, that should be all that's in the path.
-//                        translationAgent.putPage(
-//                            PhrasePath(listOf(flowName, pageName, "message")),
-//                            LanguagePhrases(messages)
-//                        )
-//                    }
-                    // TODO: Remove this
-//                    if (!chips.isNullOrEmpty()) {
-//                        translationAgent.putPage(
-//                            PhrasePath(listOf(flowName, pageName, "chips")),
-//                            LanguagePhrases(chips))
-//                    }
                 }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
