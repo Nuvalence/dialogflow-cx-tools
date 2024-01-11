@@ -79,11 +79,12 @@ fun createIntentPart(text: String, parameter: String? = null): JsonObject {
  * @param singleString whether to return the phrases as a single string or array of strings
  * @param phrases map associating a language to a list of phrases
  */
+// TODO: IS THIS MISSING PROCESSING FOR PAYLOAD IN ADDITION TO TEXT?
 fun languagePhrasesToJson_NEW(singleString: Boolean, phrases: Map<String, List<Message>>): JsonArray {
     val messagesJson = JsonArray()
     phrases.keys.forEach { languageCode ->
         val messagesList = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
-        messagesList.filter { message: Message -> message.type == "audio" }.forEach { message: Message ->
+        messagesList.filter { message: Message -> message.type == "message" }.forEach { message: Message ->
             val outerText = JsonObject()
             val innerText = JsonArray()
             if (singleString)
@@ -94,7 +95,7 @@ fun languagePhrasesToJson_NEW(singleString: Boolean, phrases: Map<String, List<M
             val textBlob = JsonObject()
             textBlob.add("text", outerText)
             textBlob.addProperty("languageCode", languageCode)
-            if (!message.channel.isNullOrEmpty()) {
+            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
                 textBlob.addProperty("channel", message.channel)
             }
             messagesJson.add(textBlob)
