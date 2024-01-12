@@ -101,7 +101,7 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
                 val type = typeIndex?.let { row[it] }
                 val channel = channelIndex?.let { row[it] }
                 val phrases = texts.split('\n')
-                language to listOf(Message(phrases, channel, type))
+                language to listOf(Message(phrases, channel, type, null))
             }
             put(PhrasePath(path), LanguageMessages(phrases))
         }

@@ -11,7 +11,7 @@ enum class PhraseType(val title: String) {
     Pages("Fulfillments");
 }
 
-data class Message(val phrases: List<String>?, val channel: String? = null, val type: String? = null) {
+data class Message(val phrases: List<String>?, val channel: String? = null, val type: String? = null, val event: String? = null) {
     fun flatten(): String {
         val result = phrases?.joinToString("\n") ?: ""
         return result
@@ -101,7 +101,11 @@ class TranslationPhrases_NEW {
                     // Create a unique string representation of the path.
                     val phrasePath: MutableList<String> = path.path.toMutableList()
                     if (!message.type.isNullOrEmpty()) {
-                        phrasePath.add(message.type)
+                        if (!message.event.isNullOrEmpty() && !phrasePath.contains(message.event)) {
+                            phrasePath.add(listOf(message.type, message.event).joinToString("\n"))
+                        } else {
+                            phrasePath.add(message.type)
+                        }
                     }
                     if (!message.channel.isNullOrEmpty()) {
                         phrasePath.add(message.channel)

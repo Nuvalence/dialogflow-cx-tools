@@ -160,8 +160,8 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                     }
                 }
                 // If the page has event handlers with fulfillment messages, capture them
-                processEventHandlers(jsonObject, flowName).forEach { (event, messages) ->
-                    translationAgent.putPage(PhrasePath(listOf(flowName, pageName, event)), messages)
+                processEventHandlers(jsonObject, flowName).forEach { (event, languageMessages) ->
+                    translationAgent.putPage(PhrasePath(listOf(flowName, pageName)), languageMessages)
                 }
             }
         }
@@ -188,7 +188,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * and a text field; under it, you find a list of text messages. Unlike for intents,
      * fulfillment messages do not have references to parameters.
      */
-    private fun processMessages_NEW(jsonElement: JsonElement): Map<String, List<Message>>? {
+    private fun processMessages_NEW(jsonElement: JsonElement, event: String? = null): Map<String, List<Message>>? {
         val messagesMap = mutableMapOf<String, MutableList<Message>>()
 
         fun addMessageToMap(languageCode: String, message: Message) {
@@ -200,11 +200,11 @@ class AgentPhrasesExtractor(private val rootPath: String) {
             val languageCode = element.asJsonObject["languageCode"].asString
             val channel = element.asJsonObject["channel"]?.asString ?: "audio"
 
-            processTextMessage(element, channel)?.let { message ->
+            processTextMessage(element, channel, event)?.let { message ->
                 addMessageToMap(languageCode, message)
             }
 
-            processPayloadMessage(element, channel)?.forEach { message ->
+            processPayloadMessage(element, channel, event)?.forEach { message ->
                 addMessageToMap(languageCode, message)
             }
         }
@@ -212,13 +212,13 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         return messagesMap.takeIf { it.isNotEmpty() }
     }
 
-    private fun processTextMessage(element: JsonElement, channel: String): Message? {
+    private fun processTextMessage(element: JsonElement, channel: String, event: String?): Message? {
         return element.asJsonObject["text"]?.asJsonObject?.get("text")?.asJsonArray?.map { it.asString }?.let { texts ->
-            if (texts.isNotEmpty()) Message(texts, channel, "message") else null
+            if (texts.isNotEmpty()) Message(texts, channel, "message", event) else null
         }
     }
 
-    private fun processPayloadMessage(element: JsonElement, channel: String): List<Message>? {
+    private fun processPayloadMessage(element: JsonElement, channel: String, event: String?): List<Message>? {
         val messages = mutableListOf<Message>()
         element.asJsonObject["payload"]?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
             outerList.asJsonArray.forEach { richContentElement ->
@@ -226,11 +226,11 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 when (elementType) {
                     "chips" -> {
                         val chipsValues = richContentElement.asJsonObject["options"].asJsonArray.map { it.asJsonObject["text"].asString }
-                        messages.add(Message(chipsValues, channel, elementType))
+                        messages.add(Message(chipsValues, channel, elementType, event))
                     }
                     "html" -> {
                         val htmlText = richContentElement.asJsonObject["html"].asString
-                        messages.add(Message(listOf(htmlText), channel, elementType))
+                        messages.add(Message(listOf(htmlText), channel, elementType, event))
                     }
                 }
             }
@@ -289,7 +289,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
     private fun processEventHandlers(jsonElement: JsonElement, flowName: String) =
         jsonElement.asJsonObject["eventHandlers"]?.asJsonArray?.mapNotNull { handler ->
             val event = handler.asJsonObject["event"].asString
-            val messages = processMessages_NEW(handler.asJsonObject["triggerFulfillment"])
+            val messages = processMessages_NEW(handler.asJsonObject["triggerFulfillment"], event)
             if (messages != null && (flowName == "Default Start Flow" ||
                         event != "sys.no-match-default" && event != "sys.no-input-default")
             )

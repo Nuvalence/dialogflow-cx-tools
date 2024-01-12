@@ -338,7 +338,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 val phrases = when (val eventName = event.asJsonObject["event"].asString) {
                     "sys.no-match-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-match-default")))
                     "sys.no-input-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-input-default")))
-                    else -> getPhrases(PhrasePath(pathPrefix + eventName + type + channel))
+                    else -> getPhrases(PhrasePath(pathPrefix + eventName))
                 }
                 if (phrases != null) {
                     val replacementMessages = languagePhrasesToJson_NEW(singleString = false, phrases.messagesByLanguage)
