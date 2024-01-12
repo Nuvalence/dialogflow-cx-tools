@@ -84,7 +84,7 @@ fun languagePhrasesToJson_NEW(singleString: Boolean, phrases: Map<String, List<M
     val messagesJson = JsonArray()
     phrases.keys.forEach { languageCode ->
         val messagesList = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
-        messagesList.filter { message: Message -> message.type == "message" }.forEach { message: Message ->
+        messagesList.filter { message -> message.type == "message" }.forEach { message ->
             val outerText = JsonObject()
             val innerText = JsonArray()
             if (singleString)
@@ -110,9 +110,52 @@ fun languagePhrasesToJson_NEW(singleString: Boolean, phrases: Map<String, List<M
                         }
             }
         }
+        messagesList.filter { message -> message.type == "html" }.forEach { message ->
+            val payloadBlob = JsonObject()
+            val payload = JsonObject()
+            val richContent = JsonArray()
+            val innerRichContent = JsonArray()
+            val content = JsonObject()
+            content.addProperty("html", message.phrases?.joinToString("\n"))
+            content.addProperty("type", "html")
+            innerRichContent.add(content)
+            richContent.add(innerRichContent)
+            payload.add("richContent", richContent)
+            payloadBlob.add("payload", payload)
+            payloadBlob.addProperty("languageCode", languageCode)
+            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
+                payloadBlob.addProperty("channel", message.channel)
+            }
+            messagesJson.add(payloadBlob)
+        }
+        messagesList.filter { message -> message.type == "chips" }.forEach { message ->
+            val payloadBlob = JsonObject()
+            val payload = JsonObject()
+            val richContent = JsonArray()
+            val innerRichContent = JsonArray()
+            val content = JsonObject()
+            val options = JsonArray()
+            message.phrases?.forEach { chipText ->
+                val chip = JsonObject()
+                chip.addProperty("text", chipText)
+                options.add(chip)
+            }
+            content.add("options", options)
+            content.addProperty("type", "chips")
+            innerRichContent.add(content)
+            richContent.add(innerRichContent)
+            payload.add("richContent", richContent)
+            payloadBlob.add("payload", payload)
+            payloadBlob.addProperty("languageCode", languageCode)
+            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
+                payloadBlob.addProperty("channel", message.channel)
+            }
+            messagesJson.add(payloadBlob)
+        }
     }
     return messagesJson
 }
+
 fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<String>>): JsonArray {
     val messages = JsonArray()
     phrases.keys.forEach { languageCode ->
@@ -146,33 +189,33 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Strin
  *
  * @param phrases map associating a language to a list of chips values
  */
-fun chipsTextToJson(textFields: Map<String, List<String>>): JsonArray {
-    val messages = JsonArray()
-    textFields.keys.forEach { languageCode ->
-        val texts = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
-        val payload = JsonObject()
-        val richContent = JsonArray()
-        val richContentInnerArray = JsonArray()
-        val richContentItem = JsonObject()
-        val options = JsonArray()
-        texts.forEach { chipText ->
-            val chip = JsonObject()
-            chip.addProperty("text", chipText)
-            options.add(chip)
-        }
-        richContentItem.add("options", options)
-        richContentItem.addProperty("type", "chips")
-        richContentInnerArray.add(richContentItem)
-        richContent.add(richContentInnerArray)
-        payload.add("richContent", richContent)
-        val message = JsonObject()
-        message.add("payload", payload)
-        message.addProperty("languageCode", languageCode)
-        message.addProperty("channel", "DF_MESSENGER")
-        messages.add(message)
-    }
-    return messages
-}
+//fun chipsTextToJson(textFields: Map<String, List<String>>): JsonArray {
+//    val messages = JsonArray()
+//    textFields.keys.forEach { languageCode ->
+//        val texts = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
+//        val payload = JsonObject()
+//        val richContent = JsonArray()
+//        val richContentInnerArray = JsonArray()
+//        val richContentItem = JsonObject()
+//        val options = JsonArray()
+//        texts.forEach { chipText ->
+//            val chip = JsonObject()
+//            chip.addProperty("text", chipText)
+//            options.add(chip)
+//        }
+//        richContentItem.add("options", options)
+//        richContentItem.addProperty("type", "chips")
+//        richContentInnerArray.add(richContentItem)
+//        richContent.add(richContentInnerArray)
+//        payload.add("richContent", richContent)
+//        val message = JsonObject()
+//        message.add("payload", payload)
+//        message.addProperty("languageCode", languageCode)
+//        message.addProperty("channel", "DF_MESSENGER")
+//        messages.add(message)
+//    }
+//    return messages
+//}
 
 /**
  * Looks for assignments to the "web-site" or "web-site-fwd" session parameters, and generate

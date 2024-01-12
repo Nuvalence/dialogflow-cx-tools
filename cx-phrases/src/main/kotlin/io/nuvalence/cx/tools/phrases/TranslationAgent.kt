@@ -69,7 +69,21 @@ class TranslationPhrases_NEW {
     operator fun get(phrasePath: PhrasePath) = phrases[phrasePath]
 
     operator fun set(path: PhrasePath, languageMessages: LanguageMessages) {
-        phrases[path] = languageMessages
+        val existingMessages = phrases[path]
+
+        phrases[path] = if (existingMessages == null) {
+            languageMessages
+        } else {
+            val combinedMessagesByLanguage = existingMessages.messagesByLanguage.toMutableMap()
+
+            languageMessages.messagesByLanguage.forEach { (languageCode, newMessages) ->
+                combinedMessagesByLanguage.merge(languageCode, newMessages) { existingMessages, newMessages ->
+                    existingMessages + newMessages
+                }
+            }
+
+            LanguageMessages(combinedMessagesByLanguage)
+        }
     }
 
     /**
@@ -168,11 +182,11 @@ class TranslationEntities {
  */
 class TranslationAgent(val defaultLanguageCode: String, val supportedLanguageCodes: List<String>) {
     private val entities = TranslationEntities()
-    private val intents = TranslationPhrases()
+//    private val intents = TranslationPhrases()
     private val intents_NEW = TranslationPhrases_NEW()
-    private val flows = TranslationPhrases()
+//    private val flows = TranslationPhrases()
     private val flows_NEW = TranslationPhrases_NEW()
-    private val pages = TranslationPhrases()
+//    private val pages = TranslationPhrases()
     private val pages_NEW = TranslationPhrases_NEW()
     val allLanguages = listOf(defaultLanguageCode) + supportedLanguageCodes
 
@@ -182,19 +196,19 @@ class TranslationAgent(val defaultLanguageCode: String, val supportedLanguageCod
     fun getPages(path: PhrasePath) = pages_NEW[path]
 
     fun putEntity(displayName: String, value: String, language: String, synonyms: List<String>) = entities.set(displayName, value, language, synonyms)
-    fun putIntent(path: PhrasePath, languagePhrases: LanguageMessages) = intents_NEW.set(path, languagePhrases)
-    fun putIntent_OLD(path: PhrasePath, languagePhrases: LanguagePhrases) = intents.set(path, languagePhrases)
-    fun putFlow_OLD(path: PhrasePath, languagePhrases: LanguagePhrases) = flows.set(path, languagePhrases)
+    fun putIntent(path: PhrasePath, languageMessages: LanguageMessages) = intents_NEW.set(path, languageMessages)
+//    fun putIntent_OLD(path: PhrasePath, languagePhrases: LanguagePhrases) = intents.set(path, languagePhrases)
+//    fun putFlow_OLD(path: PhrasePath, languagePhrases: LanguagePhrases) = flows.set(path, languagePhrases)
     fun putFlow(path: PhrasePath, languageMessages: LanguageMessages) = flows_NEW.set(path, languageMessages)
-    fun putPage(path: PhrasePath, languagePhrases: LanguagePhrases) = pages.set(path, languagePhrases)
+//    fun putPage(path: PhrasePath, languagePhrases: LanguagePhrases) = pages.set(path, languagePhrases)
     fun putPage(path: PhrasePath, languageMessages: LanguageMessages) = pages_NEW.set(path, languageMessages)
 
     fun flattenEntities() = entities.flatten(allLanguages)
-    fun flattenIntents() = intents.flatten(allLanguages)
+//    fun flattenIntents() = intents.flatten(allLanguages)
     fun flattenIntents_NEW() = intents_NEW.flatten(allLanguages)
-    fun flattenFlows() = flows.flatten(allLanguages)
+//    fun flattenFlows() = flows.flatten(allLanguages)
     fun flattenFlows_NEW() = flows_NEW.flatten(allLanguages)
-    fun flattenPages() = pages.flatten(allLanguages)
+//    fun flattenPages() = pages.flatten(allLanguages)
     fun flattenPages_NEW() = pages_NEW.flatten(allLanguages)
 }
 

@@ -130,9 +130,8 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
                 // If there are entry fulfillment messages, and they are not empty, capture them.
                 jsonObject["entryFulfillment"]?.let { entryFulfillment ->
-                    val messages_NEW = processMessages_NEW(entryFulfillment)
-                    if (!messages_NEW.isNullOrEmpty()) {
-                        translationAgent.putPage(PhrasePath(listOf(flowName, pageName)), LanguageMessages(messages_NEW))
+                    processMessages_NEW(entryFulfillment)?.let { messages ->
+                        translationAgent.putPage(PhrasePath(listOf(flowName, pageName)), LanguageMessages(messages))
                     }
                 }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
@@ -148,15 +147,15 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                     val displayName = parameter["displayName"].asString
                     parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
                         fillBehavior["initialPromptFulfillment"]?.let { initialPrompt ->
-                            val messages = processMessages(initialPrompt)
+                            val messages = processMessages_NEW(initialPrompt)
                             if (!messages.isNullOrEmpty())
-                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguagePhrases(messages))
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguageMessages(messages))
                         }
                         fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { event ->
-                            val messages = processMessages(event.asJsonObject["triggerFulfillment"])
+                            val messages = processMessages_NEW(event.asJsonObject["triggerFulfillment"])
                             val eventName = event.asJsonObject["event"].asString
                             if (!messages.isNullOrEmpty())
-                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguagePhrases(messages))
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguageMessages(messages))
                         }
                     }
                 }

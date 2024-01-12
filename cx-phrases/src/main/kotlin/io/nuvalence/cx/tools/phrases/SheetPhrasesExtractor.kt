@@ -32,7 +32,7 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
             if (index > 1) language else null
         }.mapNotNull { it }
         val translationAgent = TranslationAgent(defaultLanguageCode, supportedLanguageCodes)
-        processRows(translationAgent, intents,  translationAgent::putIntent)
+        processRows(translationAgent,  intents, 1, translationAgent::putIntent)
         return translationAgent
     }
 
@@ -56,7 +56,7 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
     // TODO: SOMETHING HERE
     private fun processFlows(translationAgent: TranslationAgent) {
         val flows = SheetReader(credentialsURL, spreadsheetId, Flows.title).read()
-        processRows(translationAgent, flows,  translationAgent::putFlow)
+        processRows(translationAgent, flows, 6, translationAgent::putFlow)
     }
 
     /**
@@ -66,7 +66,7 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
     // TODO: SOMETHING HERE
     private fun processPages(translationAgent: TranslationAgent) {
         val pages = SheetReader(credentialsURL, spreadsheetId, Pages.title).read()
-        processRows(translationAgent, pages, translationAgent::putPage)
+        processRows(translationAgent, pages, 2, translationAgent::putPage)
     }
 
     /**
@@ -80,22 +80,24 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
     private fun processRows(
         translationAgent: TranslationAgent,
         rows: List<List<String>>,
+        pathSize: Int,
         put: (PhrasePath, LanguageMessages) -> Unit
     ) {
         // Assume the first row contains headers
         val headers = rows.first()
 
         // Determine the pathSize based on the first occurrence of "en"
-        val pathSize = headers.indexOf("en")
+//        val pathSize = headers.indexOf("en")
 
         // Determine if "Type" and "Channel" columns exist
         val typeIndex = headers.indexOf("Type").takeIf { it != -1 }
         val channelIndex = headers.indexOf("Channel").takeIf { it != -1 }
+        val englishLanguageIndex = headers.indexOf("en")
 
         // Process each row except the first (header) row
         rows.drop(1).forEach { row ->
             val path = row.take(pathSize)
-            val phrases = translationAgent.allLanguages.zip(row.drop(pathSize)).associate { (language, texts) ->
+            val phrases = translationAgent.allLanguages.zip(row.drop(englishLanguageIndex)).associate { (language, texts) ->
                 val type = typeIndex?.let { row[it] }
                 val channel = channelIndex?.let { row[it] }
                 val phrases = texts.split('\n')

@@ -189,8 +189,9 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     } else {
                         "unknown"
                     }
-                    translationAgent.getPages(PhrasePath(listOf(flowName, pageName, type, channel)))?.let { page ->
-                        replaceMessages(entryFulfillment, languagePhrasesToJson_NEW(singleString = true, page.messagesByLanguage))
+                    translationAgent.getPages(PhrasePath(listOf(flowName, pageName)))?.let { page ->
+                        val replacementMessages = languagePhrasesToJson_NEW(singleString = true, page.messagesByLanguage)
+                        replaceMessages(entryFulfillment, replacementMessages)
                         val webhook = entryFulfillment.get("webhook")
                         val tags = entryFulfillment.get("tag")
                         entryFulfillment.remove("webhook")
@@ -220,7 +221,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                         }
 
                         route.asJsonObject["condition"]?.asString?.let { condition ->
-                            translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition, type, channel)))?.let { phrases ->
+                            translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
                                 replaceMessages(triggerFulfillment, languagePhrasesToJson_NEW(singleString = false, phrases.messagesByLanguage))
                                 processParameters(triggerFulfillment.asJsonObject)
                             }
@@ -243,7 +244,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                                 } else {
                                     "unknown"
                                 }
-                                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment", type, channel)))?.let { phrases ->
+                                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")))?.let { phrases ->
                                     replaceMessages(initialPrompt, languagePhrasesToJson_NEW(singleString = true, phrases.messagesByLanguage))
                                 }
                             }
@@ -262,7 +263,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                                     } else {
                                         "unknown"
                                     }
-                                    translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName", type, channel)))?.let { phrases ->
+                                    translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")))?.let { phrases ->
                                         replaceMessages(triggerFulfillment, languagePhrasesToJson_NEW(singleString = false, phrases.messagesByLanguage))
                                     }
                                 }
@@ -335,8 +336,8 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     "unknown"
                 }
                 val phrases = when (val eventName = event.asJsonObject["event"].asString) {
-                    "sys.no-match-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-match-default", type, channel)))
-                    "sys.no-input-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-input-default", type, channel)))
+                    "sys.no-match-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-match-default")))
+                    "sys.no-input-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-input-default")))
                     else -> getPhrases(PhrasePath(pathPrefix + eventName + type + channel))
                 }
                 if (phrases != null) {
