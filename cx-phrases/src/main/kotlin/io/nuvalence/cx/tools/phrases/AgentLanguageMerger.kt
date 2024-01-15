@@ -53,13 +53,32 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      */
     private fun processIntents() {
         File("$rootPath/intents").listFiles()?.forEach { directory ->
-            val intentPath = directory.absolutePath
             val intentName = directory.name
-            File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
-                val language = file.name.removeSuffix(".json")
-                val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
-                // TODO: Modify the line below to get the List<String> from the Message object with the Message object DONE
-                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.flatMap { it.phrases ?: emptyList() }?.toMutableSet()
+            val intentPath = directory.absolutePath
+
+            // Ensure the trainingPhrases directory exists
+            val trainingPhrasesPath = "$intentPath/trainingPhrases"
+
+            val trainingPhrasesDir = File(trainingPhrasesPath)
+            if (!trainingPhrasesDir.exists()) {
+                trainingPhrasesDir.mkdirs()
+            }
+
+            val languageMessages = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.messagesByLanguage
+            languageMessages?.forEach { (language, messages) ->
+                val phrasesSet = messages.flatMap { it.phrases ?: emptyList() }.toMutableSet()
+                val file = File(trainingPhrasesDir, "$language.json")
+
+                if (!file.exists()) {
+                    file.createNewFile()
+                }
+
+                val originalTrainingPhrases = if (file.readText().isNotBlank()) {
+                    JsonParser.parseString(file.readText()).asJsonObject
+                } else {
+                    JsonObject().apply { add("trainingPhrases", JsonArray()) }
+                }
+
                 val outputTrainingPhrases = JsonArray()
 
                 originalTrainingPhrases["trainingPhrases"].asJsonArray.forEach { phrase ->
@@ -67,20 +86,51 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     val combinedText = combineParts(parts)
 
 
-                    if (combinedText in languagePhrases.orEmpty()) {
+                    if (combinedText in phrasesSet) {
                         outputTrainingPhrases.add(phrase)
-                        languagePhrases?.remove(combinedText) // Remove the text from the set
+                        phrasesSet.remove(combinedText) // Remove the text from the set
+                    }
+                }
+                phrasesSet.forEach { phrase ->
+                    if (phrase.isNotEmpty()) {
+                        outputTrainingPhrases.addAll(intentLanguage(language, listOf(phrase)))
                     }
                 }
 
-                languagePhrases?.let {
-                    intentLanguage(language, it.toList()).forEach { phrase -> outputTrainingPhrases.add(phrase) }
-                }
-
-                val resultJsonObject = JsonObject().apply { add("trainingPhrases", outputTrainingPhrases) }
+                val resultJsonObject = JsonObject().apply { add("trainingPhrases", outputTrainingPhrases)}
                 prettySave(resultJsonObject, file.absolutePath)
             }
         }
+
+//        File("$rootPath/intents").listFiles()?.forEach { directory ->
+//            val intentPath = directory.absolutePath
+//            val intentName = directory.name
+//            File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
+//                val language = file.name.removeSuffix(".json")
+//                val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
+//                // TODO: Modify the line below to get the List<String> from the Message object with the Message object DONE
+//                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.flatMap { it.phrases ?: emptyList() }?.toMutableSet()
+//                val outputTrainingPhrases = JsonArray()
+//
+//                originalTrainingPhrases["trainingPhrases"].asJsonArray.forEach { phrase ->
+//                    val parts = phrase.asJsonObject["parts"].asJsonArray
+//                    val combinedText = combineParts(parts)
+//
+//
+//                    if (combinedText in languagePhrases.orEmpty()) {
+//                        outputTrainingPhrases.add(phrase)
+//                        languagePhrases?.remove(combinedText) // Remove the text from the set
+//                    }
+//                }
+//
+//                languagePhrases?.let {
+//                    intentLanguage(language, it.toList()).forEach { phrase -> outputTrainingPhrases.add(phrase) }
+//                }
+//
+//                val resultJsonObject = JsonObject().apply { add("trainingPhrases", outputTrainingPhrases) }
+//                prettySave(resultJsonObject, file.absolutePath)
+//            }
+//        }
     }
 
     /**
