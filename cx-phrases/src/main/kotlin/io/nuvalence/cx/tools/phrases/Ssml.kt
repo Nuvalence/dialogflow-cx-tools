@@ -144,7 +144,7 @@ fun processString(phrase: String, regex: Regex, replace: (String) -> String): St
         parts.append(replace(toProcess))
         lastEndIndex = matchResult.range.last + 1
     }
-    val text = phrase.substring(lastEndIndex).trim()
+    val text = phrase.substring(lastEndIndex).trimEnd()
     if (text.isNotEmpty())
         parts.append(text)
     return parts.toString()
