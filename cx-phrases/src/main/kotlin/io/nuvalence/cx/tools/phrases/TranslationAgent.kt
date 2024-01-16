@@ -160,6 +160,8 @@ class TranslationEntities {
     operator fun get(displayName: String, value: String, language: String) =
         entities[displayName]?.get(value)?.get(language) ?: error("Agent structure changed: displayName = $displayName value = $value language = $language")
 
+    operator fun get(displayName: String) = entities[displayName]
+
     operator fun set(displayName: String, value: String, language: String, synonyms: List<String>) {
         val entityType = entities.getOrPut(displayName) { mutableMapOf() }
         val phrases = entityType[value]
@@ -195,6 +197,7 @@ class TranslationAgent(val defaultLanguageCode: String, val supportedLanguageCod
     val allLanguages = listOf(defaultLanguageCode) + supportedLanguageCodes
 
     fun getEntity(displayName: String, value: String, language: String) = entities.get(displayName, value, language)
+    fun getEntities(displayName: String) = entities.get(displayName)
     fun getIntent(path: PhrasePath) = intents_NEW[path]
     fun getFlow(path: PhrasePath) = flows_NEW[path]
     fun getPages(path: PhrasePath) = pages_NEW[path]

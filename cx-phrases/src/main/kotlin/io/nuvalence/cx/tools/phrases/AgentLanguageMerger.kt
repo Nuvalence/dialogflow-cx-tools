@@ -101,36 +101,6 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 prettySave(resultJsonObject, file.absolutePath)
             }
         }
-
-//        File("$rootPath/intents").listFiles()?.forEach { directory ->
-//            val intentPath = directory.absolutePath
-//            val intentName = directory.name
-//            File("$intentPath/trainingPhrases").listFiles()?.forEach { file ->
-//                val language = file.name.removeSuffix(".json")
-//                val originalTrainingPhrases = JsonParser.parseString(file.readText()).asJsonObject
-//                // TODO: Modify the line below to get the List<String> from the Message object with the Message object DONE
-//                val languagePhrases = translationAgent.getIntent(PhrasePath(listOf(intentName)))?.get(language)?.flatMap { it.phrases ?: emptyList() }?.toMutableSet()
-//                val outputTrainingPhrases = JsonArray()
-//
-//                originalTrainingPhrases["trainingPhrases"].asJsonArray.forEach { phrase ->
-//                    val parts = phrase.asJsonObject["parts"].asJsonArray
-//                    val combinedText = combineParts(parts)
-//
-//
-//                    if (combinedText in languagePhrases.orEmpty()) {
-//                        outputTrainingPhrases.add(phrase)
-//                        languagePhrases?.remove(combinedText) // Remove the text from the set
-//                    }
-//                }
-//
-//                languagePhrases?.let {
-//                    intentLanguage(language, it.toList()).forEach { phrase -> outputTrainingPhrases.add(phrase) }
-//                }
-//
-//                val resultJsonObject = JsonObject().apply { add("trainingPhrases", outputTrainingPhrases) }
-//                prettySave(resultJsonObject, file.absolutePath)
-//            }
-//        }
     }
 
     /**
@@ -152,20 +122,51 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
             val entityPath = directory.absolutePath
             val entityName = directory.name // the directory name is the entity name
-            File("$entityPath/entities").listFiles()?.forEach { file ->
-                val languageCode = file.nameWithoutExtension // as in en.json minus .json
-                val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
-                jsonObject["entities"]?.asJsonArray?.forEach { entity ->
-                    val value = entity.asJsonObject["value"].asString
-                    val synonyms = translationAgent.getEntity(entityName, value, languageCode)
-                    val synonymArray = JsonArray()
-                    synonyms.forEach { synonym -> synonymArray.add(synonym) }
-                    entity.asJsonObject.remove("synonyms")
-                    entity.asJsonObject.remove("languageCode")
-                    entity.asJsonObject.add("synonyms", synonymArray)
-                    entity.asJsonObject.addProperty("languageCode", languageCode)
+
+            // Ensure the entities directory exists
+            val entitiesPath = "$entityPath/entities"
+
+            val entitiesDir = File(entitiesPath)
+            if (!entitiesDir.exists()) {
+                entitiesDir.mkdirs()
+            }
+
+            val entites = translationAgent.getEntities(entityName)
+            val languagePhrases = mutableMapOf<String, MutableMap<String, List<String>>>()
+            entites?.forEach { (value, phraseByLanguage) ->
+                phraseByLanguage.phraseByLanguage.forEach { (languageCode, phrases) ->
+                    val valueMap = languagePhrases.getOrPut(languageCode) { mutableMapOf() }
+                    valueMap[value] = phrases
                 }
-                prettySave(jsonObject, "$entityPath/entities/$languageCode.json")
+            }
+            languagePhrases.forEach { (languageCode, phrases) ->
+                if (languageCode.isNotBlank() && languageCode.length < 6) {
+//                    val file = File(entitiesDir, "$languageCode.json")
+//
+//                    if (!file.exists()) {
+//                        file.createNewFile()
+//                    }
+
+                    val entitiesJsonArray = JsonArray()
+                    phrases.forEach { (value, synonyms) ->
+                        if (synonyms.isNotEmpty() && synonyms.all { it.isNotBlank() }) {
+                            val entity = JsonObject()
+                            val synonymArray = JsonArray()
+                            synonyms.forEach { synonym -> synonymArray.add(synonym) }
+                            entity.addProperty("value", value)
+                            entity.add("synonyms", synonymArray)
+                            entity.addProperty("languageCode", languageCode)
+                            entitiesJsonArray.add(entity)
+                        }
+                    }
+
+                    if (entitiesJsonArray.size() > 0) {
+                        val entityJsonObject = JsonObject()
+                        entityJsonObject.add("entities", entitiesJsonArray)
+
+                        prettySave(entityJsonObject, "$entityPath/entities/$languageCode.json")
+                    }
+                }
             }
         }
     }
