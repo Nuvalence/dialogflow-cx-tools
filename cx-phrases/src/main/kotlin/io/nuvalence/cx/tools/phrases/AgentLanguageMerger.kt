@@ -316,19 +316,6 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                         }
                     }
                 }
-//                translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "chips")))?.let { page ->
-//                    val entryFulfillment = jsonObject["entryFulfillment"].asJsonObject
-//                    val messages = entryFulfillment.get("messages").asJsonArray
-////                    val messagesWithChips = chipsTextToJson(page.messagesByLanguage)
-////                    messagesWithChips.forEach { message ->
-////                        if (message !in messages) {
-////                            messages.add(message)
-////                        }
-////                    }
-//                    replaceMessages(entryFulfillment, messages)
-//                    processParameters(entryFulfillment)
-//                    processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
-//                }
                 prettySave(jsonObject, "$flowPath/pages/$pageName.json")
             }
         }
