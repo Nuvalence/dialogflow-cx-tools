@@ -176,7 +176,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             val flowPath = directory.absolutePath
             val flowName = directory.name
             val jsonObject = JsonParser.parseString(File("$flowPath/$flowName.json").readText()).asJsonObject
-            processEventHandlers_NEW(jsonObject, listOf(flowName, "", "event"), translationAgent::getFlow)
+            processEventHandlers(jsonObject, listOf(flowName, "", "event"), translationAgent::getFlow)
             jsonObject["transitionRoutes"].asJsonArray.forEach { route ->
                 processTransitionRoute(flowName, route, "condition")
                 processTransitionRoute(flowName, route, "intent")
@@ -221,19 +221,10 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             File("$flowPath/pages").listFiles()?.forEach { file ->
                 val pageName = file.name.removeSuffix(".json")
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
-                processEventHandlers_NEW(jsonObject, listOf(flowName, pageName), translationAgent::getPages)
+                processEventHandlers(jsonObject, listOf(flowName, pageName), translationAgent::getPages)
 
                 val entryFulfillment = jsonObject["entryFulfillment"]?.asJsonObject
                 entryFulfillment?.get("messages")?.asJsonArray?.forEach { message ->
-                    val channel = message.asJsonObject["channel"]?.asString ?: "audio"
-                    val isText = message.asJsonObject.has("text")
-                    val type = if (isText) {
-                        "message"
-                    } else if (message.asJsonObject.has("payload")) {
-                        message.asJsonObject["payload"].asJsonObject["richContent"].asJsonArray[0].asJsonArray[0].asJsonObject["type"].asString
-                    } else {
-                        "unknown"
-                    }
                     translationAgent.getPages(PhrasePath(listOf(flowName, pageName)))?.let { page ->
                         val replacementMessages = languagePhrasesToJson(singleString = true, page.messagesByLanguage)
                         replaceMessages(entryFulfillment, replacementMessages)
@@ -280,15 +271,6 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     parameter["fillBehavior"]?.asJsonObject?.let { fillBehavior ->
                         fillBehavior["initialPromptFulfillment"]?.asJsonObject?.let { initialPrompt ->
                             initialPrompt["messages"]?.asJsonArray?.forEach { message ->
-                                val channel = message.asJsonObject["channel"]?.asString ?: "audio"
-                                val isText = message.asJsonObject.has("text")
-                                val type = if (isText) {
-                                    "message"
-                                } else if (message.asJsonObject.has("payload")) {
-                                    message.asJsonObject["payload"].asJsonObject["richContent"].asJsonArray[0].asJsonArray[0].asJsonObject["type"].asString
-                                } else {
-                                    "unknown"
-                                }
                                 translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")))?.let { phrases ->
                                     replaceMessages(initialPrompt, languagePhrasesToJson(singleString = true, phrases.messagesByLanguage))
                                 }
@@ -299,15 +281,6 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                                 val eventName = event["event"].asString
                                 val triggerFulfillment = event["triggerFulfillment"].asJsonObject
                                 triggerFulfillment["messages"]?.asJsonArray?.forEach { message ->
-                                    val channel = message.asJsonObject["channel"]?.asString ?: "audio"
-                                    val isText = message.asJsonObject.has("text")
-                                    val type = if (isText) {
-                                        "message"
-                                    } else if (message.asJsonObject.has("payload")) {
-                                        message.asJsonObject["payload"].asJsonObject["richContent"].asJsonArray[0].asJsonArray[0].asJsonObject["type"].asString
-                                    } else {
-                                        "unknown"
-                                    }
                                     translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")))?.let { phrases ->
                                         replaceMessages(triggerFulfillment, languagePhrasesToJson(singleString = false, phrases.messagesByLanguage))
                                     }
@@ -353,20 +326,11 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      * Process event handlers, which may be found in different places of the agent. Note that for sys.no-match-default
      * and sys.no-input-default, we use the fulfillments associated with the Default Start Flow.
      */
-    private fun processEventHandlers_NEW(jsonObject: JsonObject, pathPrefix: List<String>, getPhrases: (PhrasePath) -> LanguageMessages?) {
+    private fun processEventHandlers(jsonObject: JsonObject, pathPrefix: List<String>, getPhrases: (PhrasePath) -> LanguageMessages?) {
         val eventsJson = jsonObject["eventHandlers"]?.asJsonArray
         eventsJson?.forEach { event ->
             val triggerFulfillment = event.asJsonObject["triggerFulfillment"].asJsonObject
             triggerFulfillment["messages"]?.asJsonArray?.forEach { message ->
-                val channel = message.asJsonObject["channel"]?.asString ?: "audio"
-                val isText = message.asJsonObject.has("text")
-                val type = if (isText) {
-                    "message"
-                } else if (message.asJsonObject.has("payload")) {
-                    message.asJsonObject["payload"].asJsonObject["richContent"].asJsonArray[0].asJsonArray[0].asJsonObject["type"].asString
-                } else {
-                    "unknown"
-                }
                 val phrases = when (val eventName = event.asJsonObject["event"].asString) {
                     "sys.no-match-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-match-default")))
                     "sys.no-input-default" -> getPhrases(PhrasePath(listOf("Default Start Flow", "", "event", "sys.no-input-default")))
