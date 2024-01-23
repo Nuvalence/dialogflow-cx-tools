@@ -53,7 +53,6 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
      * Read the tab containing the flow-related phrases - those are the ones that came from
      * <agent root>/flows/<flow-name>/<flow-name>.json
      */
-    // TODO: SOMETHING HERE
     private fun processFlows(translationAgent: TranslationAgent) {
         val flows = SheetReader(credentialsURL, spreadsheetId, Flows.title).read()
         processRows(translationAgent, flows, 6, translationAgent::putFlow)
@@ -63,7 +62,6 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
      * Read the tab containing the page-related phrases - those are the ones that came form
      * <agent root>/flows/<flow-name>/pages/<page-name>.json
      */
-    // TODO: SOMETHING HERE
     private fun processPages(translationAgent: TranslationAgent) {
         val pages = SheetReader(credentialsURL, spreadsheetId, Pages.title).read()
         processRows(translationAgent, pages, 2, translationAgent::putPage)
@@ -85,9 +83,6 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
     ) {
         // Assume the first row contains headers
         val headers = rows.first()
-
-        // Determine the pathSize based on the first occurrence of "en"
-//        val pathSize = headers.indexOf("en")
 
         // Determine if "Type" and "Channel" columns exist
         val typeIndex = headers.indexOf("Type").takeIf { it != -1 }
