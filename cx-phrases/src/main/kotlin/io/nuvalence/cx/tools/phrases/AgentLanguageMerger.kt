@@ -134,11 +134,6 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             }
             languagePhrases.forEach { (languageCode, phrases) ->
                 if (languageCode.isNotBlank() && languageCode.length < 6) {
-//                    val file = File(entitiesDir, "$languageCode.json")
-//
-//                    if (!file.exists()) {
-//                        file.createNewFile()
-//                    }
 
                     val entitiesJsonArray = JsonArray()
                     phrases.forEach { (value, synonyms) ->
