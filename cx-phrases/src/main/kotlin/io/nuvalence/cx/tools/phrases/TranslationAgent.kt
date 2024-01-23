@@ -31,10 +31,9 @@ data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
      * flattens the associated strings into a single newline separated string.
      */
     fun flatten(order: List<String>): List<String> {
-        val result = order.map { language ->
+        return order.map { language ->
             phraseByLanguage[language]?.joinToString("\n") ?: ""
         }
-        return result
     }
     operator fun get(languageCode: String) = phraseByLanguage[languageCode]
 }
@@ -50,21 +49,13 @@ class TranslationPhrases {
     operator fun get(phrasePath: PhrasePath) = phrases[phrasePath]
 
     operator fun set(path: PhrasePath, languageMessages: LanguageMessages) {
-        val existingMessages = phrases[path]
-
-        phrases[path] = if (existingMessages == null) {
-            languageMessages
-        } else {
-            val combinedMessagesByLanguage = existingMessages.messagesByLanguage.toMutableMap()
-
-            languageMessages.messagesByLanguage.forEach { (languageCode, newMessages) ->
-                combinedMessagesByLanguage.merge(languageCode, newMessages) { existingMessages, newMessages ->
-                    existingMessages + newMessages
-                }
+        val combinedMessagesByLanguage = phrases[path]?.messagesByLanguage.orEmpty().toMutableMap()
+        languageMessages.messagesByLanguage.forEach { (languageCode, newMessages) ->
+            combinedMessagesByLanguage.merge(languageCode, newMessages) { existing, new ->
+                existing + new
             }
-
-            LanguageMessages(combinedMessagesByLanguage)
         }
+        phrases[path] = LanguageMessages(combinedMessagesByLanguage)
     }
 
     /**
