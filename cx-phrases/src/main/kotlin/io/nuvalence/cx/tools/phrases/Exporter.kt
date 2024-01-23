@@ -38,6 +38,8 @@ fun export(args: Array<String>) {
         listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
+    Thread.sleep(60000)
+
     // add entities to Entities tab
     sheetWriter.deleteTab(PhraseType.Entities.title)
     sheetWriter.addTab(PhraseType.Entities.title)
@@ -48,6 +50,8 @@ fun export(args: Array<String>) {
         listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
+    Thread.sleep(60000)
+
     // add transition fulfillments to Transitions tab
     sheetWriter.deleteTab(PhraseType.Flows.title)
     sheetWriter.addTab(PhraseType.Flows.title)
@@ -57,6 +61,8 @@ fun export(args: Array<String>) {
         listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages,
         listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
+
+    Thread.sleep(60000)
 
     // add normal page fulfillments to Fulfillments tab
     var flattenPages = translationAgent.flattenPages_NEW()

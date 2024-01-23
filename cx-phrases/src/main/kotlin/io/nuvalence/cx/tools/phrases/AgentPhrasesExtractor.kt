@@ -70,18 +70,36 @@ class AgentPhrasesExtractor(private val rootPath: String) {
     private fun processEntityTypes(translationAgent: TranslationAgent) {
         File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
             val entityPath = directory.absolutePath
-            val entityName = directory.name // the directory name is the entity name
-            File("$entityPath/entities").listFiles()?.forEach { file ->
+            val entityName = directory.name // The directory name is the entity name
+            val entityKind = JsonParser.parseString(File("$entityPath/$entityName.json").readText()).asJsonObject["kind"].asString
+
+            val languageFiles = File("$entityPath/entities").listFiles()
+            val sortedLanguageFiles = languageFiles?.sortedBy {
+                translationAgent.allLanguages.indexOf(it.nameWithoutExtension)
+            }
+
+            var valueList = mutableListOf<String>()
+            sortedLanguageFiles?.forEach { file ->
                 val language = file.nameWithoutExtension // as in en.json minus .json
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                var i = 0
                 jsonObject["entities"]?.asJsonArray?.forEach { entity ->
+                    if (entityKind == "KIND_REGEXP") {
+                        if (language == "en") {
+                            valueList.add(i, entity.asJsonObject["value"].asString)
+                        }
+                    }
                     val value = entity.asJsonObject["value"].asString
-                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.toList().map { it.asString }
-                    translationAgent.putEntity(entityName, value, language, synonyms)
+                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.map { it.asString }
+                    if (entityKind == "KIND_REGEXP")
+                        translationAgent.putEntity(entityName, valueList[i++], language, synonyms)
+                    else
+                        translationAgent.putEntity(entityName, value, language, synonyms)
                 }
             }
         }
     }
+
 
     /**
      * Process files under <agent-root>/flows/flow-name/flow-name.json. These contain events and transitions

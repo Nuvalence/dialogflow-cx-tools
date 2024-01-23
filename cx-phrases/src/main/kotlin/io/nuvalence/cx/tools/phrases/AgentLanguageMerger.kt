@@ -122,14 +122,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
         File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
             val entityPath = directory.absolutePath
             val entityName = directory.name // the directory name is the entity name
-
-            // Ensure the entities directory exists
-            val entitiesPath = "$entityPath/entities"
-
-            val entitiesDir = File(entitiesPath)
-            if (!entitiesDir.exists()) {
-                entitiesDir.mkdirs()
-            }
+            val entityKind = JsonParser.parseString(File("$entityPath/$entityName.json").readText()).asJsonObject["kind"].asString
 
             val entites = translationAgent.getEntities(entityName)
             val languagePhrases = mutableMapOf<String, MutableMap<String, List<String>>>()
@@ -152,8 +145,14 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                         if (synonyms.isNotEmpty() && synonyms.all { it.isNotBlank() }) {
                             val entity = JsonObject()
                             val synonymArray = JsonArray()
-                            synonyms.forEach { synonym -> synonymArray.add(synonym) }
-                            entity.addProperty("value", value)
+                            if (entityKind == "KIND_REGEXP") {
+                                synonymArray.add(synonyms[0])
+                                entity.addProperty("value", synonyms[0])
+                            } else {
+                                synonyms.forEach { synonym -> synonymArray.add(synonym) }
+                                entity.addProperty("value", value)
+                            }
+
                             entity.add("synonyms", synonymArray)
                             entity.addProperty("languageCode", languageCode)
                             entitiesJsonArray.add(entity)
@@ -272,7 +271,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                         }
 
                         route.asJsonObject["condition"]?.asString?.let { condition ->
-                            translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)))?.let { phrases ->
+                            translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition, type, channel)))?.let { phrases ->
                                 replaceMessages(triggerFulfillment, languagePhrasesToJson_NEW(singleString = false, phrases.messagesByLanguage))
                                 processParameters(triggerFulfillment.asJsonObject)
                             }
