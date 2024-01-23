@@ -7,7 +7,6 @@ import java.util.*
 
 // Collection of functions that process snippets of JSON elements
 
-
 /**
  * Given a language code and a list of training phrases, create a JSON array
  * containing those training phrases in the structure Dialogflow expects.
@@ -79,8 +78,7 @@ fun createIntentPart(text: String, parameter: String? = null): JsonObject {
  * @param singleString whether to return the phrases as a single string or array of strings
  * @param phrases map associating a language to a list of phrases
  */
-// TODO: IS THIS MISSING PROCESSING FOR PAYLOAD IN ADDITION TO TEXT?
-fun languagePhrasesToJson_NEW(singleString: Boolean, phrases: Map<String, List<Message>>): JsonArray {
+fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Message>>): JsonArray {
     val messagesJson = JsonArray()
     phrases.keys.forEach { languageCode ->
         val messagesList = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
@@ -155,67 +153,6 @@ fun languagePhrasesToJson_NEW(singleString: Boolean, phrases: Map<String, List<M
     }
     return messagesJson
 }
-
-fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<String>>): JsonArray {
-    val messages = JsonArray()
-    phrases.keys.forEach { languageCode ->
-        val texts = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
-        val outerText = JsonObject()
-        val innerText = JsonArray()
-        if (singleString)
-            innerText.add(texts.joinToString("\n"))
-        else
-            texts.forEach { text -> innerText.add(text) }
-        outerText.add("text", innerText)
-        val textBlob = JsonObject()
-        textBlob.add("text", outerText)
-        textBlob.addProperty("languageCode", languageCode)
-        messages.add(textBlob)
-        if (singleString)
-            messages.add(audioMessage(languageCode, texts.joinToString("\n")))
-        else
-            texts
-                .filter { it.isNotEmpty() }
-                .forEach { text ->
-                    messages.add(audioMessage(languageCode, text))
-                }
-    }
-    return messages
-}
-
-/**
- * Similar functionality for languagePhrasesToJson, but instead of building the text messages
- * json object, we build a custom payload with chips.
- *
- * @param phrases map associating a language to a list of chips values
- */
-//fun chipsTextToJson(textFields: Map<String, List<String>>): JsonArray {
-//    val messages = JsonArray()
-//    textFields.keys.forEach { languageCode ->
-//        val texts = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
-//        val payload = JsonObject()
-//        val richContent = JsonArray()
-//        val richContentInnerArray = JsonArray()
-//        val richContentItem = JsonObject()
-//        val options = JsonArray()
-//        texts.forEach { chipText ->
-//            val chip = JsonObject()
-//            chip.addProperty("text", chipText)
-//            options.add(chip)
-//        }
-//        richContentItem.add("options", options)
-//        richContentItem.addProperty("type", "chips")
-//        richContentInnerArray.add(richContentItem)
-//        richContent.add(richContentInnerArray)
-//        payload.add("richContent", richContent)
-//        val message = JsonObject()
-//        message.add("payload", payload)
-//        message.addProperty("languageCode", languageCode)
-//        message.addProperty("channel", "DF_MESSENGER")
-//        messages.add(message)
-//    }
-//    return messages
-//}
 
 /**
  * Looks for assignments to the "web-site" or "web-site-fwd" session parameters, and generate
