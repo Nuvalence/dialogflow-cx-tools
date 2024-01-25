@@ -224,7 +224,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 processEventHandlers(jsonObject, listOf(flowName, pageName), translationAgent::getPages)
 
                 val entryFulfillment = jsonObject["entryFulfillment"]?.asJsonObject
-                entryFulfillment?.get("messages")?.asJsonArray?.forEach { message ->
+                if (entryFulfillment != null) {
                     translationAgent.getPages(PhrasePath(listOf(flowName, pageName)))?.let { page ->
                         val replacementMessages = languagePhrasesToJson(singleString = true, page.messagesByLanguage)
                         replaceMessages(entryFulfillment, replacementMessages)
@@ -242,27 +242,11 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                         processTransitionRoutes(jsonObject["transitionRoutes"]?.asJsonArray)
                     }
                 }
+
                 val transitionRoutes = jsonObject["transitionRoutes"]?.asJsonArray
                 transitionRoutes?.forEach { route ->
-                    val triggerFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
-                    triggerFulfillment["messages"]?.asJsonArray?.forEach { message ->
-                        val channel = message.asJsonObject["channel"]?.asString ?: "audio"
-                        val isText = message.asJsonObject.has("text")
-                        val type = if (isText) {
-                            "message"
-                        } else if (message.asJsonObject.has("payload")) {
-                            message.asJsonObject["payload"].asJsonObject["richContent"].asJsonArray[0].asJsonArray[0].asJsonObject["type"].asString
-                        } else {
-                            "unknown"
-                        }
-
-                        route.asJsonObject["condition"]?.asString?.let { condition ->
-                            translationAgent.getFlow(PhrasePath(listOf(flowName, pageName, "condition", condition, type, channel)))?.let { phrases ->
-                                replaceMessages(triggerFulfillment, languagePhrasesToJson(singleString = false, phrases.messagesByLanguage))
-                                processParameters(triggerFulfillment.asJsonObject)
-                            }
-                        }
-                    }
+                    processTransitionRoute(flowName, route, "condition")
+                    processTransitionRoute(flowName, route, "intent")
                 }
                 val form = jsonObject["form"]?.asJsonObject
                 form?.get("parameters")?.asJsonArray?.forEach { parameterElement ->
