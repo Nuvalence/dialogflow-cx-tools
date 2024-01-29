@@ -11,6 +11,10 @@ enum class PhraseType(val title: String) {
     Pages("Fulfillments");
 }
 
+/**
+ * Holds DFCX message information including phrases, channel (i.e. audio, DF_MESSENGER), type (i.e. message, html),
+ * and event.
+ */
 data class Message(
     val phrases: List<String>?,
     val channel: String? = null,
@@ -19,12 +23,16 @@ data class Message(
 )
 
 /**
- * Holds a list of phrases for the supported languages
+ * Holds a list of messages for the supported languages
  */
 data class LanguageMessages(val messagesByLanguage: Map<String, List<Message>>) {
     operator fun get(languageCode: String) = messagesByLanguage[languageCode]
 }
 
+/**
+ * Holds a list of phrases for the supported languages.
+ * TODO: refactor all references to use LanguageMessages instead and remove this class
+ */
 data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
     /**
      * Given an order for the languages (we like the default one to be first),
@@ -39,8 +47,8 @@ data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
 }
 
 /**
- * Holds the language phrases associated with the different paths. A path is what
- * allows us to associate a row in the spreadsheet with the set of phrases for
+ * Holds the language messages associated with the different paths. A path is what
+ * allows us to associate a row in the spreadsheet with the set of messages for
  * each language.
  */
 class TranslationPhrases {
@@ -102,6 +110,7 @@ class TranslationPhrases {
 
 /**
  * Holds the different entityTypes. They are accessed by their display name, value and language.
+ * TODO: Refactor to use LanguageMessages
  */
 class TranslationEntities {
     private  val entities = mutableMapOf<String, MutableMap<String, LanguagePhrases>>()

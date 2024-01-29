@@ -38,7 +38,7 @@ fun export(args: Array<String>) {
         listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
-    Thread.sleep(60000)
+    Thread.sleep(60000)  // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add entities to Entities tab
     sheetWriter.deleteTab(PhraseType.Entities.title)
@@ -50,7 +50,7 @@ fun export(args: Array<String>) {
         listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
-    Thread.sleep(60000)
+    Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add transition fulfillments to Transitions tab
     sheetWriter.deleteTab(PhraseType.Flows.title)
@@ -62,7 +62,7 @@ fun export(args: Array<String>) {
         listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 }
     )
 
-    Thread.sleep(60000)
+    Thread.sleep(60000) // Sleeps added here due to Google Sheets quota limits of 300 operations per minute
 
     // add normal page fulfillments to Fulfillments tab
     var flattenPages = translationAgent.flattenPages()
