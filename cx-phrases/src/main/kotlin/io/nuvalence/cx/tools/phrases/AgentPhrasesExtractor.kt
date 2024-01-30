@@ -54,10 +54,10 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 val trainingPhrases = jsonObject["trainingPhrases"].asJsonArray.map { element ->
                     processParts(element.asJsonObject["parts"]) // Training phrases have parts
                 }
-                language to trainingPhrases
+                language to listOf(Message(trainingPhrases))
             }
             if (messages != null)
-                translationAgent.putIntent(PhrasePath(listOf(intentName)), LanguagePhrases(messages))
+                translationAgent.putIntent(PhrasePath(listOf(intentName)), LanguageMessages(messages))
         }
     }
 
@@ -69,18 +69,36 @@ class AgentPhrasesExtractor(private val rootPath: String) {
     private fun processEntityTypes(translationAgent: TranslationAgent) {
         File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
             val entityPath = directory.absolutePath
-            val entityName = directory.name // the directory name is the entity name
-            File("$entityPath/entities").listFiles()?.forEach { file ->
+            val entityName = directory.name // The directory name is the entity name
+            val entityKind = JsonParser.parseString(File("$entityPath/$entityName.json").readText()).asJsonObject["kind"].asString
+
+            val languageFiles = File("$entityPath/entities").listFiles()
+            val sortedLanguageFiles = languageFiles?.sortedBy {
+                translationAgent.allLanguages.indexOf(it.nameWithoutExtension)
+            }
+
+            var valueList = mutableListOf<String>()
+            sortedLanguageFiles?.forEach { file ->
                 val language = file.nameWithoutExtension // as in en.json minus .json
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
+                var i = 0
                 jsonObject["entities"]?.asJsonArray?.forEach { entity ->
+                    if (entityKind == "KIND_REGEXP") {
+                        if (language == "en") {
+                            valueList.add(i, entity.asJsonObject["value"].asString)
+                        }
+                    }
                     val value = entity.asJsonObject["value"].asString
-                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.toList().map { it.asString }
-                    translationAgent.putEntity(entityName, value, language, synonyms)
+                    val synonyms = entity.asJsonObject["synonyms"].asJsonArray.map { it.asString }
+                    if (entityKind == "KIND_REGEXP")
+                        translationAgent.putEntity(entityName, valueList[i++], language, synonyms)
+                    else
+                        translationAgent.putEntity(entityName, value, language, synonyms)
                 }
             }
         }
     }
+
 
     /**
      * Process files under <agent-root>/flows/flow-name/flow-name.json. These contain events and transitions
@@ -101,13 +119,13 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 route.asJsonObject["condition"]?.asString?.let { condition ->
                     // If there are trigger fulfillment messages, capture them
                     processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "condition", condition)), LanguagePhrases(messages))
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "condition", condition)), LanguageMessages(messages))
                     }
                 }
                 route.asJsonObject["intent"]?.asString?.let { intent ->
                     // If there are trigger fulfillment messages, capture them
                     processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "intent", intent)), LanguagePhrases(messages))
+                        translationAgent.putFlow(PhrasePath(listOf(flowName, "", "intent", intent)), LanguageMessages(messages))
                     }
                 }
             }
@@ -129,25 +147,15 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
                 // If there are entry fulfillment messages, and they are not empty, capture them.
                 jsonObject["entryFulfillment"]?.let { entryFulfillment ->
-                    val messages = processMessages(entryFulfillment)
-                    val chips = processChips(entryFulfillment)
-                    if (!messages.isNullOrEmpty()) {
-                        translationAgent.putPage(
-                            PhrasePath(listOf(flowName, pageName, "message")),
-                            LanguagePhrases(messages)
-                        )
-                    }
-                    if (!chips.isNullOrEmpty()) {
-                        translationAgent.putPage(
-                            PhrasePath(listOf(flowName, pageName, "chips")),
-                            LanguagePhrases(chips))
+                    processMessages(entryFulfillment)?.let { messages ->
+                        translationAgent.putPage(PhrasePath(listOf(flowName, pageName)), LanguageMessages(messages))
                     }
                 }
                 jsonObject["transitionRoutes"]?.asJsonArray?.forEach { route ->
                     route.asJsonObject["condition"]?.asString?.let { condition ->
                         // If there are transition route fulfillment messages, capture them
                         processMessages(route.asJsonObject["triggerFulfillment"])?.let { messages ->
-                            translationAgent.putFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)), LanguagePhrases(messages))
+                            translationAgent.putFlow(PhrasePath(listOf(flowName, pageName, "condition", condition)), LanguageMessages(messages))
                         }
                     }
                 }
@@ -158,19 +166,19 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                         fillBehavior["initialPromptFulfillment"]?.let { initialPrompt ->
                             val messages = processMessages(initialPrompt)
                             if (!messages.isNullOrEmpty())
-                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguagePhrases(messages))
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")), LanguageMessages(messages))
                         }
                         fillBehavior["repromptEventHandlers"]?.asJsonArray?.forEach { event ->
                             val messages = processMessages(event.asJsonObject["triggerFulfillment"])
                             val eventName = event.asJsonObject["event"].asString
                             if (!messages.isNullOrEmpty())
-                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguagePhrases(messages))
+                                translationAgent.putPage(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")), LanguageMessages(messages))
                         }
                     }
                 }
                 // If the page has event handlers with fulfillment messages, capture them
-                processEventHandlers(jsonObject, flowName).forEach { (event, messages) ->
-                    translationAgent.putPage(PhrasePath(listOf(flowName, pageName, event)), messages)
+                processEventHandlers(jsonObject, flowName).forEach { (event, languageMessages) ->
+                    translationAgent.putPage(PhrasePath(listOf(flowName, pageName)), languageMessages)
                 }
             }
         }
@@ -197,39 +205,56 @@ class AgentPhrasesExtractor(private val rootPath: String) {
      * and a text field; under it, you find a list of text messages. Unlike for intents,
      * fulfillment messages do not have references to parameters.
      */
-    private fun processMessages(jsonElement: JsonElement) =
-        jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
-            val languageCode = element.asJsonObject["languageCode"].asString
-            val outerText = element.asJsonObject["text"]
-            val texts = outerText?.asJsonObject?.get("text")?.asJsonArray?.map { text ->
-                text.asString
-            }
-            if (texts != null) languageCode to texts else null
-        }?.toMap()
+    private fun processMessages(jsonElement: JsonElement, event: String? = null): Map<String, List<Message>>? {
+        val messagesMap = mutableMapOf<String, MutableList<Message>>()
 
-    /**
-     * Process customPayload fulfillment type with chips to translate the chip values. These have
-     * a languageCode and payload field with the text values; only the text values are
-     * captured in the sheet to be translated.
-     */
-    private fun processChips(jsonElement: JsonElement) =
-        jsonElement.asJsonObject["messages"]?.asJsonArray?.mapNotNull { element ->
-            var chipsArray = emptyList<String>()
+        fun addMessageToMap(languageCode: String, message: Message) {
+            val messages = messagesMap.getOrPut(languageCode) { mutableListOf() }
+            messages.add(message)
+        }
+
+        jsonElement.asJsonObject["messages"]?.asJsonArray?.forEach { element ->
             val languageCode = element.asJsonObject["languageCode"].asString
-            val payload = element.asJsonObject["payload"]
-            payload?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
-                outerList.asJsonArray.forEach { customElement ->
-                    val elementType = customElement.asJsonObject["type"].asString
-                    if (elementType == "chips") {
-                        val chipsValues = customElement.asJsonObject["options"].asJsonArray.map { chip ->
-                            chip.asJsonObject["text"].asString
-                        }
-                        chipsArray = chipsArray + chipsValues
+            val channel = element.asJsonObject["channel"]?.asString ?: "audio"
+
+            processTextMessage(element, channel, event)?.let { message ->
+                addMessageToMap(languageCode, message)
+            }
+
+            processPayloadMessage(element, channel, event)?.forEach { message ->
+                addMessageToMap(languageCode, message)
+            }
+        }
+
+        return messagesMap.takeIf { it.isNotEmpty() }
+    }
+
+    private fun processTextMessage(element: JsonElement, channel: String, event: String?): Message? {
+        return element.asJsonObject["text"]?.asJsonObject?.get("text")?.asJsonArray?.map { it.asString }?.let { texts ->
+            if (texts.isNotEmpty()) Message(texts, channel, "message", event) else null
+        }
+    }
+
+    private fun processPayloadMessage(element: JsonElement, channel: String, event: String?): List<Message>? {
+        val messages = mutableListOf<Message>()
+        element.asJsonObject["payload"]?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
+            outerList.asJsonArray.forEach { richContentElement ->
+                val elementType = richContentElement.asJsonObject["type"].asString
+                when (elementType) {
+                    "chips" -> {
+                        val chipsValues = richContentElement.asJsonObject["options"].asJsonArray.map { it.asJsonObject["text"].asString }
+                        messages.add(Message(chipsValues, channel, elementType, event))
+                    }
+                    "html" -> {
+                        val htmlText = richContentElement.asJsonObject["html"].asString
+                        messages.add(Message(listOf(htmlText), channel, elementType, event))
                     }
                 }
             }
-            if (chipsArray.isNotEmpty() && chipsArray != null) languageCode to chipsArray else null
-        }?.toMap()
+        }
+        // Return null if messages is empty, otherwise return the messages
+        return if (messages.isEmpty()) null else messages
+    }
 
     /**
      * Process event handlers and, if they have trigger fulfillment messages, extract them. Note that
@@ -240,11 +265,11 @@ class AgentPhrasesExtractor(private val rootPath: String) {
     private fun processEventHandlers(jsonElement: JsonElement, flowName: String) =
         jsonElement.asJsonObject["eventHandlers"]?.asJsonArray?.mapNotNull { handler ->
             val event = handler.asJsonObject["event"].asString
-            val messages = processMessages(handler.asJsonObject["triggerFulfillment"])
+            val messages = processMessages(handler.asJsonObject["triggerFulfillment"], event)
             if (messages != null && (flowName == "Default Start Flow" ||
                         event != "sys.no-match-default" && event != "sys.no-input-default")
             )
-                event to LanguagePhrases(messages)
+                event to LanguageMessages(messages)
             else null
         }?.toMap() ?: mapOf()
 

@@ -12,32 +12,58 @@ enum class PhraseType(val title: String) {
 }
 
 /**
- * Holds a list of phrases for the supported languages
+ * Holds DFCX message information including phrases, channel (i.e. audio, DF_MESSENGER), type (i.e. message, html),
+ * and event.
+ */
+data class Message(
+    val phrases: List<String>?,
+    val channel: String? = null,
+    val type: String? = null,
+    val event: String? = null
+)
+
+/**
+ * Holds a list of messages for the supported languages
+ */
+data class LanguageMessages(val messagesByLanguage: Map<String, List<Message>>) {
+    operator fun get(languageCode: String) = messagesByLanguage[languageCode]
+}
+
+/**
+ * Holds a list of phrases for the supported languages.
+ * TODO: refactor all references to use LanguageMessages instead and remove this class
  */
 data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
     /**
      * Given an order for the languages (we like the default one to be first),
      * flattens the associated strings into a single newline separated string.
      */
-    fun flatten(order: List<String>) =
-        order.map { language ->
+    fun flatten(order: List<String>): List<String> {
+        return order.map { language ->
             phraseByLanguage[language]?.joinToString("\n") ?: ""
         }
+    }
     operator fun get(languageCode: String) = phraseByLanguage[languageCode]
 }
 
 /**
- * Holds the language phrases associated with the different paths. A path is what
- * allows us to associate a row in the spreadsheet with the set of phrases for
+ * Holds the language messages associated with the different paths. A path is what
+ * allows us to associate a row in the spreadsheet with the set of messages for
  * each language.
  */
 class TranslationPhrases {
-    private val phrases = mutableMapOf<PhrasePath, LanguagePhrases>()
+    private val phrases = mutableMapOf<PhrasePath, LanguageMessages>()
 
     operator fun get(phrasePath: PhrasePath) = phrases[phrasePath]
 
-    operator fun set(path: PhrasePath, languagePhrases: LanguagePhrases) {
-        phrases[path] = languagePhrases
+    operator fun set(path: PhrasePath, languageMessages: LanguageMessages) {
+        val combinedMessagesByLanguage = phrases[path]?.messagesByLanguage.orEmpty().toMutableMap()
+        languageMessages.messagesByLanguage.forEach { (languageCode, newMessages) ->
+            combinedMessagesByLanguage.merge(languageCode, newMessages) { existing, new ->
+                existing + new
+            }
+        }
+        phrases[path] = LanguageMessages(combinedMessagesByLanguage)
     }
 
     /**
@@ -45,20 +71,54 @@ class TranslationPhrases {
      * which is convenient for exporting to a spreadsheet. Each row contains
      * the path plus one entry per language.
      */
-    fun flatten(order: List<String>) =
-        phrases.map { (path, languagePhrases) ->
-            path.path + languagePhrases.flatten(order)
+    fun flatten(order: List<String>): List<List<String>> {
+        val newPathToMessage = mutableMapOf<PhrasePath, MutableList<String>>()
+
+        // Flatten the phrases for each path and language.
+        phrases.forEach { (path, languagePhrases) ->
+            order.forEach { language ->
+                languagePhrases.messagesByLanguage[language]?.forEach { message: Message ->
+                    // Create a unique string representation of the path.
+                    val phrasePath: MutableList<String> = path.path.toMutableList()
+                    if (!message.type.isNullOrEmpty()) {
+                        if (!message.event.isNullOrEmpty() && !phrasePath.contains(message.event)) {
+                            phrasePath.add(listOf(message.type, message.event).joinToString("\n"))
+                        } else {
+                            phrasePath.add(message.type)
+                        }
+                    }
+                    if (!message.channel.isNullOrEmpty()) {
+                        phrasePath.add(message.channel)
+                    }
+                    // Get or create the list for this path and add the new message to it.
+                    val list = newPathToMessage.getOrPut(PhrasePath(phrasePath)) { mutableListOf() }
+                    list.add(message.phrases?.joinToString("\n") ?: "")
+                }
+            }
         }
+
+        // Transform the map into the required List<List<String>> format.
+        val result = newPathToMessage.map { (path, messages) ->
+            path.path + messages  // Combine the path with its messages into a single list.
+        }
+
+        return result
+    }
+
+
 }
 
 /**
  * Holds the different entityTypes. They are accessed by their display name, value and language.
+ * TODO: Refactor to use LanguageMessages
  */
 class TranslationEntities {
     private  val entities = mutableMapOf<String, MutableMap<String, LanguagePhrases>>()
 
     operator fun get(displayName: String, value: String, language: String) =
         entities[displayName]?.get(value)?.get(language) ?: error("Agent structure changed: displayName = $displayName value = $value language = $language")
+
+    operator fun get(displayName: String) = entities[displayName]
 
     operator fun set(displayName: String, value: String, language: String, synonyms: List<String>) {
         val entityType = entities.getOrPut(displayName) { mutableMapOf() }
@@ -89,15 +149,15 @@ class TranslationAgent(val defaultLanguageCode: String, val supportedLanguageCod
     private val pages = TranslationPhrases()
     val allLanguages = listOf(defaultLanguageCode) + supportedLanguageCodes
 
-    fun getEntity(displayName: String, value: String, language: String) = entities.get(displayName, value, language)
+    fun getEntities(displayName: String) = entities.get(displayName)
     fun getIntent(path: PhrasePath) = intents[path]
     fun getFlow(path: PhrasePath) = flows[path]
     fun getPages(path: PhrasePath) = pages[path]
 
     fun putEntity(displayName: String, value: String, language: String, synonyms: List<String>) = entities.set(displayName, value, language, synonyms)
-    fun putIntent(path: PhrasePath, languagePhrases: LanguagePhrases) = intents.set(path, languagePhrases)
-    fun putFlow(path: PhrasePath, languagePhrases: LanguagePhrases) = flows.set(path, languagePhrases)
-    fun putPage(path: PhrasePath, languagePhrases: LanguagePhrases) = pages.set(path, languagePhrases)
+    fun putIntent(path: PhrasePath, languageMessages: LanguageMessages) = intents.set(path, languageMessages)
+    fun putFlow(path: PhrasePath, languageMessages: LanguageMessages) = flows.set(path, languageMessages)
+    fun putPage(path: PhrasePath, languageMessages: LanguageMessages) = pages.set(path, languageMessages)
 
     fun flattenEntities() = entities.flatten(allLanguages)
     fun flattenIntents() = intents.flatten(allLanguages)

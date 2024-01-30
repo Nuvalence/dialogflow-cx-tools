@@ -1,13 +1,11 @@
 package io.nuvalence.cx.tools.phrases
 
 import com.google.gson.JsonArray
-import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import java.util.*
 
 // Collection of functions that process snippets of JSON elements
-
 
 /**
  * Given a language code and a list of training phrases, create a JSON array
@@ -80,65 +78,80 @@ fun createIntentPart(text: String, parameter: String? = null): JsonObject {
  * @param singleString whether to return the phrases as a single string or array of strings
  * @param phrases map associating a language to a list of phrases
  */
-fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<String>>): JsonArray {
-    val messages = JsonArray()
+fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Message>>): JsonArray {
+    val messagesJson = JsonArray()
     phrases.keys.forEach { languageCode ->
-        val texts = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
-        val outerText = JsonObject()
-        val innerText = JsonArray()
-        if (singleString)
-            innerText.add(texts.joinToString("\n"))
-        else
-            texts.forEach { text -> innerText.add(text) }
-        outerText.add("text", innerText)
-        val textBlob = JsonObject()
-        textBlob.add("text", outerText)
-        textBlob.addProperty("languageCode", languageCode)
-        messages.add(textBlob)
-        if (singleString)
-            messages.add(audioMessage(languageCode, texts.joinToString("\n")))
-        else
-            texts
-                .filter { it.isNotEmpty() }
-                .forEach { text ->
-                    messages.add(audioMessage(languageCode, text))
-                }
-    }
-    return messages
-}
-
-/**
- * Similar functionality for languagePhrasesToJson, but instead of building the text messages
- * json object, we build a custom payload with chips.
- *
- * @param phrases map associating a language to a list of chips values
- */
-fun chipsTextToJson(textFields: Map<String, List<String>>): JsonArray {
-    val messages = JsonArray()
-    textFields.keys.forEach { languageCode ->
-        val texts = textFields[languageCode] ?: error("Something weird happened with key = $languageCode")
-        val payload = JsonObject()
-        val richContent = JsonArray()
-        val richContentInnerArray = JsonArray()
-        val richContentItem = JsonObject()
-        val options = JsonArray()
-        texts.forEach { chipText ->
-            val chip = JsonObject()
-            chip.addProperty("text", chipText)
-            options.add(chip)
+        val messagesList = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
+        messagesList.filter { message -> message.type == "message" }.forEach { message ->
+            val outerText = JsonObject()
+            val innerText = JsonArray()
+            if (singleString)
+                innerText.add(message.phrases?.joinToString("\n"))
+            else
+                message.phrases?.forEach { text -> innerText.add(text) }
+            outerText.add("text", innerText)
+            val textBlob = JsonObject()
+            textBlob.add("text", outerText)
+            textBlob.addProperty("languageCode", languageCode)
+            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
+                textBlob.addProperty("channel", message.channel)
+            }
+            messagesJson.add(textBlob)
+            if (message.channel != "DF_MESSENGER") {
+                if (singleString)
+                    messagesJson.add(message.phrases?.joinToString("\n")?.let { audioMessage(languageCode, it) })
+                else
+                    message.phrases
+                        ?.filter { it.isNotEmpty() }
+                        ?.forEach { text ->
+                            messagesJson.add(audioMessage(languageCode, text))
+                        }
+            }
         }
-        richContentItem.add("options", options)
-        richContentItem.addProperty("type", "chips")
-        richContentInnerArray.add(richContentItem)
-        richContent.add(richContentInnerArray)
-        payload.add("richContent", richContent)
-        val message = JsonObject()
-        message.add("payload", payload)
-        message.addProperty("languageCode", languageCode)
-        message.addProperty("channel", "DF_MESSENGER")
-        messages.add(message)
+        messagesList.filter { message -> message.type == "html" }.forEach { message ->
+            val payloadBlob = JsonObject()
+            val payload = JsonObject()
+            val richContent = JsonArray()
+            val innerRichContent = JsonArray()
+            val content = JsonObject()
+            content.addProperty("html", message.phrases?.joinToString("\n"))
+            content.addProperty("type", "html")
+            innerRichContent.add(content)
+            richContent.add(innerRichContent)
+            payload.add("richContent", richContent)
+            payloadBlob.add("payload", payload)
+            payloadBlob.addProperty("languageCode", languageCode)
+            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
+                payloadBlob.addProperty("channel", message.channel)
+            }
+            messagesJson.add(payloadBlob)
+        }
+        messagesList.filter { message -> message.type == "chips" }.forEach { message ->
+            val payloadBlob = JsonObject()
+            val payload = JsonObject()
+            val richContent = JsonArray()
+            val innerRichContent = JsonArray()
+            val content = JsonObject()
+            val options = JsonArray()
+            message.phrases?.forEach { chipText ->
+                val chip = JsonObject()
+                chip.addProperty("text", chipText)
+                options.add(chip)
+            }
+            content.add("options", options)
+            content.addProperty("type", "chips")
+            innerRichContent.add(content)
+            richContent.add(innerRichContent)
+            payload.add("richContent", richContent)
+            payloadBlob.add("payload", payload)
+            payloadBlob.addProperty("languageCode", languageCode)
+            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
+                payloadBlob.addProperty("channel", message.channel)
+            }
+            messagesJson.add(payloadBlob)
+        }
     }
-    return messages
+    return messagesJson
 }
 
 /**
