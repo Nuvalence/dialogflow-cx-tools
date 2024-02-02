@@ -1,5 +1,6 @@
 package io.nuvalence.cx.tools.phrases
 
+import io.nuvalence.cx.tools.shared.HighlightPreset
 import io.nuvalence.cx.tools.shared.SheetWriter
 import java.net.URL
 
@@ -41,37 +42,126 @@ fun export(args: Array<String>) {
     Thread.sleep(60000)  // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add entities to Entities tab
+    val entities = translationAgent.flattenEntities()
+    val entityHeaders = listOf("Entity Type", "Value") + translationAgent.allLanguages
     sheetWriter.deleteTab(PhraseType.Entities.title)
     sheetWriter.addTab(PhraseType.Entities.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Entities.title,
-        translationAgent.flattenEntities(),
-        listOf("Entity Type", "Value") + translationAgent.allLanguages,
-        listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
+        entities,
+        entityHeaders,
+        listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 },
+        (entityHeaders.size downTo 2).toList(),
+        ::highlightEntity,
+        HighlightPreset.BLUE_BOLD.getHighlightFormat()
     )
 
     Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add transition fulfillments to Transitions tab
+    val flowTransitions = translationAgent.flattenFlows()
+    val flowTransitionHeaders = listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages
     sheetWriter.deleteTab(PhraseType.Flows.title)
     sheetWriter.addTab(PhraseType.Flows.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Flows.title,
-        translationAgent.flattenFlows(),
-        listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages,
-        listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 }
+        flowTransitions,
+        flowTransitionHeaders,
+        listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 },
+        (flowTransitionHeaders.size downTo 6).toList(),
+        ::highlightTransition,
+        HighlightPreset.BLUE_BOLD.getHighlightFormat()
     )
 
-    Thread.sleep(60000) // Sleeps added here due to Google Sheets quota limits of 300 operations per minute
+    Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add normal page fulfillments to Fulfillments tab
-    var flattenPages = translationAgent.flattenPages()
+    val pages = translationAgent.flattenPages()
+    val pageHeaders = listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages
     sheetWriter.deleteTab(PhraseType.Pages.title)
     sheetWriter.addTab(PhraseType.Pages.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Pages.title,
-        flattenPages,
-        listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages,
-        listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 }
+        pages,
+        pageHeaders,
+        listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 },
+        (pageHeaders.size downTo 4).toList(),
+        ::highlightFulfillment,
+        HighlightPreset.BLUE_BOLD.getHighlightFormat()
     )
+}
+
+fun highlightEntity(string: String) : List<Pair<Int, Int>>{
+    val highlightIndices = mutableListOf<Pair<Int, Int>>()
+    val pattern = Regex("]\\s*\\([^)]*\\)|\\[")
+    pattern.findAll(string).forEach { matchResult ->
+        highlightIndices.add(matchResult.range.first to matchResult.range.last)
+    }
+
+    return highlightIndices
+}
+
+fun highlightTransition(string: String) : List<Pair<Int, Int>>{
+    val highlightIndices = mutableListOf<Pair<Int, Int>>()
+    val pattern = Regex("(?<=^|\\s)(?![\\p{L}\\p{N}]+(?=\$|\\s))[\\p{L}\\p{N}]*[\\p{P}\\p{S}][\\p{L}\\p{N}\\p{P}\\p{S}]*")
+    pattern.findAll(string).forEach { matchResult ->
+        highlightIndices.add(matchResult.range.first to matchResult.range.last)
+    }
+
+    return highlightIndices
+}
+
+private fun getFunctionCallIndices(string: String, expressions: List<MatchResult>) : List<Pair<Int, Int>> {
+    fun isFunctionExpression (expression: MatchResult) : Boolean {
+        return expression.range.last < string.length-2 && string[expression.range.last+1] == '('
+    }
+
+    var lastFunctionEnd = 0;
+    return expressions.filter(::isFunctionExpression).fold(mutableListOf<Pair<Int, Int>>()) { acc, expression ->
+        var inSingleQuotes = false
+        var inDoubleQuotes = false
+        var level = 1
+
+        val start = expression.range.last+2
+        val rest = string.substring(expression.range.last+2)
+
+        fun toggleQuotes (char: Char) : Boolean {
+            return !((char == '\'' && !inDoubleQuotes) || (char == '"' && !inSingleQuotes))
+        }
+
+        loop@ for ((index, char) in rest.withIndex()) {
+            if (level == 0) {
+                acc.add(start to (start + index))
+                break@loop
+            }
+
+            inSingleQuotes = toggleQuotes(char)
+            inDoubleQuotes = toggleQuotes(char)
+
+            val isInQuotes = inSingleQuotes || inDoubleQuotes
+
+            if (isInQuotes) {
+                continue@loop
+            } else when (char) {
+                '(' -> level++
+                ')' -> level--
+            }
+        }
+
+        return acc
+    }.filter { indexPair ->
+        if (indexPair.second > lastFunctionEnd) {
+            lastFunctionEnd = indexPair.second
+            return@filter true
+        }
+        return@filter false
+    }
+}
+
+fun highlightFulfillment(string: String) : List<Pair<Int, Int>>{
+    val pattern = Regex("\\\$(\\p{L}*\\.)*\\p{L}+")
+    val expressions = pattern.findAll(string).toList()
+    val functionCallIndices = getFunctionCallIndices(string, expressions)
+
+    return expressions.map { expression -> expression.range.first to expression.range.last } + functionCallIndices
 }

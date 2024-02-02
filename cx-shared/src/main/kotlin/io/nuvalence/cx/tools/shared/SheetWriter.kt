@@ -57,32 +57,23 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
     }
 
     /**
-     * Adds data to an existing tab. Columns are resized by the supplied parameter,
+     * Formats cells within an existing tab, presumed to be already populated. Columns are resized by the supplied parameter,
      * and cells are set to wrap text to make them more readable.
      *
      * @param tabName name of the tab
-     * @param data rows of data to add to the tab
-     * @param headers list of headers for the given data
-     * @param sizes list of sizes to resize the columns once the data is added.
+     * @param columnWidths list of sizes to resize the columns once the data is added
      */
-    fun addDataToTab(tabName: String, data: List<List<String>>, headers: List<String>, sizes: List<Int>) {
-        val request = ValueRange().setValues(listOf(headers, *data.toTypedArray()))
-        service
-            .spreadsheets()
-            .values()
-            .update(spreadsheetId, tabName, request)
-            .setValueInputOption("RAW")
-            .execute()
+    private fun setCellFormats(tabName: String, columnWidths: List<Int>) {
         val sheet = service.spreadsheets().get(spreadsheetId).execute().sheets.find { it.properties.title == tabName }
         val sheetId = sheet?.properties?.sheetId ?: error("Could not find tab $tabName")
-        sizes.forEachIndexed { i, size ->
+        columnWidths.forEachIndexed { i, columnWidth ->
             // Set column width
             val dimensionRange = DimensionRange()
                 .setSheetId(sheetId)
                 .setDimension("COLUMNS")
                 .setStartIndex(i)
                 .setEndIndex(i + 1)
-            val dimensionProperties = DimensionProperties().setPixelSize(size)
+            val dimensionProperties = DimensionProperties().setPixelSize(columnWidth)
             val updateDimensionPropertiesRequest = UpdateDimensionPropertiesRequest()
                 .setRange(dimensionRange)
                 .setProperties(dimensionProperties)
@@ -106,6 +97,95 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
                     )
             ).execute()
         }
+    }
+
+    /**
+     * Adds data to an existing tab. Columns are resized by the supplied parameter,
+     * and cells are set to wrap text to make them more readable.
+     *
+     * @param tabName name of the tab
+     * @param data rows of data to add to the tab
+     * @param headers list of headers for the given data
+     * @param columnWidths list of sizes to resize the columns once the data is added
+     */
+    fun addDataToTab(tabName: String, data: List<List<String>>, headers: List<String>, columnWidths: List<Int>) {
+        val request = ValueRange().setValues(listOf(headers, *data.toTypedArray()))
+        service
+            .spreadsheets()
+            .values()
+            .update(spreadsheetId, tabName, request)
+            .setValueInputOption("RAW")
+            .execute()
+
+        setCellFormats(tabName, columnWidths)
+    }
+
+    /**
+     * Adds formatted data to an existing tab. Columns are resized by the supplied parameter,
+     * and cells are set to wrap text to make them more readable.
+     *
+     * @param tabName name of the tab
+     * @param data rows of data to add to the tab
+     * @param headers list of headers for the given data
+     * @param columnWidths list of sizes to resize the columns once the data is added
+     * @param formatColumns list of indices of columns to format
+     * @param highlightSelector function to determine ranges for text format runs
+     * @param highlightFormat text formatting to apply to highlighted text
+     */
+    fun addFormattedDataToTab(tabName: String, data: List<List<String>>, headers: List<String>, columnWidths: List<Int>,
+                              formatColumns: List<Int>, highlightSelector: (String) -> List<Pair<Int, Int>>, highlightFormat: TextFormat) {
+        val requests = mutableListOf<Request>()
+        val dataWithHeader = listOf(headers, *data.toTypedArray())
+        dataWithHeader.forEachIndexed { rowIndex, row ->
+            row.forEachIndexed { columnIndex, cellValue ->
+                val textFormatRuns = mutableListOf<TextFormatRun>()
+
+                if (rowIndex > 0 && formatColumns.contains(columnIndex)) {
+                    // Apply highlighting based on highlightSelector function
+                    val highlightRanges = highlightSelector(cellValue)
+                    highlightRanges.forEach { range ->
+                        textFormatRuns.add(
+                            TextFormatRun().apply {
+                                startIndex = range.first
+                                format = highlightFormat
+                            }
+                        )
+                        textFormatRuns.add(
+                            TextFormatRun().apply {
+                                startIndex = range.second + 1
+                                format = null
+                            }
+                        )
+                    }
+                }
+
+                // Create CellData for the current cell
+                val cellData = CellData().apply {
+                    userEnteredValue = ExtendedValue().setStringValue(cellValue)
+                    if (textFormatRuns.isNotEmpty()) this.textFormatRuns = textFormatRuns
+                }
+
+                // Define the cell's location using GridRange
+                val gridRange = GridRange().apply {
+                    this.sheetId = sheetId
+                    this.startRowIndex = rowIndex
+                    this.endRowIndex = rowIndex + 1
+                    this.startColumnIndex = columnIndex
+                    this.endColumnIndex = columnIndex + 1
+                }
+
+                // Add the update request for the cell
+                requests.add(Request().setUpdateCells(UpdateCellsRequest().apply {
+                    rows = listOf(RowData().setValues(listOf(cellData)))
+                    range = gridRange
+                    fields = "userEnteredValue,textFormatRuns"
+                }))
+            }
+        }
+
+        val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
+        service.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
+        setCellFormats(tabName, columnWidths)
     }
 
     fun deleteCellRange(range: String) {
