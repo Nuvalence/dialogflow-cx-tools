@@ -6,7 +6,7 @@ import com.google.api.services.sheets.v4.model.TextFormat
 enum class HighlightPreset {
     BLUE_BOLD {
         override fun getHighlightFormat() : TextFormat {
-            return TextFormat().setBold(false).setForegroundColor(Color().setBlue(0.8f))
+            return TextFormat().setBold(true).setForegroundColor(Color().setBlue(0.8f))
         }
     };
 
