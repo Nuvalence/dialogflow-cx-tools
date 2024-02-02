@@ -30,13 +30,18 @@ fun export(args: Array<String>) {
     val sheetWriter = SheetWriter(url, spreadsheetId)
 
     // add intent training phrases to Training Phrases tab
+    val intents = translationAgent.flattenIntents()
+    val intentHeaders = listOf("Intent Name") + translationAgent.allLanguages
     sheetWriter.deleteTab(PhraseType.Intents.title)
     sheetWriter.addTab(PhraseType.Intents.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Intents.title,
-        translationAgent.flattenIntents(),
-        listOf("Intent Name") + translationAgent.allLanguages,
-        listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
+        intents,
+        intentHeaders,
+        listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 },
+        (intentHeaders.size downTo 1).toList(),
+        ::highlightForTrainingPhrases,
+        HighlightPreset.BLUE_BOLD
     )
 
     Thread.sleep(60000)  // Sleep added here due to Google Sheets quota limits of 300 operations per minute
@@ -52,8 +57,8 @@ fun export(args: Array<String>) {
         entityHeaders,
         listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 },
         (entityHeaders.size downTo 2).toList(),
-        ::highlightEntity,
-        HighlightPreset.BLUE_BOLD.getHighlightFormat()
+        ::highlightForEntities,
+        HighlightPreset.BLUE_BOLD
     )
 
     Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
@@ -69,8 +74,8 @@ fun export(args: Array<String>) {
         flowTransitionHeaders,
         listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 },
         (flowTransitionHeaders.size downTo 6).toList(),
-        ::highlightTransition,
-        HighlightPreset.BLUE_BOLD.getHighlightFormat()
+        ::highlightForTransitions,
+        HighlightPreset.BLUE_BOLD
     )
 
     Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
@@ -86,12 +91,12 @@ fun export(args: Array<String>) {
         pageHeaders,
         listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 },
         (pageHeaders.size downTo 4).toList(),
-        ::highlightFulfillment,
-        HighlightPreset.BLUE_BOLD.getHighlightFormat()
+        ::highlightForFulfillments,
+        HighlightPreset.BLUE_BOLD
     )
 }
 
-fun highlightEntity(string: String) : List<Pair<Int, Int>>{
+fun highlightAnnotatedFragments(string: String) : List<Pair<Int, Int>>{
     val highlightIndices = mutableListOf<Pair<Int, Int>>()
     val pattern = Regex("]\\s*\\([^)]*\\)|\\[")
     pattern.findAll(string).forEach { matchResult ->
@@ -101,67 +106,126 @@ fun highlightEntity(string: String) : List<Pair<Int, Int>>{
     return highlightIndices
 }
 
-fun highlightTransition(string: String) : List<Pair<Int, Int>>{
+fun highlightFragmentsWithSymbols(string: String) : List<Pair<Int, Int>>{
     val highlightIndices = mutableListOf<Pair<Int, Int>>()
-    val pattern = Regex("(?<=^|\\s)(?![\\p{L}\\p{N}]+(?=\$|\\s))[\\p{L}\\p{N}]*[\\p{P}\\p{S}][\\p{L}\\p{N}\\p{P}\\p{S}]*")
+    val lookarounds = "(?<=^|\\s)(?![\\p{L}\\p{N}\\p{P}]+(?=\$|\\s))"
+    val symbolsPattern = "[\\p{L}\\p{N}]*[\\p{P}\\p{S}][\\p{L}\\p{N}\\p{P}\\p{S}]*"
+    val underscoresPattern = "[\\p{L}\\p{N}]*_+[\\p{L}\\p{N}\\p{P}\\p{S}]*"
+    val regexPattern = "(?=[^\\s]*(\\\\|\\[|\\]))[^\\s]*"
+    val pattern = Regex("$lookarounds$symbolsPattern|$underscoresPattern|$regexPattern")
     pattern.findAll(string).forEach { matchResult ->
         highlightIndices.add(matchResult.range.first to matchResult.range.last)
     }
 
-    return highlightIndices
+    return highlightIndices + highlightForFulfillments(string)
+}
+
+private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, Int>? {
+    var inSingleQuotes = false
+    var inDoubleQuotes = false
+    var level = 1
+
+    val start = expression.range.first
+    val end = expression.range.last
+    val rest = string.substring(expression.range.last + 2)
+
+    for ((index, char) in rest.withIndex()) {
+        if (level == 0) {
+            return start to (end + index + 1)
+        }
+
+        if (char == '\'' && !inDoubleQuotes) {
+            inSingleQuotes = !inSingleQuotes
+        }
+        if (char == '"' && !inSingleQuotes) {
+            inDoubleQuotes = !inDoubleQuotes
+        }
+
+        if (inSingleQuotes || inDoubleQuotes) {
+            continue
+        }
+
+        when (char) {
+            '(' -> level++
+            ')' -> level--
+        }
+    }
+
+    return null
 }
 
 private fun getFunctionCallIndices(string: String, expressions: List<MatchResult>) : List<Pair<Int, Int>> {
-    fun isFunctionExpression (expression: MatchResult) : Boolean {
-        return expression.range.last < string.length-2 && string[expression.range.last+1] == '('
+    val fullFunctions = expressions.fold(mutableListOf<Pair<Int, Int>>()) { acc, expression ->
+        val functionPair = parseFunction(string, expression)
+        if (functionPair != null) {
+            acc.add(functionPair)
+        }
+        acc
     }
 
-    var lastFunctionEnd = 0;
-    return expressions.filter(::isFunctionExpression).fold(mutableListOf<Pair<Int, Int>>()) { acc, expression ->
-        var inSingleQuotes = false
-        var inDoubleQuotes = false
-        var level = 1
-
-        val start = expression.range.last+2
-        val rest = string.substring(expression.range.last+2)
-
-        fun toggleQuotes (char: Char) : Boolean {
-            return !((char == '\'' && !inDoubleQuotes) || (char == '"' && !inSingleQuotes))
-        }
-
-        loop@ for ((index, char) in rest.withIndex()) {
-            if (level == 0) {
-                acc.add(start to (start + index))
-                break@loop
-            }
-
-            inSingleQuotes = toggleQuotes(char)
-            inDoubleQuotes = toggleQuotes(char)
-
-            val isInQuotes = inSingleQuotes || inDoubleQuotes
-
-            if (isInQuotes) {
-                continue@loop
-            } else when (char) {
-                '(' -> level++
-                ')' -> level--
-            }
-        }
-
-        return acc
-    }.filter { indexPair ->
-        if (indexPair.second > lastFunctionEnd) {
+    var lastFunctionEnd = 0
+    val filteredFunctions = fullFunctions.filter { indexPair ->
+        if (indexPair.first > lastFunctionEnd) {
             lastFunctionEnd = indexPair.second
             return@filter true
         }
         return@filter false
     }
+
+    return filteredFunctions
 }
 
-fun highlightFulfillment(string: String) : List<Pair<Int, Int>>{
-    val pattern = Regex("\\\$(\\p{L}*\\.)*\\p{L}+")
-    val expressions = pattern.findAll(string).toList()
-    val functionCallIndices = getFunctionCallIndices(string, expressions)
+fun highlightReferences(string: String) : List<Pair<Int, Int>>{
+    val pattern = Regex("\\\$(\\w*\\.)+[\\w-]+")
+    val rawExpressions = pattern.findAll(string).toList()
+    val (functionCallExpressions, basicExpressions) = rawExpressions.partition { it.range.last < string.length-2 && string[it.range.last+1] == '(' }
+    val functionCallIndices = getFunctionCallIndices(string, functionCallExpressions)
 
-    return expressions.map { expression -> expression.range.first to expression.range.last } + functionCallIndices
+    val basicExpressionIndices = basicExpressions.filterNot { expression ->
+        functionCallIndices.any { (start, end) ->
+            expression.range.first in start..end
+        }
+    }.map { expression -> expression.range.first to expression.range.last }
+
+    return basicExpressionIndices + functionCallIndices
+}
+
+fun highlightForEntities(string: String) : List<Pair<Int, Int>> {
+    return highlightFragmentsWithSymbols(string)
+}
+
+fun highlightForTransitions(string: String) : List<Pair<Int, Int>> {
+    val pairs = (highlightFragmentsWithSymbols(string) + highlightReferences(string))
+
+    val result = pairs.fold(mutableListOf<Pair<Int, Int>>()) { acc, pair ->
+        val superstringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
+        val substringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
+        val overlapping = acc.find { (it.first <= pair.second) && (it.second >= pair.first) }
+
+        if (superstringPair != null) {
+            acc
+        } else if (substringPair != null) {
+            acc.remove(substringPair)
+            acc.add(pair)
+            acc
+        } else if (overlapping != null) {
+            val newPair = overlapping.first.coerceAtMost(pair.first) to overlapping.second.coerceAtLeast(pair.second)
+            acc.remove(overlapping)
+            acc.add(newPair)
+            acc
+        } else {
+            acc.add(pair)
+            acc
+        }
+    }
+
+    return result
+}
+
+fun highlightForFulfillments (string: String) : List<Pair<Int, Int>> {
+    return highlightReferences(string)
+}
+
+fun highlightForTrainingPhrases (string: String) : List<Pair<Int, Int>> {
+    return highlightAnnotatedFragments(string)
 }
