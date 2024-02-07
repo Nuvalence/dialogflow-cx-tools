@@ -120,45 +120,40 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      */
     private fun  processEntityTypes() {
         File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
-            val entityPath = directory.absolutePath
+            val entityDirectory = directory.absolutePath
             val entityName = directory.name // the directory name is the entity name
-            val entityKind = JsonParser.parseString(File("$entityPath/$entityName.json").readText()).asJsonObject["kind"].asString
+            val entityKind = JsonParser.parseString(File("$entityDirectory/$entityName.json").readText()).asJsonObject["kind"].asString
 
-            val entites = translationAgent.getEntities(entityName)
-            val languagePhrases = mutableMapOf<String, MutableMap<String, List<String>>>()
-            entites?.forEach { (value, phraseByLanguage) ->
-                phraseByLanguage.phraseByLanguage.forEach { (languageCode, phrases) ->
-                    val valueMap = languagePhrases.getOrPut(languageCode) { mutableMapOf() }
-                    valueMap[value] = phrases
-                }
-            }
-            languagePhrases.forEach { (languageCode, phrases) ->
-                if (languageCode.isNotBlank() && languageCode.length < 6) {
+            val entities = translationAgent.getEntities(entityName)
+            entities.entries.forEach { (phrasePath, languageMessages) ->
+                val value = phrasePath.path[1]
+                languageMessages.messagesByLanguage.forEach { (languageCode, valueMessage) ->
+                    if (languageCode.isNotBlank() && languageCode.length < 6) {
+                        val entitiesJsonArray = JsonArray()
+                        valueMessage.forEach { (synonyms) ->
+                            if (!synonyms.isNullOrEmpty() && synonyms.all { it.isNotBlank() }) {
+                                val entity = JsonObject()
+                                val synonymArray = JsonArray()
+                                if (entityKind == "KIND_REGEXP") {
+                                    synonymArray.add(synonyms[0])
+                                    entity.addProperty("value", synonyms[0])
+                                } else {
+                                    synonyms.forEach { synonym -> synonymArray.add(synonym) }
+                                    entity.addProperty("value", value)
+                                }
 
-                    val entitiesJsonArray = JsonArray()
-                    phrases.forEach { (value, synonyms) ->
-                        if (synonyms.isNotEmpty() && synonyms.all { it.isNotBlank() }) {
-                            val entity = JsonObject()
-                            val synonymArray = JsonArray()
-                            if (entityKind == "KIND_REGEXP") {
-                                synonymArray.add(synonyms[0])
-                                entity.addProperty("value", synonyms[0])
-                            } else {
-                                synonyms.forEach { synonym -> synonymArray.add(synonym) }
-                                entity.addProperty("value", value)
+                                entity.add("synonyms", synonymArray)
+                                entity.addProperty("languageCode", languageCode)
+                                entitiesJsonArray.add(entity)
                             }
-
-                            entity.add("synonyms", synonymArray)
-                            entity.addProperty("languageCode", languageCode)
-                            entitiesJsonArray.add(entity)
                         }
-                    }
 
-                    if (entitiesJsonArray.size() > 0) {
-                        val entityJsonObject = JsonObject()
-                        entityJsonObject.add("entities", entitiesJsonArray)
+                        if (entitiesJsonArray.size() > 0) {
+                            val entityJsonObject = JsonObject()
+                            entityJsonObject.add("entities", entitiesJsonArray)
 
-                        prettySave(entityJsonObject, "$entityPath/entities/$languageCode.json")
+                            prettySave(entityJsonObject, "$entityDirectory/entities/$languageCode.json")
+                        }
                     }
                 }
             }

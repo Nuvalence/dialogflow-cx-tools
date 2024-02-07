@@ -42,11 +42,7 @@ class SheetPhrasesExtractor(private val credentialsURL: URL, private val spreads
      */
     private fun processEntityTypes(translationAgent: TranslationAgent) {
         val entities = SheetReader(credentialsURL, spreadsheetId, Entities.title).read()
-        entities.drop(1).forEach { row ->
-            (2 until row.size).forEach { languageCol ->
-                translationAgent.putEntity(row[0], row[1], entities[0][languageCol], row[languageCol].split("\n"))
-            }
-        }
+        processRows(translationAgent, entities, 2, translationAgent::putEntity)
     }
 
     /**
