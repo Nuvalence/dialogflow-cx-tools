@@ -130,12 +130,12 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
      * @param data rows of data to add to the tab
      * @param headers list of headers for the given data
      * @param columnWidths list of sizes to resize the columns once the data is added
-     * @param formatColumns list of indices of columns to format
-     * @param highlightSelector function to determine ranges for text format runs
+     * @param columnOffset column index to begin formatting on
+     * @param highlightFormatRunIndices 2D table of format run indices per cell
      * @param highlightFormat text formatting to apply to highlighted text
      */
     fun addFormattedDataToTab(tabName: String, data: List<List<String>>, headers: List<String>, columnWidths: List<Int>,
-                              formatColumns: List<Int>, highlightSelector: (String) -> List<Pair<Int, Int>>, highlightFormat: HighlightPreset) {
+                              columnOffset: Int, highlightFormatRunIndices: List<List<List<Pair<Int, Int>>>>, highlightFormat: HighlightPreset) {
         val requests = mutableListOf<Request>()
         val dataWithHeader = listOf(headers, *data.toTypedArray())
 
@@ -146,23 +146,25 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
             row.forEachIndexed { columnIndex, cellValue ->
                 val textFormatRuns = mutableListOf<TextFormatRun>()
 
-                if (rowIndex > 0 && formatColumns.contains(columnIndex)) {
-                    // Apply highlighting based on highlightSelector function
-                    val highlightRanges = highlightSelector(cellValue)
-                    highlightRanges.forEach { range ->
-                        textFormatRuns.add(
-                            TextFormatRun().apply {
-                                startIndex = range.first
-                                format = highlightFormat.getHighlightFormat()
-                            }
-                        )
-                        if (range.second + 1 < cellValue.length)
-                        textFormatRuns.add(
-                            TextFormatRun().apply {
-                                startIndex = range.second + 1
-                                format = null
-                            }
-                        )
+                if (rowIndex > 0 && columnIndex >= columnOffset) {
+                    val highlightRow = highlightFormatRunIndices[rowIndex - 1]
+                    if (columnIndex - columnOffset < highlightRow.size) {
+                        val highlightRanges = highlightRow[columnIndex - columnOffset]
+                        highlightRanges.forEach { range ->
+                            textFormatRuns.add(
+                                TextFormatRun().apply {
+                                    startIndex = range.first
+                                    format = highlightFormat.getHighlightFormat()
+                                }
+                            )
+                            if (range.second + 1 < cellValue.length)
+                                textFormatRuns.add(
+                                    TextFormatRun().apply {
+                                        startIndex = range.second + 1
+                                        format = null
+                                    }
+                                )
+                        }
                     }
                 }
 

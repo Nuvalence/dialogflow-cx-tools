@@ -32,6 +32,8 @@ fun export(args: Array<String>) {
     // add intent training phrases to Training Phrases tab
     val intents = translationAgent.flattenIntents()
     val intentHeaders = listOf("Intent Name") + translationAgent.allLanguages
+    val intentHeaderOffset = 1
+    val intentHighlightIndices = highlightForTrainingPhrases(intents, intentHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Intents.title)
     sheetWriter.addTab(PhraseType.Intents.title)
     sheetWriter.addFormattedDataToTab(
@@ -39,8 +41,8 @@ fun export(args: Array<String>) {
         intents,
         intentHeaders,
         listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 },
-        (intentHeaders.size downTo 1).toList(),
-        ::highlightForTrainingPhrases,
+        intentHeaderOffset,
+        intentHighlightIndices,
         HighlightPreset.BLUE_BOLD
     )
 
@@ -49,6 +51,8 @@ fun export(args: Array<String>) {
     // add entities to Entities tab
     val entities = translationAgent.flattenEntities()
     val entityHeaders = listOf("Entity Type", "Value") + translationAgent.allLanguages
+    val entityHeaderOffset = 2
+    val entityHighlightIndices = highlightForEntities(entities, translationAgent, entityHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Entities.title)
     sheetWriter.addTab(PhraseType.Entities.title)
     sheetWriter.addFormattedDataToTab(
@@ -56,8 +60,8 @@ fun export(args: Array<String>) {
         entities,
         entityHeaders,
         listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 },
-        (entityHeaders.size downTo 2).toList(),
-        ::highlightForEntities,
+        entityHeaderOffset,
+        entityHighlightIndices,
         HighlightPreset.BLUE_BOLD
     )
 
@@ -66,6 +70,8 @@ fun export(args: Array<String>) {
     // add transition fulfillments to Transitions tab
     val flowTransitions = translationAgent.flattenFlows()
     val flowTransitionHeaders = listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages
+    val flowTransitionHeaderOffset = 6
+    val flowTransitionHighlightIndices = highlightForTransitions(flowTransitions, flowTransitionHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Flows.title)
     sheetWriter.addTab(PhraseType.Flows.title)
     sheetWriter.addFormattedDataToTab(
@@ -73,8 +79,8 @@ fun export(args: Array<String>) {
         flowTransitions,
         flowTransitionHeaders,
         listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 },
-        (flowTransitionHeaders.size downTo 6).toList(),
-        ::highlightForTransitions,
+        flowTransitionHeaderOffset,
+        flowTransitionHighlightIndices,
         HighlightPreset.BLUE_BOLD
     )
 
@@ -83,6 +89,8 @@ fun export(args: Array<String>) {
     // add normal page fulfillments to Fulfillments tab
     val pages = translationAgent.flattenPages()
     val pageHeaders = listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages
+    val pageHeaderOffset = 4
+    val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Pages.title)
     sheetWriter.addTab(PhraseType.Pages.title)
     sheetWriter.addFormattedDataToTab(
@@ -90,8 +98,8 @@ fun export(args: Array<String>) {
         pages,
         pageHeaders,
         listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 },
-        (pageHeaders.size downTo 4).toList(),
-        ::highlightForFulfillments,
+        pageHeaderOffset,
+        pageHighlightIndices,
         HighlightPreset.BLUE_BOLD
     )
 }
@@ -117,7 +125,7 @@ fun highlightFragmentsWithSymbols(string: String) : List<Pair<Int, Int>>{
         highlightIndices.add(matchResult.range.first to matchResult.range.last)
     }
 
-    return highlightIndices + highlightForFulfillments(string)
+    return highlightIndices
 }
 
 private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, Int>? {
@@ -190,42 +198,76 @@ fun highlightReferences(string: String) : List<Pair<Int, Int>>{
     return basicExpressionIndices + functionCallIndices
 }
 
-fun highlightForEntities(string: String) : List<Pair<Int, Int>> {
-    return highlightFragmentsWithSymbols(string)
-}
-
-fun highlightForTransitions(string: String) : List<Pair<Int, Int>> {
-    val pairs = (highlightFragmentsWithSymbols(string) + highlightReferences(string))
-
-    val result = pairs.fold(mutableListOf<Pair<Int, Int>>()) { acc, pair ->
-        val superstringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
-        val substringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
-        val overlapping = acc.find { (it.first <= pair.second) && (it.second >= pair.first) }
-
-        if (superstringPair != null) {
-            acc
-        } else if (substringPair != null) {
-            acc.remove(substringPair)
-            acc.add(pair)
-            acc
-        } else if (overlapping != null) {
-            val newPair = overlapping.first.coerceAtMost(pair.first) to overlapping.second.coerceAtLeast(pair.second)
-            acc.remove(overlapping)
-            acc.add(newPair)
-            acc
-        } else {
-            acc.add(pair)
-            acc
+fun highlightForEntities(entities: List<List<String>>, translationAgent: TranslationAgent, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return entities.map { row ->
+        val entity = translationAgent.getEntity(PhrasePath(listOf(row[0], row[1])))
+        val type = entity?.messagesByLanguage?.values?.toList()?.get(0)?.get(0)?.type
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            if (type == "KIND_REGEXP" || type == "KIND_LIST") {
+                rowIndices.add(listOf(0 to row[i].length))
+            } else {
+                rowIndices.add(highlightFragmentsWithSymbols(row[i]))
+            }
         }
+
+        rowIndices
     }
-
-    return result
 }
 
-fun highlightForFulfillments (string: String) : List<Pair<Int, Int>> {
-    return highlightReferences(string)
+fun highlightForTransitions(transitions: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return transitions.map { row ->
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            val pairs = (highlightFragmentsWithSymbols(row[i]) + highlightReferences(row[i]))
+
+            val result = pairs.fold(mutableListOf<Pair<Int, Int>>()) { acc, pair ->
+                val superstringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
+                val substringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
+                val overlapping = acc.find { (it.first <= pair.second) && (it.second >= pair.first) }
+
+                if (superstringPair != null) {
+                    acc
+                } else if (substringPair != null) {
+                    acc.remove(substringPair)
+                    acc.add(pair)
+                    acc
+                } else if (overlapping != null) {
+                    val newPair = overlapping.first.coerceAtMost(pair.first) to overlapping.second.coerceAtLeast(pair.second)
+                    acc.remove(overlapping)
+                    acc.add(newPair)
+                    acc
+                } else {
+                    acc.add(pair)
+                    acc
+                }
+            }
+
+            rowIndices.add(result)
+        }
+
+        rowIndices
+    }
 }
 
-fun highlightForTrainingPhrases (string: String) : List<Pair<Int, Int>> {
-    return highlightAnnotatedFragments(string)
+fun highlightForFulfillments (fulfillments: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return fulfillments.map { row ->
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            rowIndices.add(highlightReferences(row[i]))
+        }
+
+        rowIndices
+    }
+}
+
+fun highlightForTrainingPhrases (trainingPhrases: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return trainingPhrases.map { row ->
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            rowIndices.add(highlightAnnotatedFragments(row[i]))
+        }
+
+        rowIndices
+    }
 }
