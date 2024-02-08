@@ -129,19 +129,18 @@ fun highlightFragmentsWithSymbols(string: String) : List<Pair<Int, Int>>{
 }
 
 private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, Int>? {
-    var inSingleQuotes = false
-    var inDoubleQuotes = false
-    var level = 1
+    val substringSkip = 1 // substring end is exclusive
+    val restSkip = 1 // start at immediately following parenthesis
 
     val start = expression.range.first
-    val end = expression.range.last
-    val rest = string.substring(expression.range.last + 2)
+    val end = expression.range.last + substringSkip
+    val rest = string.substring(end + restSkip)
+
+    var level = 1
+    var inSingleQuotes = false
+    var inDoubleQuotes = false
 
     for ((index, char) in rest.withIndex()) {
-        if (level == 0) {
-            return start to (end + index + 1)
-        }
-
         if (char == '\'' && !inDoubleQuotes) {
             inSingleQuotes = !inSingleQuotes
         }
@@ -155,7 +154,12 @@ private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, I
 
         when (char) {
             '(' -> level++
-            ')' -> level--
+            ')' -> {
+                level--
+                if (level == 0) {
+                    return start to (end + index + restSkip)
+                }
+            }
         }
     }
 
@@ -219,31 +223,7 @@ fun highlightForTransitions(transitions: List<List<String>>, offset: Int) : List
     return transitions.map { row ->
         val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
         for (i in offset until row.size) {
-            val pairs = (highlightFragmentsWithSymbols(row[i]) + highlightReferences(row[i]))
-
-            val result = pairs.fold(mutableListOf<Pair<Int, Int>>()) { acc, pair ->
-                val superstringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
-                val substringPair = acc.find { it.first <= pair.first && it.second >= pair.second }
-                val overlapping = acc.find { (it.first <= pair.second) && (it.second >= pair.first) }
-
-                if (superstringPair != null) {
-                    acc
-                } else if (substringPair != null) {
-                    acc.remove(substringPair)
-                    acc.add(pair)
-                    acc
-                } else if (overlapping != null) {
-                    val newPair = overlapping.first.coerceAtMost(pair.first) to overlapping.second.coerceAtLeast(pair.second)
-                    acc.remove(overlapping)
-                    acc.add(newPair)
-                    acc
-                } else {
-                    acc.add(pair)
-                    acc
-                }
-            }
-
-            rowIndices.add(result)
+            rowIndices.add(highlightReferences(row[i]))
         }
 
         rowIndices
