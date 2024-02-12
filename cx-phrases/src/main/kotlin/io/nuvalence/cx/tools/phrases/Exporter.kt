@@ -32,6 +32,7 @@ fun export(args: Array<String>) {
     // add intent training phrases to Training Phrases tab
     val intents = translationAgent.flattenIntents()
     val intentHeaders = listOf("Intent Name") + translationAgent.allLanguages
+    val intentColumnWidths = listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
     val intentHeaderOffset = 1
     val intentHighlightIndices = highlightForTrainingPhrases(intents, intentHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Intents.title)
@@ -40,7 +41,7 @@ fun export(args: Array<String>) {
         PhraseType.Intents.title,
         intents,
         intentHeaders,
-        listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 },
+        intentColumnWidths,
         intentHeaderOffset,
         intentHighlightIndices,
         HighlightPreset.BLUE_BOLD
@@ -51,6 +52,7 @@ fun export(args: Array<String>) {
     // add entities to Entities tab
     val entities = translationAgent.flattenEntities()
     val entityHeaders = listOf("Entity Type", "Value") + translationAgent.allLanguages
+    val entityColumnWidths = listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
     val entityHeaderOffset = 2
     val entityHighlightIndices = highlightForEntities(entities, translationAgent, entityHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Entities.title)
@@ -59,7 +61,7 @@ fun export(args: Array<String>) {
         PhraseType.Entities.title,
         entities,
         entityHeaders,
-        listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 },
+        entityColumnWidths,
         entityHeaderOffset,
         entityHighlightIndices,
         HighlightPreset.BLUE_BOLD
@@ -89,6 +91,7 @@ fun export(args: Array<String>) {
     // add normal page fulfillments to Fulfillments tab
     val pages = translationAgent.flattenPages()
     val pageHeaders = listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages
+    val pageColumnWidths = listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 }
     val pageHeaderOffset = 4
     val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Pages.title)
@@ -97,13 +100,21 @@ fun export(args: Array<String>) {
         PhraseType.Pages.title,
         pages,
         pageHeaders,
-        listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 },
+        pageColumnWidths,
         pageHeaderOffset,
         pageHighlightIndices,
         HighlightPreset.BLUE_BOLD
     )
 }
 
+/**
+ * Highlights annotated fragments in a given string.
+ * These are represented by square brackets, parentheses, and the contents of the parentheses in a given string.
+ * Used primarily for training phrases.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
 fun highlightAnnotatedFragments(string: String) : List<Pair<Int, Int>>{
     val highlightIndices = mutableListOf<Pair<Int, Int>>()
     val pattern = Regex("]\\s*\\([^)]*\\)|\\[")
@@ -114,6 +125,13 @@ fun highlightAnnotatedFragments(string: String) : List<Pair<Int, Int>>{
     return highlightIndices
 }
 
+/**
+ * Highlights fragments that contain symbols in a given string.
+ * Used primarily for entities with value/synonym maps.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
 fun highlightFragmentsWithSymbols(string: String) : List<Pair<Int, Int>>{
     val highlightIndices = mutableListOf<Pair<Int, Int>>()
     val lookarounds = "(?<=^|\\s)(?![\\p{L}\\p{N}\\p{P}]+(?=\$|\\s))"
@@ -166,6 +184,15 @@ private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, I
     return null
 }
 
+/**
+ * Highlights function calls within a given string.
+ * Used primarily for transition and page fulfillments.
+ * Logic is part of highlightReferences.
+ *
+ * @param string the string to be processed
+ * @param expressions a list of regex match results for expressions to additionally check for functions
+ * @return the list of index ranges, including the contents of the function calls, where the given string should be highlighted
+ */
 private fun getFunctionCallIndices(string: String, expressions: List<MatchResult>) : List<Pair<Int, Int>> {
     val fullFunctions = expressions.fold(mutableListOf<Pair<Int, Int>>()) { acc, expression ->
         val functionPair = parseFunction(string, expression)
@@ -179,14 +206,21 @@ private fun getFunctionCallIndices(string: String, expressions: List<MatchResult
     val filteredFunctions = fullFunctions.filter { indexPair ->
         if (indexPair.first > lastFunctionEnd) {
             lastFunctionEnd = indexPair.second
-            return@filter true
         }
-        return@filter false
+        indexPair.first <= lastFunctionEnd
     }
 
     return filteredFunctions
 }
 
+/**
+ * Highlights references (parameters or function calls) within a given string.
+ * References start with $ and have its fragments delimited by ".". Function calls are additionally followed by parentheses.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
 fun highlightReferences(string: String) : List<Pair<Int, Int>>{
     val pattern = Regex("\\\$(\\w*\\.)+[\\w-]+")
     val rawExpressions = pattern.findAll(string).toList()
@@ -208,6 +242,7 @@ fun highlightForEntities(entities: List<List<String>>, translationAgent: Transla
         val type = entity?.messagesByLanguage?.values?.toList()?.get(0)?.get(0)?.type
         val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
         for (i in offset until row.size) {
+            // if the entity is configured as regex or a composite of other entities, highlight the whole string
             if (type == "KIND_REGEXP" || type == "KIND_LIST") {
                 rowIndices.add(listOf(0 to row[i].length))
             } else {
