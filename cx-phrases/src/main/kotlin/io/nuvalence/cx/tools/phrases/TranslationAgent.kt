@@ -93,7 +93,6 @@ class TranslationPhrases {
 
 /**
  * Holds the different entityTypes. They are accessed by their display name, value and language.
- * TODO: Refactor to use LanguageMessages
  */
 class TranslationEntities {
     private val entities = mutableMapOf<PhrasePath, LanguageMessages>()
@@ -125,9 +124,13 @@ class TranslationEntities {
         // Flatten the phrases for each path and language.
         entities.forEach { (path, languagePhrases) ->
             order.forEach { language ->
-                languagePhrases.messagesByLanguage[language]?.forEach { message: Message ->
-                    val list = newPathToMessage.getOrPut(path) { mutableListOf() }
-                    list.add(message.phrases?.joinToString("\n") ?: "")
+                val list = newPathToMessage.getOrPut(path) { mutableListOf() }
+                if (languagePhrases.messagesByLanguage[language] != null) {
+                    languagePhrases.messagesByLanguage[language]?.forEach { message: Message ->
+                        list.add(message.phrases?.joinToString("\n") ?: "")
+                    }
+                } else {
+                    list.add("")
                 }
             }
         }

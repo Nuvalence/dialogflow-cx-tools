@@ -65,7 +65,7 @@ cd cx-phrases
 **Arguments**:
 * The word `import`
 * Google Sheet ID (see above)
-* Path to where the exploded agent is
+* Path to the source agent
 * Path to where the resulting agent should be created (**must be an empty directory**,
 we make no assumption whether we can go ahead and delete things...) 
 * URL where to find the `credentials.json` file granting access to the Google Sheet above

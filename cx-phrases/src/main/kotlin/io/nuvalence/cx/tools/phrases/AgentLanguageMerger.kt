@@ -124,16 +124,24 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             val entityName = directory.name // the directory name is the entity name
             val entityKind = JsonParser.parseString(File("$entityDirectory/$entityName.json").readText()).asJsonObject["kind"].asString
 
-            val entities = translationAgent.getEntities(entityName)
-            entities.entries.forEach { (phrasePath, languageMessages) ->
+            val entityValueMap = translationAgent.getEntities(entityName)
+            val languageEntityMap = mutableMapOf<String, JsonObject>()
+
+            entityValueMap.entries.forEach { (phrasePath, languageMessages) ->
                 val value = phrasePath.path[1]
                 languageMessages.messagesByLanguage.forEach { (languageCode, valueMessage) ->
                     if (languageCode.isNotBlank() && languageCode.length < 6) {
-                        val entitiesJsonArray = JsonArray()
+                        val entityJsonObject = languageEntityMap.getOrPut(languageCode) {
+                            val entityJsonObject = JsonObject()
+                            val entitiesJsonArray = JsonArray()
+                            entityJsonObject.add("entities", entitiesJsonArray)
+                            entityJsonObject
+                        }
+                        val entitiesJsonArray = entityJsonObject.getAsJsonArray("entities")
+                        val entity = JsonObject()
+                        val synonymArray = JsonArray()
                         valueMessage.forEach { (synonyms) ->
                             if (!synonyms.isNullOrEmpty() && synonyms.all { it.isNotBlank() }) {
-                                val entity = JsonObject()
-                                val synonymArray = JsonArray()
                                 if (entityKind == "KIND_REGEXP") {
                                     synonymArray.add(synonyms[0])
                                     entity.addProperty("value", synonyms[0])
@@ -141,20 +149,24 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                                     synonyms.forEach { synonym -> synonymArray.add(synonym) }
                                     entity.addProperty("value", value)
                                 }
-
-                                entity.add("synonyms", synonymArray)
-                                entity.addProperty("languageCode", languageCode)
-                                entitiesJsonArray.add(entity)
                             }
                         }
-
-                        if (entitiesJsonArray.size() > 0) {
-                            val entityJsonObject = JsonObject()
-                            entityJsonObject.add("entities", entitiesJsonArray)
-
-                            prettySave(entityJsonObject, "$entityDirectory/entities/$languageCode.json")
+                        if (!synonymArray.isEmpty) {
+                            entity.add("synonyms", synonymArray)
+                            entity.addProperty("languageCode", languageCode)
+                            entitiesJsonArray.add(entity)
                         }
                     }
+                }
+            }
+
+            languageEntityMap.entries.forEach { (languageCode, entity) ->
+                val entitiesJsonArray = entity.getAsJsonArray("entities")
+                if (entitiesJsonArray.size() > 0) {
+                    val entityJsonObject = JsonObject()
+                    entityJsonObject.add("entities", entitiesJsonArray)
+
+                    prettySave(entityJsonObject, "$entityDirectory/entities/$languageCode.json")
                 }
             }
         }
