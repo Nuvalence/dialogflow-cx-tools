@@ -4,6 +4,21 @@ import io.nuvalence.cx.tools.shared.HighlightPreset
 import io.nuvalence.cx.tools.shared.SheetWriter
 import java.net.URL
 
+const val PHRASE_COLUMN_WIDTH = 500
+const val INTENT_NAME_COLUMN_WIDTH = 200
+const val ENTITY_TYPE_COLUMN_WIDTH = 200
+const val ENTITY_VALUE_COLUMN_WIDTH = 200
+const val TRANSITION_FLOW_NAME_COLUMN_WIDTH = 200
+const val TRANSITION_PAGE_COLUMN_WIDTH = 200
+const val TRANSITION_TYPE_COLUMN_WIDTH = 100
+const val TRANSITION_VALUE_COLUMN_WIDTH = 300
+const val TRANSITION_ELEMENT_TYPE_COLUMN_WIDTH = 200
+const val TRANSITION_CHANNEL_COLUMN_WIDTH = 200
+const val PAGE_FLOW_NAME_COLUMN_WIDTH = 200
+const val PAGE_NAME_COLUMN_WIDTH = 250
+const val PAGE_ELEMENT_TYPE_COLUMN_WIDTH = 150
+const val PAGE_CHANNEL_COLUMN_WIDTH = 200
+
 /**
  * Exports an agent to a spreadsheet. "args" represent the parameters passed to the main
  * program. Note that the exporter will delete the tabs where it publishes the data, but
@@ -32,7 +47,7 @@ fun export(args: Array<String>) {
     // add intent training phrases to Training Phrases tab
     val intents = translationAgent.flattenIntents()
     val intentHeaders = listOf("Intent Name") + translationAgent.allLanguages
-    val intentColumnWidths = listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
+    val intentColumnWidths = listOf(INTENT_NAME_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val intentHeaderOffset = 1
     val intentHighlightIndices = highlightForTrainingPhrases(intents, intentHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Intents.title)
@@ -52,7 +67,7 @@ fun export(args: Array<String>) {
     // add entities to Entities tab
     val entities = translationAgent.flattenEntities()
     val entityHeaders = listOf("Entity Type", "Value") + translationAgent.allLanguages
-    val entityColumnWidths = listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
+    val entityColumnWidths = listOf(ENTITY_TYPE_COLUMN_WIDTH, ENTITY_VALUE_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val entityHeaderOffset = 2
     val entityHighlightIndices = highlightForEntities(entities, translationAgent, entityHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Entities.title)
@@ -72,6 +87,7 @@ fun export(args: Array<String>) {
     // add transition fulfillments to Transitions tab
     val flowTransitions = translationAgent.flattenFlows()
     val flowTransitionHeaders = listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages
+    val flowTransitionColumnWidths = listOf(TRANSITION_FLOW_NAME_COLUMN_WIDTH, TRANSITION_PAGE_COLUMN_WIDTH, TRANSITION_TYPE_COLUMN_WIDTH, TRANSITION_VALUE_COLUMN_WIDTH, TRANSITION_ELEMENT_TYPE_COLUMN_WIDTH, TRANSITION_CHANNEL_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val flowTransitionHeaderOffset = 6
     val flowTransitionHighlightIndices = highlightForTransitions(flowTransitions, flowTransitionHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Flows.title)
@@ -80,7 +96,7 @@ fun export(args: Array<String>) {
         PhraseType.Flows.title,
         flowTransitions,
         flowTransitionHeaders,
-        listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 },
+        flowTransitionColumnWidths,
         flowTransitionHeaderOffset,
         flowTransitionHighlightIndices,
         HighlightPreset.BLUE_BOLD
@@ -91,7 +107,7 @@ fun export(args: Array<String>) {
     // add normal page fulfillments to Fulfillments tab
     val pages = translationAgent.flattenPages()
     val pageHeaders = listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages
-    val pageColumnWidths = listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 }
+    val pageColumnWidths = listOf(PAGE_FLOW_NAME_COLUMN_WIDTH, PAGE_NAME_COLUMN_WIDTH, PAGE_ELEMENT_TYPE_COLUMN_WIDTH, PAGE_CHANNEL_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val pageHeaderOffset = 4
     val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Pages.title)
