@@ -3,9 +3,11 @@ package io.nuvalence.cx.tools.cxtest
 import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.launcher.EngineFilter
+import org.junit.platform.launcher.LauncherDiscoveryRequest
 import org.junit.platform.launcher.TagFilter
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener
 import java.io.File
 import java.net.URL
 import java.util.*
@@ -79,6 +81,9 @@ class Launcher {
             }
 
             val launcher = LauncherFactory.create()
+
+            val summaryListener = SummaryGeneratingListener()
+            launcher.registerTestExecutionListeners(summaryListener)
 
             launcher.execute(requestBuilder.build())
         }
