@@ -56,6 +56,8 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
         DFCXSpreadsheetArtifact.summaryInfo.testsPassed = 0
         DFCXSpreadsheetArtifact.summaryInfo.testsFailed = 0
 
+        DFCXTestBuilderSpec.formattedResults.set(mutableMapOf())
+
         try {
             val request: BatchRunTestCasesRequest = BatchRunTestCasesRequest.newBuilder()
                 .setParent(Properties.AGENT_PATH)
@@ -65,32 +67,38 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
             val response = testClient.batchRunTestCasesAsync(request).get()
             val resultsList = response.resultsList.sortedBy { result -> result.name }
 
+            println("Raw test results:")
+            println("Tests passed: ${resultsList.count { it.testResult == TestResult.PASSED } }")
+            println("Tests failed: ${resultsList.count { it.testResult == TestResult.FAILED } }")
+
             context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
                 ?.put("testCaseEntries", testCaseList zip resultsList)
             context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
-                ?.put("formattedResultList", Collections.synchronizedList(mutableListOf<DFCXTestBuilderResult>()))
+                ?.put("formattedResultMap", Collections.synchronizedMap(mutableMapOf<String, DFCXTestBuilderResult>()))
         } catch (e: Exception) {
             println("Error running tests: ${e.message}")
         }
     }
 
     override fun afterTestExecution(context: ExtensionContext?) {
-        val result = DFCXTestBuilderSpec.formattedResult.get()
-
-        if (result != null) {
-            //println(result)
-            val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
-            formattedResultList.add(result)
-            DFCXTestBuilderSpec.formattedResult.remove()
+        val formattedResultMap = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultMap") as MutableMap<String, DFCXTestBuilderResult>
+        val incomingTestResults = DFCXTestBuilderSpec.formattedResults.get()
+        synchronized(incomingTestResults) {
+            formattedResultMap.putAll(incomingTestResults)
         }
     }
 
     override fun afterAll(context: ExtensionContext?) {
         val artifactSpreadsheetId = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("artifactSpreadsheetId") as String
-        val formattedResultList = context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultList") as MutableList<DFCXTestBuilderResult>
+        val formattedResultList = (context.root?.getStore(ExtensionContext.Namespace.GLOBAL)?.get("formattedResultMap") as MutableMap<String, DFCXTestBuilderResult>)
+            .values.toList()
 
         DFCXSpreadsheetArtifact.summaryInfo.testsPassed = formattedResultList.count { it.result == ResultLabel.PASS }
         DFCXSpreadsheetArtifact.summaryInfo.testsFailed = formattedResultList.count { it.result == ResultLabel.FAIL }
+
+        println("Processed test results (added to artifact summary):")
+        println("Tests passed: ${DFCXSpreadsheetArtifact.summaryInfo.testsPassed}")
+        println("Tests failed: ${DFCXSpreadsheetArtifact.summaryInfo.testsFailed}")
 
         try {
             val intentCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
