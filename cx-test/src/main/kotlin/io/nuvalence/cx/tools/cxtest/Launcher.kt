@@ -86,6 +86,10 @@ class Launcher {
             launcher.registerTestExecutionListeners(summaryListener)
 
             launcher.execute(requestBuilder.build())
+
+            println("Tests found: ${summaryListener.summary.testsFoundCount}")
+            println("Tests succeeded: ${summaryListener.summary.testsSucceededCount}")
+            println("Tests failed: ${summaryListener.summary.testsFailedCount}")
         }
     }
 }
