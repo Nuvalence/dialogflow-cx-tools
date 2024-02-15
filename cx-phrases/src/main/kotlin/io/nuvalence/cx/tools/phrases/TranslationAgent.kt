@@ -30,23 +30,6 @@ data class LanguageMessages(val messagesByLanguage: Map<String, List<Message>>) 
 }
 
 /**
- * Holds a list of phrases for the supported languages.
- * TODO: refactor all references to use LanguageMessages instead and remove this class
- */
-data class LanguagePhrases(val phraseByLanguage: Map<String, List<String>>) {
-    /**
-     * Given an order for the languages (we like the default one to be first),
-     * flattens the associated strings into a single newline separated string.
-     */
-    fun flatten(order: List<String>): List<String> {
-        return order.map { language ->
-            phraseByLanguage[language]?.joinToString("\n") ?: ""
-        }
-    }
-    operator fun get(languageCode: String) = phraseByLanguage[languageCode]
-}
-
-/**
  * Holds the language messages associated with the different paths. A path is what
  * allows us to associate a row in the spreadsheet with the set of messages for
  * each language.
@@ -110,33 +93,55 @@ class TranslationPhrases {
 
 /**
  * Holds the different entityTypes. They are accessed by their display name, value and language.
- * TODO: Refactor to use LanguageMessages
  */
 class TranslationEntities {
-    private  val entities = mutableMapOf<String, MutableMap<String, LanguagePhrases>>()
+    private val entities = mutableMapOf<PhrasePath, LanguageMessages>()
 
-    operator fun get(displayName: String, value: String, language: String) =
-        entities[displayName]?.get(value)?.get(language) ?: error("Agent structure changed: displayName = $displayName value = $value language = $language")
+    operator fun get(phrasePath: PhrasePath) = entities[phrasePath]
 
-    operator fun get(displayName: String) = entities[displayName]
+    operator fun get(phrasePath: PhrasePath, language: String) = entities[phrasePath]?.get(language) ?: error("Agent structure changed: phrasePath = $phrasePath language = $language")
 
-    operator fun set(displayName: String, value: String, language: String, synonyms: List<String>) {
-        val entityType = entities.getOrPut(displayName) { mutableMapOf() }
-        val phrases = entityType[value]
-        if (phrases == null)
-            entityType[value] = LanguagePhrases(mapOf(language to synonyms))
-        else
-            entityType[value] = LanguagePhrases(mapOf(language to synonyms) + phrases.phraseByLanguage)
-    }
+    operator fun get(entityType: String) = entities.filter { it.key.path[0] == entityType }
 
-    fun flatten(order: List<String>) =
-        entities.flatMap { (displayName, entityMap) ->
-            entityMap.map { (entity, languagePhrases) ->
-                listOf(entity) + languagePhrases.flatten(order)
-            }.map { list ->
-                listOf(displayName) + list
+    operator fun set(path: PhrasePath, languageMessages: LanguageMessages) {
+        val combinedMessagesByLanguage = entities[path]?.messagesByLanguage.orEmpty().toMutableMap()
+        languageMessages.messagesByLanguage.forEach { (languageCode, newMessages) ->
+            combinedMessagesByLanguage.merge(languageCode, newMessages) { existing, new ->
+                existing + new
             }
         }
+        entities[path] = LanguageMessages(combinedMessagesByLanguage)
+    }
+
+    /**
+     * Flatten the information, converting it into a list of list of strings,
+     * which is convenient for exporting to a spreadsheet. Each row contains
+     * the path plus one entry per language.
+     */
+    fun flatten(order: List<String>): List<List<String>> {
+        val newPathToMessage = mutableMapOf<PhrasePath, MutableList<String>>()
+
+        // Flatten the phrases for each path and language.
+        entities.forEach { (path, languagePhrases) ->
+            order.forEach { language ->
+                val list = newPathToMessage.getOrPut(path) { mutableListOf() }
+                if (languagePhrases.messagesByLanguage[language] != null) {
+                    languagePhrases.messagesByLanguage[language]?.forEach { message: Message ->
+                        list.add(message.phrases?.joinToString("\n") ?: "")
+                    }
+                } else {
+                    list.add("")
+                }
+            }
+        }
+
+        // Transform the map into the required List<List<String>> format.
+        val result = newPathToMessage.map { (path, messages) ->
+            path.path + messages  // Combine the path with its messages into a single list.
+        }
+
+        return result
+    }
 }
 
 /**
@@ -149,12 +154,14 @@ class TranslationAgent(val defaultLanguageCode: String, val supportedLanguageCod
     private val pages = TranslationPhrases()
     val allLanguages = listOf(defaultLanguageCode) + supportedLanguageCodes
 
-    fun getEntities(displayName: String) = entities.get(displayName)
+    fun getEntity(path: PhrasePath) = entities[path]
+    fun getEntities(entityName: String) = entities[entityName]
     fun getIntent(path: PhrasePath) = intents[path]
     fun getFlow(path: PhrasePath) = flows[path]
     fun getPages(path: PhrasePath) = pages[path]
 
-    fun putEntity(displayName: String, value: String, language: String, synonyms: List<String>) = entities.set(displayName, value, language, synonyms)
+
+    fun putEntity(path: PhrasePath, languageMessages: LanguageMessages) = entities.set(path, languageMessages)
     fun putIntent(path: PhrasePath, languageMessages: LanguageMessages) = intents.set(path, languageMessages)
     fun putFlow(path: PhrasePath, languageMessages: LanguageMessages) = flows.set(path, languageMessages)
     fun putPage(path: PhrasePath, languageMessages: LanguageMessages) = pages.set(path, languageMessages)

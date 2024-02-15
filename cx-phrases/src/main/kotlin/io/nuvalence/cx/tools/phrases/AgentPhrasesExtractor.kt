@@ -77,7 +77,8 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 translationAgent.allLanguages.indexOf(it.nameWithoutExtension)
             }
 
-            var valueList = mutableListOf<String>()
+            val regexList = mutableListOf<String>()
+            val phraseMap = mutableMapOf<PhrasePath, MutableMap<String, List<Message>>>()
             sortedLanguageFiles?.forEach { file ->
                 val language = file.nameWithoutExtension // as in en.json minus .json
                 val jsonObject = JsonParser.parseString(file.readText()).asJsonObject
@@ -85,16 +86,23 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 jsonObject["entities"]?.asJsonArray?.forEach { entity ->
                     if (entityKind == "KIND_REGEXP") {
                         if (language == "en") {
-                            valueList.add(i, entity.asJsonObject["value"].asString)
+                            regexList.add(i, entity.asJsonObject["value"].asString)
                         }
                     }
                     val value = entity.asJsonObject["value"].asString
                     val synonyms = entity.asJsonObject["synonyms"].asJsonArray.map { it.asString }
-                    if (entityKind == "KIND_REGEXP")
-                        translationAgent.putEntity(entityName, valueList[i++], language, synonyms)
+                    val message = Message(synonyms, null, entityKind, null)
+                    val phraseLangMap = if (entityKind == "KIND_REGEXP") {
+                        phraseMap.getOrPut(PhrasePath(listOf(entityName, regexList[i++]))) { mutableMapOf() }
+                    }
                     else
-                        translationAgent.putEntity(entityName, value, language, synonyms)
+                        phraseMap.getOrPut(PhrasePath(listOf(entityName, value))) { mutableMapOf() }
+                    phraseLangMap[language] = listOf(message)
                 }
+            }
+
+            phraseMap.entries.forEach { (phrasePath, languageMessages) ->
+                translationAgent.putEntity(phrasePath, LanguageMessages(languageMessages))
             }
         }
     }

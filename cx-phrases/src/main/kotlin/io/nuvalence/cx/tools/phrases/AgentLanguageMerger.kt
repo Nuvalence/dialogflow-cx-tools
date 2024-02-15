@@ -120,46 +120,53 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
      */
     private fun  processEntityTypes() {
         File("$rootPath/entityTypes").listFiles()?.forEach { directory ->
-            val entityPath = directory.absolutePath
+            val entityDirectory = directory.absolutePath
             val entityName = directory.name // the directory name is the entity name
-            val entityKind = JsonParser.parseString(File("$entityPath/$entityName.json").readText()).asJsonObject["kind"].asString
+            val entityKind = JsonParser.parseString(File("$entityDirectory/$entityName.json").readText()).asJsonObject["kind"].asString
 
-            val entites = translationAgent.getEntities(entityName)
-            val languagePhrases = mutableMapOf<String, MutableMap<String, List<String>>>()
-            entites?.forEach { (value, phraseByLanguage) ->
-                phraseByLanguage.phraseByLanguage.forEach { (languageCode, phrases) ->
-                    val valueMap = languagePhrases.getOrPut(languageCode) { mutableMapOf() }
-                    valueMap[value] = phrases
-                }
-            }
-            languagePhrases.forEach { (languageCode, phrases) ->
-                if (languageCode.isNotBlank() && languageCode.length < 6) {
+            val entityValueMap = translationAgent.getEntities(entityName)
+            val languageEntityMap = mutableMapOf<String, JsonObject>()
 
-                    val entitiesJsonArray = JsonArray()
-                    phrases.forEach { (value, synonyms) ->
-                        if (synonyms.isNotEmpty() && synonyms.all { it.isNotBlank() }) {
-                            val entity = JsonObject()
-                            val synonymArray = JsonArray()
-                            if (entityKind == "KIND_REGEXP") {
-                                synonymArray.add(synonyms[0])
-                                entity.addProperty("value", synonyms[0])
-                            } else {
-                                synonyms.forEach { synonym -> synonymArray.add(synonym) }
-                                entity.addProperty("value", value)
+            entityValueMap.entries.forEach { (phrasePath, languageMessages) ->
+                val value = phrasePath.path[1]
+                languageMessages.messagesByLanguage.forEach { (languageCode, valueMessage) ->
+                    if (languageCode.isNotBlank() && languageCode.length < 6) {
+                        val entityJsonObject = languageEntityMap.getOrPut(languageCode) {
+                            val entityJsonObject = JsonObject()
+                            val entitiesJsonArray = JsonArray()
+                            entityJsonObject.add("entities", entitiesJsonArray)
+                            entityJsonObject
+                        }
+                        val entitiesJsonArray = entityJsonObject.getAsJsonArray("entities")
+                        val entity = JsonObject()
+                        val synonymArray = JsonArray()
+                        valueMessage.forEach { (synonyms) ->
+                            if (!synonyms.isNullOrEmpty() && synonyms.all { it.isNotBlank() }) {
+                                if (entityKind == "KIND_REGEXP") {
+                                    synonymArray.add(synonyms[0])
+                                    entity.addProperty("value", synonyms[0])
+                                } else {
+                                    synonyms.forEach { synonym -> synonymArray.add(synonym) }
+                                    entity.addProperty("value", value)
+                                }
                             }
-
+                        }
+                        if (!synonymArray.isEmpty) {
                             entity.add("synonyms", synonymArray)
                             entity.addProperty("languageCode", languageCode)
                             entitiesJsonArray.add(entity)
                         }
                     }
+                }
+            }
 
-                    if (entitiesJsonArray.size() > 0) {
-                        val entityJsonObject = JsonObject()
-                        entityJsonObject.add("entities", entitiesJsonArray)
+            languageEntityMap.entries.forEach { (languageCode, entity) ->
+                val entitiesJsonArray = entity.getAsJsonArray("entities")
+                if (entitiesJsonArray.size() > 0) {
+                    val entityJsonObject = JsonObject()
+                    entityJsonObject.add("entities", entitiesJsonArray)
 
-                        prettySave(entityJsonObject, "$entityPath/entities/$languageCode.json")
-                    }
+                    prettySave(entityJsonObject, "$entityDirectory/entities/$languageCode.json")
                 }
             }
         }

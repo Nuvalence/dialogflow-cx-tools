@@ -1,7 +1,23 @@
 package io.nuvalence.cx.tools.phrases
 
+import io.nuvalence.cx.tools.shared.HighlightPreset
 import io.nuvalence.cx.tools.shared.SheetWriter
 import java.net.URL
+
+const val PHRASE_COLUMN_WIDTH = 500
+const val INTENT_NAME_COLUMN_WIDTH = 200
+const val ENTITY_TYPE_COLUMN_WIDTH = 200
+const val ENTITY_VALUE_COLUMN_WIDTH = 200
+const val TRANSITION_FLOW_NAME_COLUMN_WIDTH = 200
+const val TRANSITION_PAGE_COLUMN_WIDTH = 200
+const val TRANSITION_TYPE_COLUMN_WIDTH = 100
+const val TRANSITION_VALUE_COLUMN_WIDTH = 300
+const val TRANSITION_ELEMENT_TYPE_COLUMN_WIDTH = 200
+const val TRANSITION_CHANNEL_COLUMN_WIDTH = 200
+const val PAGE_FLOW_NAME_COLUMN_WIDTH = 200
+const val PAGE_NAME_COLUMN_WIDTH = 250
+const val PAGE_ELEMENT_TYPE_COLUMN_WIDTH = 150
+const val PAGE_CHANNEL_COLUMN_WIDTH = 200
 
 /**
  * Exports an agent to a spreadsheet. "args" represent the parameters passed to the main
@@ -29,49 +45,260 @@ fun export(args: Array<String>) {
     val sheetWriter = SheetWriter(url, spreadsheetId)
 
     // add intent training phrases to Training Phrases tab
+    val intents = translationAgent.flattenIntents()
+    val intentHeaders = listOf("Intent Name") + translationAgent.allLanguages
+    val intentColumnWidths = listOf(INTENT_NAME_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val intentHeaderOffset = 1
+    val intentHighlightIndices = highlightForTrainingPhrases(intents, intentHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Intents.title)
     sheetWriter.addTab(PhraseType.Intents.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Intents.title,
-        translationAgent.flattenIntents(),
-        listOf("Intent Name") + translationAgent.allLanguages,
-        listOf(200) + MutableList(translationAgent.allLanguages.size) { 500 }
+        intents,
+        intentHeaders,
+        intentColumnWidths,
+        intentHeaderOffset,
+        intentHighlightIndices,
+        HighlightPreset.BLUE_BOLD
     )
 
     Thread.sleep(60000)  // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add entities to Entities tab
+    val entities = translationAgent.flattenEntities()
+    val entityHeaders = listOf("Entity Type", "Value") + translationAgent.allLanguages
+    val entityColumnWidths = listOf(ENTITY_TYPE_COLUMN_WIDTH, ENTITY_VALUE_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val entityHeaderOffset = 2
+    val entityHighlightIndices = highlightForEntities(entities, translationAgent, entityHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Entities.title)
     sheetWriter.addTab(PhraseType.Entities.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Entities.title,
-        translationAgent.flattenEntities(),
-        listOf("Entity Type", "Value") + translationAgent.allLanguages,
-        listOf(200, 200) + MutableList(translationAgent.allLanguages.size) { 500 }
+        entities,
+        entityHeaders,
+        entityColumnWidths,
+        entityHeaderOffset,
+        entityHighlightIndices,
+        HighlightPreset.BLUE_BOLD
     )
 
     Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add transition fulfillments to Transitions tab
+    val flowTransitions = translationAgent.flattenFlows()
+    val flowTransitionHeaders = listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages
+    val flowTransitionColumnWidths = listOf(TRANSITION_FLOW_NAME_COLUMN_WIDTH, TRANSITION_PAGE_COLUMN_WIDTH, TRANSITION_TYPE_COLUMN_WIDTH, TRANSITION_VALUE_COLUMN_WIDTH, TRANSITION_ELEMENT_TYPE_COLUMN_WIDTH, TRANSITION_CHANNEL_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val flowTransitionHeaderOffset = 6
+    val flowTransitionHighlightIndices = highlightForTransitions(flowTransitions, flowTransitionHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Flows.title)
     sheetWriter.addTab(PhraseType.Flows.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Flows.title,
-        translationAgent.flattenFlows(),
-        listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages,
-        listOf(200, 200, 100, 300) + MutableList(translationAgent.allLanguages.size) { 500 }
+        flowTransitions,
+        flowTransitionHeaders,
+        flowTransitionColumnWidths,
+        flowTransitionHeaderOffset,
+        flowTransitionHighlightIndices,
+        HighlightPreset.BLUE_BOLD
     )
 
-    Thread.sleep(60000) // Sleeps added here due to Google Sheets quota limits of 300 operations per minute
+    Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add normal page fulfillments to Fulfillments tab
-    var flattenPages = translationAgent.flattenPages()
+    val pages = translationAgent.flattenPages()
+    val pageHeaders = listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages
+    val pageColumnWidths = listOf(PAGE_FLOW_NAME_COLUMN_WIDTH, PAGE_NAME_COLUMN_WIDTH, PAGE_ELEMENT_TYPE_COLUMN_WIDTH, PAGE_CHANNEL_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val pageHeaderOffset = 4
+    val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
     sheetWriter.deleteTab(PhraseType.Pages.title)
     sheetWriter.addTab(PhraseType.Pages.title)
-    sheetWriter.addDataToTab(
+    sheetWriter.addFormattedDataToTab(
         PhraseType.Pages.title,
-        flattenPages,
-        listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages,
-        listOf(200, 250, 150) + MutableList(translationAgent.allLanguages.size) { 500 }
+        pages,
+        pageHeaders,
+        pageColumnWidths,
+        pageHeaderOffset,
+        pageHighlightIndices,
+        HighlightPreset.BLUE_BOLD
     )
+}
+
+/**
+ * Highlights annotated fragments in a given string.
+ * These are represented by square brackets, parentheses, and the contents of the parentheses in a given string.
+ * Used primarily for training phrases.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
+fun highlightAnnotatedFragments(string: String) : List<Pair<Int, Int>>{
+    val highlightIndices = mutableListOf<Pair<Int, Int>>()
+    val pattern = Regex("]\\s*\\([^)]*\\)|\\[")
+    pattern.findAll(string).forEach { matchResult ->
+        highlightIndices.add(matchResult.range.first to matchResult.range.last)
+    }
+
+    return highlightIndices
+}
+
+/**
+ * Highlights fragments that contain symbols in a given string.
+ * Used primarily for entities with value/synonym maps.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
+fun highlightFragmentsWithSymbols(string: String) : List<Pair<Int, Int>>{
+    val highlightIndices = mutableListOf<Pair<Int, Int>>()
+    val lookarounds = "(?<=^|\\s)(?![\\p{L}\\p{N}\\p{P}]+(?=\$|\\s))"
+    val symbolsPattern = "[\\p{L}\\p{N}]*[\\p{P}\\p{S}][\\p{L}\\p{N}\\p{P}\\p{S}]*"
+    val underscoresPattern = "[\\p{L}\\p{N}]*_+[\\p{L}\\p{N}\\p{P}\\p{S}]*"
+    val regexPattern = "(?=[^\\s]*(\\\\|\\[|\\]))[^\\s]*"
+    val pattern = Regex("$lookarounds$symbolsPattern|$underscoresPattern|$regexPattern")
+    pattern.findAll(string).forEach { matchResult ->
+        highlightIndices.add(matchResult.range.first to matchResult.range.last)
+    }
+
+    return highlightIndices
+}
+
+private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, Int>? {
+    val substringSkip = 1 // substring end is exclusive
+    val restSkip = 1 // start at immediately following parenthesis
+
+    val start = expression.range.first
+    val end = expression.range.last + substringSkip
+    val rest = string.substring(end + restSkip)
+
+    var level = 1
+    var inSingleQuotes = false
+    var inDoubleQuotes = false
+
+    for ((index, char) in rest.withIndex()) {
+        if (char == '\'' && !inDoubleQuotes) {
+            inSingleQuotes = !inSingleQuotes
+        }
+        if (char == '"' && !inSingleQuotes) {
+            inDoubleQuotes = !inDoubleQuotes
+        }
+
+        if (inSingleQuotes || inDoubleQuotes) {
+            continue
+        }
+
+        when (char) {
+            '(' -> level++
+            ')' -> {
+                level--
+                if (level == 0) {
+                    return start to (end + index + restSkip)
+                }
+            }
+        }
+    }
+
+    return null
+}
+
+/**
+ * Highlights function calls within a given string.
+ * Used primarily for transition and page fulfillments.
+ * Logic is part of highlightReferences.
+ *
+ * @param string the string to be processed
+ * @param expressions a list of regex match results for expressions to additionally check for functions
+ * @return the list of index ranges, including the contents of the function calls, where the given string should be highlighted
+ */
+private fun getFunctionCallIndices(string: String, expressions: List<MatchResult>) : List<Pair<Int, Int>> {
+    val fullFunctions = expressions.fold(mutableListOf<Pair<Int, Int>>()) { acc, expression ->
+        val functionPair = parseFunction(string, expression)
+        if (functionPair != null) {
+            acc.add(functionPair)
+        }
+        acc
+    }
+
+    var lastFunctionEnd = 0
+    val filteredFunctions = fullFunctions.filter { indexPair ->
+        if (indexPair.first > lastFunctionEnd) {
+            lastFunctionEnd = indexPair.second
+        }
+        indexPair.first <= lastFunctionEnd
+    }
+
+    return filteredFunctions
+}
+
+/**
+ * Highlights references (parameters or function calls) within a given string.
+ * References start with $ and have its fragments delimited by ".". Function calls are additionally followed by parentheses.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
+fun highlightReferences(string: String) : List<Pair<Int, Int>>{
+    val pattern = Regex("\\\$(\\w*\\.)+[\\w-]+")
+    val rawExpressions = pattern.findAll(string).toList()
+    val (functionCallExpressions, basicExpressions) = rawExpressions.partition { it.range.last < string.length-2 && string[it.range.last+1] == '(' }
+    val functionCallIndices = getFunctionCallIndices(string, functionCallExpressions)
+
+    val basicExpressionIndices = basicExpressions.filterNot { expression ->
+        functionCallIndices.any { (start, end) ->
+            expression.range.first in start..end
+        }
+    }.map { expression -> expression.range.first to expression.range.last }
+
+    return basicExpressionIndices + functionCallIndices
+}
+
+fun highlightForEntities(entities: List<List<String>>, translationAgent: TranslationAgent, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return entities.map { row ->
+        val entity = translationAgent.getEntity(PhrasePath(listOf(row[0], row[1])))
+        val type = entity?.messagesByLanguage?.values?.toList()?.get(0)?.get(0)?.type
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            // if the entity is configured as regex or a composite of other entities, highlight the whole string
+            if (type == "KIND_REGEXP" || type == "KIND_LIST") {
+                rowIndices.add(listOf(0 to row[i].length))
+            } else {
+                rowIndices.add(highlightFragmentsWithSymbols(row[i]))
+            }
+        }
+
+        rowIndices
+    }
+}
+
+fun highlightForTransitions(transitions: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return transitions.map { row ->
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            rowIndices.add(highlightReferences(row[i]))
+        }
+
+        rowIndices
+    }
+}
+
+fun highlightForFulfillments (fulfillments: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return fulfillments.map { row ->
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            rowIndices.add(highlightReferences(row[i]))
+        }
+
+        rowIndices
+    }
+}
+
+fun highlightForTrainingPhrases (trainingPhrases: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
+    return trainingPhrases.map { row ->
+        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
+        for (i in offset until row.size) {
+            rowIndices.add(highlightAnnotatedFragments(row[i]))
+        }
+
+        rowIndices
+    }
 }
