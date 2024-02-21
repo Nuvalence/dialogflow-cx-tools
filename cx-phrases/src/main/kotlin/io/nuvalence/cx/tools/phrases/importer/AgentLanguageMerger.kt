@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.phrases
+package io.nuvalence.cx.tools.phrases.importer
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -7,6 +7,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.internal.Streams
 import com.google.gson.stream.JsonWriter
+import io.nuvalence.cx.tools.phrases.util.*
 import io.nuvalence.cx.tools.shared.zipDirectory
 import java.io.File
 import java.io.StringWriter

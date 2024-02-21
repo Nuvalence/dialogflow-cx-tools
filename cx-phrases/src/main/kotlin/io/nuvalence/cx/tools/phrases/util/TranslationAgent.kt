@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.phrases
+package io.nuvalence.cx.tools.phrases.util
 
 /**
  * Convenience enum with the different types of phrases, and the name we should

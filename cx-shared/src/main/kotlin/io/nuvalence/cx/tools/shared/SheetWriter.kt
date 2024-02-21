@@ -4,6 +4,10 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.model.*
+import io.nuvalence.cx.tools.shared.format.CellFormatPreset
+import io.nuvalence.cx.tools.shared.format.GridRangePreset
+import io.nuvalence.cx.tools.shared.format.SheetPropertyPreset
+import io.nuvalence.cx.tools.shared.format.TextHighlightPreset
 import java.net.URL
 
 /**
@@ -135,7 +139,8 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
      * @param highlightFormat text formatting to apply to highlighted text
      */
     fun addFormattedDataToTab(tabName: String, data: List<List<String>>, headers: List<String>, columnWidths: List<Int>,
-                              columnOffset: Int, highlightFormatRunIndices: List<List<List<Pair<Int, Int>>>>, highlightFormat: HighlightPreset) {
+                              columnOffset: Int, highlightFormatRunIndices: List<List<List<Pair<Int, Int>>>>, highlightFormat: TextHighlightPreset
+    ) {
         val requests = mutableListOf<Request>()
         val dataWithHeader = listOf(headers, *data.toTypedArray())
 
@@ -206,6 +211,32 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
 
     fun deleteCellRange(range: String) {
         service.spreadsheets().values().clear(spreadsheetId, range, ClearValuesRequest()).execute()
+    }
+
+    fun applyCellFormatUpdates(tabName: String, cellFormatPreset: CellFormatPreset, gridRangePreset: GridRangePreset, gridRangeSpan: Int) {
+        val sheet = service.spreadsheets().get(spreadsheetId).execute().sheets.find { it.properties.title == tabName }
+        val sheetId = sheet?.properties?.sheetId ?: error("Could not find tab $tabName")
+
+        val format = cellFormatPreset.getCellFormat()
+        val range = gridRangePreset.getGridRange(sheetId, gridRangeSpan)
+
+        val headerRequest = FormatUpdateRequest(range, format)
+        batchUpdateCellFormats(listOf(headerRequest))
+    }
+
+    fun applySheetPropertyUpdates(tabName: String, sheetPropertyPreset: SheetPropertyPreset, gridPropertySpan: Int) {
+        val sheet = service.spreadsheets().get(spreadsheetId).execute().sheets.find { it.properties.title == tabName }
+        val sheetId = sheet?.properties?.sheetId ?: error("Could not find tab $tabName")
+
+        val properties = sheetPropertyPreset.getSheetProperties(sheetId, gridPropertySpan)
+        val fields = sheetPropertyPreset.getFields()
+
+        val request = Request().setUpdateSheetProperties(UpdateSheetPropertiesRequest()
+            .setProperties(properties)
+            .setFields(fields)
+        )
+
+        batchUpdateSheets(listOf(request))
     }
 
     fun batchUpdateCellContents(cellContentUpdateRequests: List<CellContentUpdateRequest>) {
