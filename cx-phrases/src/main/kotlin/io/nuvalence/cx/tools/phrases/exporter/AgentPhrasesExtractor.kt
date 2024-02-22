@@ -251,8 +251,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         val messages = mutableListOf<Message>()
         element.asJsonObject["payload"]?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
             outerList.asJsonArray.forEach { richContentElement ->
-                val elementType = richContentElement.asJsonObject["type"].asString
-                when (elementType) {
+                when (val elementType = richContentElement.asJsonObject["type"].asString) {
                     "chips" -> {
                         val chipsValues = richContentElement.asJsonObject["options"].asJsonArray.map { it.asJsonObject["text"].asString }
                         messages.add(Message(chipsValues, channel, elementType, event))

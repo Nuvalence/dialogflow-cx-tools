@@ -59,23 +59,53 @@ class TranslationPhrases {
 
         // Flatten the phrases for each path and language.
         phrases.forEach { (path, languagePhrases) ->
-            order.forEach { language ->
-                languagePhrases.messagesByLanguage[language]?.forEach { message: Message ->
-                    // Create a unique string representation of the path.
+            fun fillInMissingSubPaths (subPaths: Set<List<String>>) {
+                subPaths.forEach { subPath ->
                     val phrasePath: MutableList<String> = path.path.toMutableList()
-                    if (!message.type.isNullOrEmpty()) {
-                        if (!message.event.isNullOrEmpty() && !phrasePath.contains(message.event)) {
-                            phrasePath.add(listOf(message.type, message.event).joinToString("\n"))
-                        } else {
-                            phrasePath.add(message.type)
-                        }
-                    }
-                    if (!message.channel.isNullOrEmpty()) {
-                        phrasePath.add(message.channel)
-                    }
-                    // Get or create the list for this path and add the new message to it.
+                    phrasePath.addAll(subPath)
                     val list = newPathToMessage.getOrPut(PhrasePath(phrasePath)) { mutableListOf() }
-                    list.add(message.phrases?.joinToString("\n") ?: "")
+                    list.add("")
+                }
+            }
+
+            val phraseSubPaths = mutableSetOf<List<String>>()
+
+            order.forEach { language ->
+
+                val messageByLanguage = languagePhrases.messagesByLanguage[language]
+                if (messageByLanguage.isNullOrEmpty()) {
+                    fillInMissingSubPaths(phraseSubPaths)
+                } else {
+                    val currentLanguageMessageSubPaths = mutableSetOf<List<String>>()
+                    messageByLanguage.forEach { message: Message ->
+                        // Create a unique string representation of the path.
+                        val phrasePath: MutableList<String> = path.path.toMutableList()
+                        val subPath = mutableListOf<String>()
+                        if (!message.type.isNullOrEmpty()) {
+                            if (!message.event.isNullOrEmpty() && !phrasePath.contains(message.event)) {
+                                val typeEventSubPath = listOf(message.type, message.event).joinToString("\n")
+                                subPath.add(typeEventSubPath)
+                                phrasePath.add(typeEventSubPath)
+                            } else {
+                                subPath.add(message.type)
+                                phrasePath.add(message.type)
+                            }
+                        }
+                        if (!message.channel.isNullOrEmpty()) {
+                            subPath.add(message.channel)
+                            phrasePath.add(message.channel)
+                        }
+                        phraseSubPaths.add(subPath)
+                        currentLanguageMessageSubPaths.add(subPath)
+                        // Get or create the list for this path and add the new message to it.
+                        val list = newPathToMessage.getOrPut(PhrasePath(phrasePath)) { mutableListOf() }
+                        list.add(message.phrases?.joinToString("\n") ?: "")
+                    }
+
+                    val missingSubPaths = phraseSubPaths.minus(currentLanguageMessageSubPaths)
+                    if (missingSubPaths.isNotEmpty()) {
+                        fillInMissingSubPaths(missingSubPaths)
+                    }
                 }
             }
         }

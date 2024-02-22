@@ -11,6 +11,11 @@ enum class CellFormatPreset {
                 .setBackgroundColor(Color().setRed(0.8f).setGreen(0.8f).setBlue(0.8f))
                 .setTextFormat(TextFormat().setBold(true))
         }
+    },
+    BG_RED {
+        override fun getCellFormat() : CellFormat {
+            return CellFormat().setBackgroundColor(Color().setRed(1.0f).setGreen(0.8f).setBlue(0.8f))
+        }
     };
 
     abstract fun getCellFormat() : CellFormat

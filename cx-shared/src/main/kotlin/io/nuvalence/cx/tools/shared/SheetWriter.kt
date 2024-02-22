@@ -220,8 +220,26 @@ class SheetWriter(credentialsURL: URL, private val spreadsheetId: String) {
         val format = cellFormatPreset.getCellFormat()
         val range = gridRangePreset.getGridRange(sheetId, gridRangeSpan)
 
-        val headerRequest = FormatUpdateRequest(range, format)
-        batchUpdateCellFormats(listOf(headerRequest))
+        val formatUpdateRequest = FormatUpdateRequest(range, format)
+        batchUpdateCellFormats(listOf(formatUpdateRequest))
+    }
+
+    fun applyCellFormatUpdates(tabName: String, cellFormatPreset: CellFormatPreset, coordinates: List<String>) {
+        val sheet = service.spreadsheets().get(spreadsheetId).execute().sheets.find { it.properties.title == tabName }
+        val sheetId = sheet?.properties?.sheetId ?: error("Could not find tab $tabName")
+
+        val format = cellFormatPreset.getCellFormat()
+        val formatUpdateRequests = mutableListOf<FormatUpdateRequest>()
+        coordinates.forEach { cellPosition ->
+            val range = GridRange()
+                .setSheetId(sheetId)
+                .setStartRowIndex(cellPosition.substring(1).toInt() - 1)
+                .setEndRowIndex(cellPosition.substring(1).toInt())
+                .setStartColumnIndex(cellPosition[0] - 'A')
+                .setEndColumnIndex(cellPosition[0] - 'A' + 1)
+            formatUpdateRequests.add(FormatUpdateRequest(range, format))
+        }
+        batchUpdateCellFormats(formatUpdateRequests)
     }
 
     fun applySheetPropertyUpdates(tabName: String, sheetPropertyPreset: SheetPropertyPreset, gridPropertySpan: Int) {
