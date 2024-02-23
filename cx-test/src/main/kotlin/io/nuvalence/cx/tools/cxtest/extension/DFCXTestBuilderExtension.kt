@@ -17,7 +17,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.stream.Stream
 
-class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterAllCallback, AfterTestExecutionCallback {
+class DFCXTestBuilderExtension : ArgumentsProvider, BeforeAllCallback, AfterAllCallback, AfterTestExecutionCallback {
     companion object {
         val artifact = DFCXSpreadsheetArtifact()
         lateinit var testClient: TestCasesClient
@@ -67,10 +67,6 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
             val response = testClient.batchRunTestCasesAsync(request).get()
             val resultsList = response.resultsList.sortedBy { result -> result.name }
 
-            println("Raw test results:")
-            println("Tests passed: ${resultsList.count { it.testResult == TestResult.PASSED } }")
-            println("Tests failed: ${resultsList.count { it.testResult == TestResult.FAILED } }")
-
             context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
                 ?.put("testCaseEntries", testCaseList zip resultsList)
             context?.root?.getStore(ExtensionContext.Namespace.GLOBAL)
@@ -95,10 +91,6 @@ class DFCXTestBuilderExtension () : ArgumentsProvider, BeforeAllCallback, AfterA
 
         DFCXSpreadsheetArtifact.summaryInfo.testsPassed = formattedResultList.count { it.result == ResultLabel.PASS }
         DFCXSpreadsheetArtifact.summaryInfo.testsFailed = formattedResultList.count { it.result == ResultLabel.FAIL }
-
-        println("Processed test results (added to artifact summary):")
-        println("Tests passed: ${DFCXSpreadsheetArtifact.summaryInfo.testsPassed}")
-        println("Tests failed: ${DFCXSpreadsheetArtifact.summaryInfo.testsFailed}")
 
         try {
             val intentCoverage = testClient.calculateCoverage(CalculateCoverageRequest.newBuilder()
