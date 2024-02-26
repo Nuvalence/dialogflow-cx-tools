@@ -13,16 +13,17 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ArgumentsSource
 
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(ExecutionMode.SAME_THREAD)
 @Tag("dfcx")
 @ExtendWith(DFCXTestBuilderExtension::class)
 class DFCXTestBuilderSpec {
     companion object {
-        val formattedResult: ThreadLocal<DFCXTestBuilderResult> = ThreadLocal()
+        val formattedResults: ThreadLocal<MutableMap<String, DFCXTestBuilderResult>> = ThreadLocal()
     }
 
     @ParameterizedTest(name = "{0}")
     @ArgumentsSource(DFCXTestBuilderExtension::class)
+    @Synchronized
     fun testCases(displayName: String, testCase: TestCase, testCaseResult: TestCaseResult) {
         val testBuilderResult = DFCXTestBuilderResult(
             testCaseId = testCase.name,
@@ -30,7 +31,6 @@ class DFCXTestBuilderSpec {
             tags = testCase.tagsList.map { tag -> tag.toString() },
             notes = testCase.notes
         )
-        formattedResult.set(testBuilderResult)
 
         val fullResult = DFCXTestBuilderExtension.testClient.getTestCaseResult(testCaseResult.name)
 
@@ -68,11 +68,19 @@ class DFCXTestBuilderSpec {
             testBuilderResult.resultSteps.add(resultStep)
         }
 
+        // Test failures should also include text mismatches that otherwise count as passes
         if(testCaseResult.testResult == TestResult.FAILED || testBuilderResult.resultSteps.any { resultStep ->
             resultStep.result == ResultLabel.FAIL
         }) {
             testBuilderResult.result = ResultLabel.FAIL
-            Assertions.fail<AssertionError>("Test failed")
+        }
+
+        synchronized(formattedResults) {
+            formattedResults.get()[testBuilderResult.testCaseId] = testBuilderResult
+
+            if (testBuilderResult.result == ResultLabel.FAIL) {
+                Assertions.fail<AssertionError>("Test failed")
+            }
         }
     }
 }
