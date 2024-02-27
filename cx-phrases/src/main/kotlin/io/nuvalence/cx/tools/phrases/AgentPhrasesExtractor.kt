@@ -257,6 +257,11 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                         val htmlText = richContentElement.asJsonObject["html"].asString
                         messages.add(Message(listOf(htmlText), channel, elementType, event))
                     }
+                    "button" -> {
+                        val buttonText = richContentElement.asJsonObject["text"].asString
+                        val buttonEvent = richContentElement.asJsonObject["event"].asJsonObject["event"].asString
+                        messages.add(Message(listOf(buttonText), channel, elementType, buttonEvent))
+                    }
                 }
             }
         }

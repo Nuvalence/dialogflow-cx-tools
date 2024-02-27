@@ -78,7 +78,7 @@ fun createIntentPart(text: String, parameter: String? = null): JsonObject {
  * @param singleString whether to return the phrases as a single string or array of strings
  * @param phrases map associating a language to a list of phrases
  */
-fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Message>>): JsonArray {
+fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Message>>, fulfillmentJson: JsonObject?): JsonArray {
     val messagesJson = JsonArray()
     phrases.keys.forEach { languageCode ->
         val messagesList = phrases[languageCode] ?: error("Something weird happened with key = $languageCode")
@@ -108,45 +108,85 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Messa
                         }
             }
         }
-        messagesList.filter { message -> message.type == "html" }.forEach { message ->
-            val payloadBlob = JsonObject()
-            val payload = JsonObject()
-            val richContent = JsonArray()
-            val innerRichContent = JsonArray()
+
+        val payloadBlob = JsonObject()
+        val payload = JsonObject()
+        val richContent = JsonArray()
+        val innerRichContent = JsonArray()
+        var channel: String? = null
+        messagesList.filter { message -> message.type != "message" }.forEach { message ->
             val content = JsonObject()
-            content.addProperty("html", message.phrases?.joinToString("\n"))
-            content.addProperty("type", "html")
-            innerRichContent.add(content)
-            richContent.add(innerRichContent)
-            payload.add("richContent", richContent)
-            payloadBlob.add("payload", payload)
-            payloadBlob.addProperty("languageCode", languageCode)
-            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
-                payloadBlob.addProperty("channel", message.channel)
+            val messageType = message.type?.split("\n")?.firstOrNull()
+            if (channel == null) {
+                channel = message.channel.toString()
             }
-            messagesJson.add(payloadBlob)
+
+            var messagePayloads = JsonArray()
+            fulfillmentJson?.get("messages")?.asJsonArray?.forEach { messageJson ->
+                if (messageJson.asJsonObject["payload"] != null && messageJson.asJsonObject["channel"].asString == "DF_MESSENGER" && messageJson.asJsonObject["languageCode"].asString == "en") {
+                    messagePayloads = messageJson.asJsonObject["payload"].asJsonObject["richContent"].asJsonArray.get(0).asJsonArray
+                }
+            }
+
+             when(messageType) {
+                 "html" -> {
+                     content.addProperty("html", message.phrases?.joinToString("\n"))
+                     content.addProperty("type", "html")
+                 }
+                 "button" -> {
+                     message.phrases?.forEach { buttonText ->
+                         var buttonAttributes = JsonObject()
+
+                         messagePayloads.forEach { messagePayload ->
+                             if (messagePayload.asJsonObject["type"].asString == "button" && messagePayload.asJsonObject["text"].asString == buttonText) {
+                                 buttonAttributes = messagePayload.asJsonObject
+                             }
+                         }
+                         buttonAttributes.remove("text")
+                         buttonAttributes.remove("type")
+                         buttonAttributes.addProperty("text", buttonText)
+                         buttonAttributes.addProperty("type", "button")
+                         innerRichContent.add(buttonAttributes)
+                     }
+                 }
+                 "chips" -> {
+                     val options = JsonArray()
+
+                     var chipOptions = JsonArray()
+                     messagePayloads.forEach { messagePayload ->
+                         if (messagePayload.asJsonObject["type"].asString == "chips") {
+                             chipOptions = messagePayload.asJsonObject["options"].asJsonArray
+                         }
+                     }
+
+                     message.phrases?.forEach { chipText ->
+                         var chipAttributes = JsonObject()
+
+                         chipOptions.forEach { chipOption ->
+                             if (chipOption.asJsonObject["text"].asString == chipText) {
+                                 chipAttributes = chipOption.asJsonObject
+                             }
+                         }
+                         chipAttributes.remove("text")
+                         chipAttributes.addProperty("text", chipText)
+
+                         options.add(chipAttributes)
+                     }
+                     content.add("options", options)
+                     content.addProperty("type", "chips")
+                 }
+            }
+            if (!content.isEmpty) {
+                innerRichContent.add(content)
+            }
         }
-        messagesList.filter { message -> message.type == "chips" }.forEach { message ->
-            val payloadBlob = JsonObject()
-            val payload = JsonObject()
-            val richContent = JsonArray()
-            val innerRichContent = JsonArray()
-            val content = JsonObject()
-            val options = JsonArray()
-            message.phrases?.forEach { chipText ->
-                val chip = JsonObject()
-                chip.addProperty("text", chipText)
-                options.add(chip)
-            }
-            content.add("options", options)
-            content.addProperty("type", "chips")
-            innerRichContent.add(content)
+        if (!innerRichContent.isEmpty) {
             richContent.add(innerRichContent)
             payload.add("richContent", richContent)
             payloadBlob.add("payload", payload)
             payloadBlob.addProperty("languageCode", languageCode)
-            if (!message.channel.isNullOrEmpty() && !message.channel.equals("audio")) {
-                payloadBlob.addProperty("channel", message.channel)
+            if (!channel.isNullOrEmpty() && !channel.equals("audio")) {
+                payloadBlob.addProperty("channel", channel)
             }
             messagesJson.add(payloadBlob)
         }
