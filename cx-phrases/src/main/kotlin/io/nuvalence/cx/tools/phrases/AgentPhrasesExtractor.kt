@@ -250,7 +250,14 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                 val elementType = richContentElement.asJsonObject["type"].asString
                 when (elementType) {
                     "chips" -> {
-                        val chipsValues = richContentElement.asJsonObject["options"].asJsonArray.map { it.asJsonObject["text"].asString }
+                        val chipsValues = richContentElement.asJsonObject["options"].asJsonArray.map {
+                            var resultString = it.asJsonObject["text"].asString
+                            val anchorUrl = it.asJsonObject["anchor"]?.asJsonObject?.get("href")?.asString
+                            if (!anchorUrl.isNullOrEmpty()) {
+                                resultString += " [$anchorUrl]"
+                            }
+                            resultString
+                        }
                         messages.add(Message(chipsValues, channel, elementType, event))
                     }
                     "html" -> {
