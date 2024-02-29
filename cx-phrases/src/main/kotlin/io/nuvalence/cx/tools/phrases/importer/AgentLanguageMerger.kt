@@ -210,7 +210,11 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
             route.asJsonObject[transitionTrigger]?.asString?.let { entry ->
                 translationAgent.getFlow(PhrasePath(listOf(flowName, "", transitionTrigger, entry, type, channel)))?.let { flow ->
                     val entryFulfillment = route.asJsonObject["triggerFulfillment"].asJsonObject
-                    replaceMessages(entryFulfillment, languagePhrasesToJson(singleString = false, flow.messagesByLanguage))
+                    replaceMessages(entryFulfillment, languagePhrasesToJson(
+                        singleString = false,
+                        flow.messagesByLanguage,
+                        null
+                    ))
                     processParameters(entryFulfillment.asJsonObject)
                 }
             }
@@ -234,7 +238,7 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                 val entryFulfillment = jsonObject["entryFulfillment"]?.asJsonObject
                 if (entryFulfillment != null) {
                     translationAgent.getPages(PhrasePath(listOf(flowName, pageName)))?.let { page ->
-                        val replacementMessages = languagePhrasesToJson(singleString = true, page.messagesByLanguage)
+                        val replacementMessages = languagePhrasesToJson(singleString = true, page.messagesByLanguage, entryFulfillment)
                         replaceMessages(entryFulfillment, replacementMessages)
                         val webhook = entryFulfillment.get("webhook")
                         val tags = entryFulfillment.get("tag")
@@ -264,7 +268,11 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                         fillBehavior["initialPromptFulfillment"]?.asJsonObject?.let { initialPrompt ->
                             initialPrompt["messages"]?.asJsonArray?.forEach { message ->
                                 translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\ninitialPromptFulfillment")))?.let { phrases ->
-                                    replaceMessages(initialPrompt, languagePhrasesToJson(singleString = true, phrases.messagesByLanguage))
+                                    replaceMessages(initialPrompt, languagePhrasesToJson(
+                                        singleString = true,
+                                        phrases.messagesByLanguage,
+                                        null
+                                    ))
                                 }
                             }
                         }
@@ -274,7 +282,11 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                                 val triggerFulfillment = event["triggerFulfillment"].asJsonObject
                                 triggerFulfillment["messages"]?.asJsonArray?.forEach { message ->
                                     translationAgent.getPages(PhrasePath(listOf(flowName, pageName, "$displayName\nrepromptEventHandlers\n$eventName")))?.let { phrases ->
-                                        replaceMessages(triggerFulfillment, languagePhrasesToJson(singleString = false, phrases.messagesByLanguage))
+                                        replaceMessages(triggerFulfillment, languagePhrasesToJson(
+                                            singleString = false,
+                                            phrases.messagesByLanguage,
+                                            null
+                                        ))
                                     }
                                 }
                             }
@@ -329,7 +341,11 @@ class AgentLanguageMerger(private val translationAgent: TranslationAgent, privat
                     else -> getPhrases(PhrasePath(pathPrefix + eventName))
                 }
                 if (phrases != null) {
-                    val replacementMessages = languagePhrasesToJson(singleString = false, phrases.messagesByLanguage)
+                    val replacementMessages = languagePhrasesToJson(
+                        singleString = false,
+                        phrases.messagesByLanguage,
+                        null
+                    )
                     replaceMessages(triggerFulfillment, replacementMessages)
                     processParameters(triggerFulfillment)
                 }
