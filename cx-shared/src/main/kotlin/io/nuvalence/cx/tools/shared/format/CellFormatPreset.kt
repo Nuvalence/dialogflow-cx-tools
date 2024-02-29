@@ -20,6 +20,11 @@ enum class CellFormatPreset {
         override fun getCellFormat() : CellFormat {
             return CellFormat().setBackgroundColor(Color().setRed(1.0f).setGreen(0.8f).setBlue(0.8f))
         }
+    },
+    FG_RED {
+        override fun getCellFormat() : CellFormat {
+            return CellFormat().setTextFormat(TextFormat().setForegroundColor(Color().setRed(1.0f).setGreen(0.0f).setBlue(0.0f)))
+        }
     };
 
     abstract fun getCellFormat() : CellFormat

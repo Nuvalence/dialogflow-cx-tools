@@ -45,7 +45,7 @@ fun export(args: Array<String>) {
     val intentColumnWidths = intentSheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val intentHeaderOffset = intentSheetFormat.getTotalOffset()
     val intentHighlightIndices = highlightForTrainingPhrases(intents, intentHeaderOffset)
-    val intentMissingTranslations = highlightMissingTranslations(intents, intentHeaderOffset, 1)
+    val intentMissingTranslations = highlightMissingTranslations(intents, intentHeaderOffset, 1, intentSheetFormat.phrasePathLength)
     sheetWriter.deleteTab(intentSheetName)
     sheetWriter.addTab(intentSheetName)
     sheetWriter.addFormattedDataToTab(
@@ -59,7 +59,7 @@ fun export(args: Array<String>) {
     )
     sheetWriter.applyCellFormatUpdates(intentSheetName, CellFormatPreset.HEADER, GridRangePreset.FIRST_N_ROWS, 1)
     if (intentMissingTranslations.isNotEmpty()) {
-        sheetWriter.applyCellFormatUpdates(intentSheetName, CellFormatPreset.BG_RED, intentMissingTranslations)
+        sheetWriter.applyCellFormatUpdates(intentSheetName, CellFormatPreset.FG_RED, intentMissingTranslations)
     }
     sheetWriter.applySheetPropertyUpdates(intentSheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
     sheetWriter.applySheetPropertyUpdates(intentSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, intentSheetFormat.phrasePathLength)
@@ -74,7 +74,7 @@ fun export(args: Array<String>) {
     val entityColumnWidths = entitySheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val entityHeaderOffset = entitySheetFormat.getTotalOffset()
     val entityHighlightIndices = highlightForEntities(entities, translationAgent, entityHeaderOffset)
-    val entityMissingTranslations = highlightMissingTranslations(entities, entityHeaderOffset, 1)
+    val entityMissingTranslations = highlightMissingTranslations(entities, entityHeaderOffset, 1, entitySheetFormat.phrasePathLength)
     sheetWriter.deleteTab(entitySheetName)
     sheetWriter.addTab(entitySheetName)
     sheetWriter.addFormattedDataToTab(
@@ -88,7 +88,7 @@ fun export(args: Array<String>) {
     )
     sheetWriter.applyCellFormatUpdates(entitySheetName, CellFormatPreset.HEADER, GridRangePreset.FIRST_N_ROWS, 1)
     if (entityMissingTranslations.isNotEmpty()) {
-        sheetWriter.applyCellFormatUpdates(entitySheetName, CellFormatPreset.BG_RED, entityMissingTranslations)
+        sheetWriter.applyCellFormatUpdates(entitySheetName, CellFormatPreset.FG_RED, entityMissingTranslations)
     }
     sheetWriter.applySheetPropertyUpdates(entitySheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
     sheetWriter.applySheetPropertyUpdates(entitySheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, entitySheetFormat.phrasePathLength)
@@ -103,7 +103,7 @@ fun export(args: Array<String>) {
     val flowTransitionColumnWidths = flowTransitionSheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val flowTransitionHeaderOffset = flowTransitionSheetFormat.getTotalOffset()
     val flowTransitionHighlightIndices = highlightForTransitions(flowTransitions, flowTransitionHeaderOffset)
-    val flowTransitionMissingTranslations = highlightMissingTranslations(flowTransitions, flowTransitionHeaderOffset, 1)
+    val flowTransitionMissingTranslations = highlightMissingTranslations(flowTransitions, flowTransitionHeaderOffset, 1, flowTransitionSheetFormat.phrasePathLength)
     sheetWriter.deleteTab(flowTransitionSheetName)
     sheetWriter.addTab(flowTransitionSheetName)
     sheetWriter.addFormattedDataToTab(
@@ -119,7 +119,7 @@ fun export(args: Array<String>) {
     if (flowTransitionMissingTranslations.isNotEmpty()) {
         sheetWriter.applyCellFormatUpdates(
             flowTransitionSheetName,
-            CellFormatPreset.BG_RED,
+            CellFormatPreset.FG_RED,
             flowTransitionMissingTranslations
         )
     }
@@ -136,7 +136,7 @@ fun export(args: Array<String>) {
     val pageColumnWidths = pageSheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
     val pageHeaderOffset = pageSheetFormat.getTotalOffset()
     val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
-    val pageMissingTranslations = highlightMissingTranslations(pages, pageHeaderOffset, 1)
+    val pageMissingTranslations = highlightMissingTranslations(pages, pageHeaderOffset, 1, pageSheetFormat.phrasePathLength)
     sheetWriter.deleteTab(pageSheetName)
     sheetWriter.addTab(pageSheetName)
     sheetWriter.addFormattedDataToTab(
@@ -150,18 +150,20 @@ fun export(args: Array<String>) {
     )
     sheetWriter.applyCellFormatUpdates(pageSheetName, CellFormatPreset.HEADER, GridRangePreset.FIRST_N_ROWS, 1)
     if (pageMissingTranslations.isNotEmpty()) {
-        sheetWriter.applyCellFormatUpdates(pageSheetName, CellFormatPreset.BG_RED, pageMissingTranslations)
+        sheetWriter.applyCellFormatUpdates(pageSheetName, CellFormatPreset.FG_RED, pageMissingTranslations)
     }
     sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
     sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, pageSheetFormat.phrasePathLength)
 }
 
-fun highlightMissingTranslations(table: List<List<String>>, columnOffset: Int, headerHeight: Int) : List<String> {
+fun highlightMissingTranslations(table: List<List<String>>, columnOffset: Int, headerHeight: Int, pathWidth: Int) : List<String> {
     val coordinates = mutableListOf<String>()
     table.forEachIndexed { rowIndex, row ->
-        row.drop(columnOffset).forEachIndexed { colIndex, cell ->
-            if (cell.isEmpty()) {
-                coordinates += "${'A' + colIndex + columnOffset}${rowIndex + headerHeight + 1}"
+        val hasMissingTranslation = row.drop(columnOffset).any { cell -> cell.isEmpty() }
+
+        if (hasMissingTranslation) {
+            for (colIndex in 0 until pathWidth) {
+                coordinates += "${'A' + colIndex}${rowIndex + headerHeight + 1}"
             }
         }
     }
