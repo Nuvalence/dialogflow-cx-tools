@@ -135,13 +135,9 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Messa
                  }
                  "button" -> {
                      message.phrases?.forEach { buttonText ->
-                         var buttonAttributes = JsonObject()
-
-                         messagePayloads.forEach { messagePayload ->
-                             if (messagePayload.asJsonObject["type"].asString == "button" && messagePayload.asJsonObject["text"].asString == buttonText) {
-                                 buttonAttributes = messagePayload.asJsonObject
-                             }
-                         }
+                         val buttonAttributes = messagePayloads.lastOrNull { messagePayload ->
+                             messagePayload.asJsonObject["type"].asString == "button" &&
+                             messagePayload.asJsonObject["text"].asString == buttonText } ?.asJsonObject ?: JsonObject()
                          buttonAttributes.remove("text")
                          buttonAttributes.remove("type")
                          buttonAttributes.addProperty("text", buttonText)
@@ -152,23 +148,31 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Messa
                  "chips" -> {
                      val options = JsonArray()
 
-                     var chipOptions = JsonArray()
-                     messagePayloads.forEach { messagePayload ->
-                         if (messagePayload.asJsonObject["type"].asString == "chips") {
-                             chipOptions = messagePayload.asJsonObject["options"].asJsonArray
-                         }
-                     }
+                     val chipOptions = messagePayloads.lastOrNull { messagePayload ->
+                         messagePayload.asJsonObject["type"].asString == "chips"
+                     }?.asJsonObject?.get("options")?.asJsonArray ?: JsonArray()
 
                      message.phrases?.forEach { chipText ->
-                         var chipAttributes = JsonObject()
+                         val chipAttributes = chipOptions.lastOrNull { chipOption ->
+                             chipOption.asJsonObject["text"].asString == chipText } ?.asJsonObject ?: JsonObject()
 
-                         chipOptions.forEach { chipOption ->
-                             if (chipOption.asJsonObject["text"].asString == chipText) {
-                                 chipAttributes = chipOption.asJsonObject
-                             }
-                         }
                          chipAttributes.remove("text")
-                         chipAttributes.addProperty("text", chipText)
+                         chipAttributes.remove("anchor")
+
+                         val pattern = "\\[(.*?)\\]".toRegex()
+                         val match = pattern.find(chipText)
+
+                         if (match != null) {
+                             val text = chipText.substring(0, match.range.first - 1)
+                             val href = match.groupValues[1]
+                             val anchorAttributes = JsonObject()
+                             anchorAttributes.addProperty("href", href)
+                             anchorAttributes.addProperty("target", "_blank")
+                             chipAttributes.add("anchor", anchorAttributes)
+                             chipAttributes.addProperty("text", text)
+                         } else {
+                             chipAttributes.addProperty("text", chipText)
+                         }
 
                          options.add(chipAttributes)
                      }
