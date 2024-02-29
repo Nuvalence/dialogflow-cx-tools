@@ -2,6 +2,35 @@ package io.nuvalence.cx.tools.phrases.format
 
 import io.nuvalence.cx.tools.phrases.util.PhraseType
 
+/**
+ * Enumerates formatting information for each tab in the exported spreadsheet.
+ *
+ * @param phraseType the phraseType for a given tab, containing the sheet title
+ * @param phrasePathLength the expected number of fragments in the phrase path, used to inform column freezing
+ * @param languageColumnOffset the expected column gap width between the phrase path columns and the first translation column
+ * @param initialHeaders header information, containing the header name and column width
+ */
+enum class AgentExportSheetFormat (val phraseType: PhraseType, val phrasePathLength: Int, val languageColumnOffset: Int, val initialHeaders: List<AgentExportHeader>) {
+    TRAINING_PHRASES(PhraseType.Intents, 1, 0, TRAINING_PHRASE_COLUMNS),
+    ENTITIES(PhraseType.Entities, 2, 0, ENTITY_COLUMNS),
+    TRANSITIONS(PhraseType.Flows, 4, 2, TRANSITION_COLUMNS),
+    FULFILLMENTS(PhraseType.Pages, 4, 0, FULFILLMENT_COLUMNS);
+
+    fun getHeaders () : List<String> {
+        return this.initialHeaders.map { it.headerName }
+    }
+
+    fun getColumnWidths () : List<Int> {
+        return this.initialHeaders.map { it.columnWidth }
+    }
+
+    fun getTotalOffset (): Int {
+        return this.phrasePathLength + this.languageColumnOffset
+    }
+
+    data class AgentExportHeader (val headerName: String, val columnWidth: Int)
+}
+
 const val INTENT_NAME_COLUMN_WIDTH = 200
 const val ENTITY_TYPE_COLUMN_WIDTH = 200
 const val ENTITY_VALUE_COLUMN_WIDTH = 200
@@ -36,24 +65,3 @@ val FULFILLMENT_COLUMNS = createHeaders(
         "Type" to PAGE_ELEMENT_TYPE_COLUMN_WIDTH,
         "Channel" to PAGE_CHANNEL_COLUMN_WIDTH)
 )
-
-enum class AgentExportSheetFormat (val phraseType: PhraseType, val phrasePathLength: Int, val languageColumnOffset: Int, val initialHeaders: List<AgentExportHeader>) {
-    TRAINING_PHRASES(PhraseType.Intents, 1, 0, TRAINING_PHRASE_COLUMNS),
-    ENTITIES(PhraseType.Entities, 2, 0, ENTITY_COLUMNS),
-    TRANSITIONS(PhraseType.Flows, 4, 2, TRANSITION_COLUMNS),
-    FULFILLMENTS(PhraseType.Pages, 4, 0, FULFILLMENT_COLUMNS);
-
-    fun getHeaders () : List<String> {
-        return this.initialHeaders.map { it.headerName }
-    }
-
-    fun getColumnWidths () : List<Int> {
-        return this.initialHeaders.map { it.columnWidth }
-    }
-
-    fun getTotalOffset (): Int {
-        return this.phrasePathLength + this.languageColumnOffset
-    }
-
-    data class AgentExportHeader (val headerName: String, val columnWidth: Int)
-}

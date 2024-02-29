@@ -4,6 +4,10 @@ import com.google.api.services.sheets.v4.model.CellFormat
 import com.google.api.services.sheets.v4.model.Color
 import com.google.api.services.sheets.v4.model.TextFormat
 
+/**
+ * Enumerates presets for cell formats for use with Google Sheets.
+ * This can be used by projects that do not or cannot themselves contain the Google Sheets API library.
+ */
 enum class CellFormatPreset {
     HEADER {
         override fun getCellFormat() : CellFormat {

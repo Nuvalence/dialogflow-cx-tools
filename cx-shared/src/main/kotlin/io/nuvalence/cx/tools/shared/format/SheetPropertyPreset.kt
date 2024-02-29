@@ -3,6 +3,10 @@ package io.nuvalence.cx.tools.shared.format
 import com.google.api.services.sheets.v4.model.GridProperties
 import com.google.api.services.sheets.v4.model.SheetProperties
 
+/**
+ * Enumerates presets for sheet properties for use with Google Sheets.
+ * This can be used by projects that do not or cannot themselves contain the Google Sheets API library.
+ */
 enum class SheetPropertyPreset {
     FREEZE_N_ROWS {
         override fun getSheetProperties(sheetId: Int, span: Int): SheetProperties {
