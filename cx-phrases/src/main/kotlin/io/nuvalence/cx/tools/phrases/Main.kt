@@ -1,5 +1,8 @@
 package io.nuvalence.cx.tools.phrases
 
+import io.nuvalence.cx.tools.phrases.exporter.export
+import io.nuvalence.cx.tools.phrases.importer.import
+
 /**
  * Entry point for export/import. The first parameter specifies the operation to be performed,
  * followed by operation-specific parameters.

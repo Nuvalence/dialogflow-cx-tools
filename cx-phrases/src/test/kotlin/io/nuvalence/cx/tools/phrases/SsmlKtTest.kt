@@ -1,5 +1,6 @@
 package io.nuvalence.cx.tools.phrases
 
+import io.nuvalence.cx.tools.phrases.util.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -37,33 +38,40 @@ internal class SsmlKtTest {
     fun testAddSsmlTags() {
         assertEquals("""<speak>
 OK. You want to withhold <break time="300ms"/><prosody rate="90%"><say-as interpret-as="percentage">2.5%</say-as></prosody><break time="300ms"/>of your benefits for state taxes.
-</speak>""", addSsmlTags("OK. You want to withhold 2.5% of your benefits for state taxes."))
+</speak>""", addSsmlTags("OK. You want to withhold 2.5% of your benefits for state taxes.")
+        )
 
         assertEquals("""<speak>
 Yes, please submit by 12:15pm or go to<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> o n </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s>when<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> t o </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s>file<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> a </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s>claim</prosody><break time="300ms"/>
-</speak>""", addSsmlTags("Yes, please submit by 12:15pm or go to on.ny.gov/when-to-file-a-claim"))
+</speak>""", addSsmlTags("Yes, please submit by 12:15pm or go to on.ny.gov/when-to-file-a-claim")
+        )
 
         assertEquals("""<speak>
 Please visit<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> d o l </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s>1099<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> G </say-as></s></prosody><break time="300ms"/>
-</speak>""", addSsmlTags("Please visit dol.ny.gov/1099-G"))
+</speak>""", addSsmlTags("Please visit dol.ny.gov/1099-G")
+        )
 
         assertEquals("""<speak>
 To request information or records, follow the instructions outlined at<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> o n </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> d c f a q </say-as></s></prosody><break time="300ms"/><s></s>
-</speak>""", addSsmlTags("To request information or records, follow the instructions outlined at on.ny.gov/dcfaq ."))
+</speak>""", addSsmlTags("To request information or records, follow the instructions outlined at on.ny.gov/dcfaq .")
+        )
 
         assertEquals("""<speak>
 Please call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">800-833-3000</say-as></prosody><break time="300ms"/> to schedule an appointment.
-</speak>""", addSsmlTags("Please call 800-833-3000 to schedule an appointment."))
+</speak>""", addSsmlTags("Please call 800-833-3000 to schedule an appointment.")
+        )
 
         assertEquals("""<speak>
 Call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">123-123-1234</say-as></prosody><break time="300ms"/>  or <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" google:style="zero-as-zero">""" + '$'.toString() + """flow.test-phone-number-var'</say-as></prosody><break time="300ms"/> to get in touch.
-</speak>""", addSsmlTags("Call 123-123-1234 or " + '$'.toString() + "flow.test-phone-number-var' to get in touch."))
+</speak>""", addSsmlTags("Call 123-123-1234 or " + '$'.toString() + "flow.test-phone-number-var' to get in touch.")
+        )
 
         assert(!addSsmlTags("Do not process 1234567890 as a telephone number").contains("<say-as interpret-as=\"telephone\">"))
 
         assertEquals("""<speak>
 1099-G <break time="300ms"/> and 1099-G <break time="300ms"/> and 1099-G <break time="300ms"/>
-</speak>""", addSsmlTags("1099-G and 1099G and 1099 G"))
+</speak>""", addSsmlTags("1099-G and 1099G and 1099 G")
+        )
     }
 
     @Test
@@ -71,11 +79,14 @@ Call <break time="300ms"/><prosody rate="90%"><say-as interpret-as="telephone" g
         assertEquals("session.params.web-site", processUrl("session.params.web-site"))
         assertEquals("session.params.web-site-fwd", processUrl("session.params.web-site-fwd"))
         assertEquals("""<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> d o l </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s>when<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> t o </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s>file<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> a </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s>claim</prosody><break time="300ms"/>""",
-            processUrl(" dol.ny.gov/when-to-file-a-claim"))
+            processUrl(" dol.ny.gov/when-to-file-a-claim")
+        )
         assertEquals("""<break time="300ms"/><prosody rate="90%"><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> d o l </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s>com<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> / </say-as></s>1099<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> - </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> G </say-as></s></prosody><break time="300ms"/>""",
-            processUrl("ny.dol.gov.com/1099-G"))
+            processUrl("ny.dol.gov.com/1099-G")
+        )
         assertEquals("""<break time="300ms"/><prosody rate="90%">unemployment<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s>labor<break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> n y </say-as></s><break time="100ms"/><s><break time="100ms"/><say-as interpret-as="verbatim"> . </say-as></s><s><break time="100ms"/><say-as interpret-as="verbatim"> g o v </say-as></s></prosody><break time="300ms"/>""",
-            processUrl("unemployment.labor.ny.gov"))
+            processUrl("unemployment.labor.ny.gov")
+        )
 
         var processedUrl = processUrl("nys.dol.ny.gov/nysdol-po-ny-gov")
         assert(processedUrl.contains("n y s"))

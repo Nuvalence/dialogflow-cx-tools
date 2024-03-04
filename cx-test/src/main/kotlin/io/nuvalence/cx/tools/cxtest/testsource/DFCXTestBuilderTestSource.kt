@@ -38,7 +38,7 @@ class DFCXTestBuilderTestSource {
             DFCXSpreadsheetArtifact.summaryInfo.tagsExcluded = tagExclusions.joinToString(", ")
 
             val filteredTestCaseList = testCaseList.filter { testCase ->
-                tagFilters.isEmpty() || testCase.tagsList.containsAll(tagFilters)
+                tagFilters.isEmpty() || testCase.tagsList.containsAllIgnoreCase(tagFilters)
             }.filter { testCase ->
                 !testCase.tagsList.any { tag -> tagExclusions.contains(tag) }
             }
@@ -52,5 +52,11 @@ class DFCXTestBuilderTestSource {
 
         println("Found ${testCaseList.size} tests")
         return testCaseList
+    }
+
+    private fun List<String>.containsAllIgnoreCase(comp: List<String>): Boolean {
+        return comp.all { item ->
+            this.any { it.equals(item, ignoreCase = true) }
+        }
     }
 }
