@@ -76,7 +76,7 @@ class TranslationPhrases {
                     // Get or create the list for this path and add the new message to it.
                     var list = newPathToMessage.getOrPut(PhrasePath(phrasePath)) { mutableListOf() }
 
-                    // create special case for list items on langauge selection page
+                    // create special case for list items on language selection page
                     if (message.type == "list" && message.event == "set-lang") {
                         val flattenedMessage = message.phrases?.joinToString("\n") ?: ""
                         list.add(flattenedMessage)
