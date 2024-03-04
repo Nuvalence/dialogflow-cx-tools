@@ -1,6 +1,6 @@
-package io.nuvalence.cx.tools.phrases
+package io.nuvalence.cx.tools.phrases.util
 
-import io.nuvalence.cx.tools.phrases.PhraseType.*
+import io.nuvalence.cx.tools.phrases.util.PhraseType.*
 import io.nuvalence.cx.tools.shared.SheetReader
 import java.net.URL
 

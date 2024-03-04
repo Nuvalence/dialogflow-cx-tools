@@ -1,7 +1,11 @@
-package io.nuvalence.cx.tools.phrases
+package io.nuvalence.cx.tools.phrases.exporter
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import io.nuvalence.cx.tools.phrases.util.LanguageMessages
+import io.nuvalence.cx.tools.phrases.util.Message
+import io.nuvalence.cx.tools.phrases.util.PhrasePath
+import io.nuvalence.cx.tools.phrases.util.TranslationAgent
 import java.io.File
 
 /**
@@ -247,8 +251,7 @@ class AgentPhrasesExtractor(private val rootPath: String) {
         val messages = mutableListOf<Message>()
         element.asJsonObject["payload"]?.asJsonObject?.get("richContent")?.asJsonArray?.forEach { outerList ->
             outerList.asJsonArray.forEach { richContentElement ->
-                val elementType = richContentElement.asJsonObject["type"].asString
-                when (elementType) {
+                when (val elementType = richContentElement.asJsonObject["type"].asString) {
                     "chips" -> {
                         val chipsValues = richContentElement.asJsonObject["options"].asJsonArray.map {
                             var resultString = it.asJsonObject["text"].asString

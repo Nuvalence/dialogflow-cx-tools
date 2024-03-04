@@ -1,23 +1,16 @@
-package io.nuvalence.cx.tools.phrases
+package io.nuvalence.cx.tools.phrases.exporter
 
-import io.nuvalence.cx.tools.shared.HighlightPreset
+import io.nuvalence.cx.tools.phrases.format.AgentExportSheetFormat
+import io.nuvalence.cx.tools.phrases.util.PhrasePath
+import io.nuvalence.cx.tools.phrases.util.TranslationAgent
+import io.nuvalence.cx.tools.shared.format.TextHighlightPreset
 import io.nuvalence.cx.tools.shared.SheetWriter
+import io.nuvalence.cx.tools.shared.format.CellFormatPreset
+import io.nuvalence.cx.tools.shared.format.GridRangePreset
+import io.nuvalence.cx.tools.shared.format.SheetPropertyPreset
 import java.net.URL
 
 const val PHRASE_COLUMN_WIDTH = 500
-const val INTENT_NAME_COLUMN_WIDTH = 200
-const val ENTITY_TYPE_COLUMN_WIDTH = 200
-const val ENTITY_VALUE_COLUMN_WIDTH = 200
-const val TRANSITION_FLOW_NAME_COLUMN_WIDTH = 200
-const val TRANSITION_PAGE_COLUMN_WIDTH = 200
-const val TRANSITION_TYPE_COLUMN_WIDTH = 100
-const val TRANSITION_VALUE_COLUMN_WIDTH = 300
-const val TRANSITION_ELEMENT_TYPE_COLUMN_WIDTH = 200
-const val TRANSITION_CHANNEL_COLUMN_WIDTH = 200
-const val PAGE_FLOW_NAME_COLUMN_WIDTH = 200
-const val PAGE_NAME_COLUMN_WIDTH = 250
-const val PAGE_ELEMENT_TYPE_COLUMN_WIDTH = 150
-const val PAGE_CHANNEL_COLUMN_WIDTH = 200
 
 /**
  * Exports an agent to a spreadsheet. "args" represent the parameters passed to the main
@@ -46,81 +39,136 @@ fun export(args: Array<String>) {
 
     // add intent training phrases to Training Phrases tab
     val intents = translationAgent.flattenIntents()
-    val intentHeaders = listOf("Intent Name") + translationAgent.allLanguages
-    val intentColumnWidths = listOf(INTENT_NAME_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
-    val intentHeaderOffset = 1
+    val intentSheetFormat = AgentExportSheetFormat.TRAINING_PHRASES
+    val intentSheetName = intentSheetFormat.phraseType.title
+    val intentHeaders = intentSheetFormat.getHeaders() + translationAgent.allLanguages
+    val intentColumnWidths = intentSheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val intentHeaderOffset = intentSheetFormat.getTotalOffset()
     val intentHighlightIndices = highlightForTrainingPhrases(intents, intentHeaderOffset)
-    sheetWriter.deleteTab(PhraseType.Intents.title)
-    sheetWriter.addTab(PhraseType.Intents.title)
+    val intentMissingTranslations = highlightMissingTranslations(intents, intentHeaderOffset, 1, intentSheetFormat.phrasePathLength)
+    sheetWriter.deleteTab(intentSheetName)
+    sheetWriter.addTab(intentSheetName)
     sheetWriter.addFormattedDataToTab(
-        PhraseType.Intents.title,
+        intentSheetName,
         intents,
         intentHeaders,
         intentColumnWidths,
         intentHeaderOffset,
         intentHighlightIndices,
-        HighlightPreset.BLUE_BOLD
+        TextHighlightPreset.BLUE_BOLD
     )
+    sheetWriter.applyCellFormatUpdates(intentSheetName, CellFormatPreset.HEADER, GridRangePreset.FIRST_N_ROWS, 1)
+    if (intentMissingTranslations.isNotEmpty()) {
+        sheetWriter.applyCellFormatUpdates(intentSheetName, CellFormatPreset.FG_RED, intentMissingTranslations)
+    }
+    sheetWriter.applySheetPropertyUpdates(intentSheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
+    sheetWriter.applySheetPropertyUpdates(intentSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, intentSheetFormat.phrasePathLength)
 
     Thread.sleep(60000)  // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add entities to Entities tab
     val entities = translationAgent.flattenEntities()
-    val entityHeaders = listOf("Entity Type", "Value") + translationAgent.allLanguages
-    val entityColumnWidths = listOf(ENTITY_TYPE_COLUMN_WIDTH, ENTITY_VALUE_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
-    val entityHeaderOffset = 2
+    val entitySheetFormat = AgentExportSheetFormat.ENTITIES
+    val entitySheetName = entitySheetFormat.phraseType.title
+    val entityHeaders = entitySheetFormat.getHeaders() + translationAgent.allLanguages
+    val entityColumnWidths = entitySheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val entityHeaderOffset = entitySheetFormat.getTotalOffset()
     val entityHighlightIndices = highlightForEntities(entities, translationAgent, entityHeaderOffset)
-    sheetWriter.deleteTab(PhraseType.Entities.title)
-    sheetWriter.addTab(PhraseType.Entities.title)
+    val entityMissingTranslations = highlightMissingTranslations(entities, entityHeaderOffset, 1, entitySheetFormat.phrasePathLength)
+    sheetWriter.deleteTab(entitySheetName)
+    sheetWriter.addTab(entitySheetName)
     sheetWriter.addFormattedDataToTab(
-        PhraseType.Entities.title,
+        entitySheetName,
         entities,
         entityHeaders,
         entityColumnWidths,
         entityHeaderOffset,
         entityHighlightIndices,
-        HighlightPreset.BLUE_BOLD
+        TextHighlightPreset.BLUE_BOLD
     )
+    sheetWriter.applyCellFormatUpdates(entitySheetName, CellFormatPreset.HEADER, GridRangePreset.FIRST_N_ROWS, 1)
+    if (entityMissingTranslations.isNotEmpty()) {
+        sheetWriter.applyCellFormatUpdates(entitySheetName, CellFormatPreset.FG_RED, entityMissingTranslations)
+    }
+    sheetWriter.applySheetPropertyUpdates(entitySheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
+    sheetWriter.applySheetPropertyUpdates(entitySheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, entitySheetFormat.phrasePathLength)
 
     Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add transition fulfillments to Transitions tab
     val flowTransitions = translationAgent.flattenFlows()
-    val flowTransitionHeaders = listOf("Flow Name", "Page", "Transition Type", "Value", "Type", "Channel") + translationAgent.allLanguages
-    val flowTransitionColumnWidths = listOf(TRANSITION_FLOW_NAME_COLUMN_WIDTH, TRANSITION_PAGE_COLUMN_WIDTH, TRANSITION_TYPE_COLUMN_WIDTH, TRANSITION_VALUE_COLUMN_WIDTH, TRANSITION_ELEMENT_TYPE_COLUMN_WIDTH, TRANSITION_CHANNEL_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
-    val flowTransitionHeaderOffset = 6
+    val flowTransitionSheetFormat = AgentExportSheetFormat.TRANSITIONS
+    val flowTransitionSheetName = flowTransitionSheetFormat.phraseType.title
+    val flowTransitionHeaders = flowTransitionSheetFormat.getHeaders() + translationAgent.allLanguages
+    val flowTransitionColumnWidths = flowTransitionSheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val flowTransitionHeaderOffset = flowTransitionSheetFormat.getTotalOffset()
     val flowTransitionHighlightIndices = highlightForTransitions(flowTransitions, flowTransitionHeaderOffset)
-    sheetWriter.deleteTab(PhraseType.Flows.title)
-    sheetWriter.addTab(PhraseType.Flows.title)
+    val flowTransitionMissingTranslations = highlightMissingTranslations(flowTransitions, flowTransitionHeaderOffset, 1, flowTransitionSheetFormat.phrasePathLength)
+    sheetWriter.deleteTab(flowTransitionSheetName)
+    sheetWriter.addTab(flowTransitionSheetName)
     sheetWriter.addFormattedDataToTab(
-        PhraseType.Flows.title,
+        flowTransitionSheetName,
         flowTransitions,
         flowTransitionHeaders,
         flowTransitionColumnWidths,
         flowTransitionHeaderOffset,
         flowTransitionHighlightIndices,
-        HighlightPreset.BLUE_BOLD
+        TextHighlightPreset.BLUE_BOLD
     )
+    sheetWriter.applyCellFormatUpdates(flowTransitionSheetName, CellFormatPreset.HEADER, GridRangePreset.FIRST_N_ROWS, 1)
+    if (flowTransitionMissingTranslations.isNotEmpty()) {
+        sheetWriter.applyCellFormatUpdates(
+            flowTransitionSheetName,
+            CellFormatPreset.FG_RED,
+            flowTransitionMissingTranslations
+        )
+    }
+    sheetWriter.applySheetPropertyUpdates(flowTransitionSheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
+    sheetWriter.applySheetPropertyUpdates(flowTransitionSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, flowTransitionSheetFormat.phrasePathLength)
 
     Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
 
     // add normal page fulfillments to Fulfillments tab
     val pages = translationAgent.flattenPages()
-    val pageHeaders = listOf("Flow Name", "Page Name", "Type", "Channel") + translationAgent.allLanguages
-    val pageColumnWidths = listOf(PAGE_FLOW_NAME_COLUMN_WIDTH, PAGE_NAME_COLUMN_WIDTH, PAGE_ELEMENT_TYPE_COLUMN_WIDTH, PAGE_CHANNEL_COLUMN_WIDTH) + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
-    val pageHeaderOffset = 4
+    val pageSheetFormat = AgentExportSheetFormat.FULFILLMENTS
+    val pageSheetName = pageSheetFormat.phraseType.title
+    val pageHeaders = pageSheetFormat.getHeaders() + translationAgent.allLanguages
+    val pageColumnWidths = pageSheetFormat.getColumnWidths() + MutableList(translationAgent.allLanguages.size) { PHRASE_COLUMN_WIDTH }
+    val pageHeaderOffset = pageSheetFormat.getTotalOffset()
     val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
-    sheetWriter.deleteTab(PhraseType.Pages.title)
-    sheetWriter.addTab(PhraseType.Pages.title)
+    val pageMissingTranslations = highlightMissingTranslations(pages, pageHeaderOffset, 1, pageSheetFormat.phrasePathLength)
+    sheetWriter.deleteTab(pageSheetName)
+    sheetWriter.addTab(pageSheetName)
     sheetWriter.addFormattedDataToTab(
-        PhraseType.Pages.title,
+        pageSheetName,
         pages,
         pageHeaders,
         pageColumnWidths,
         pageHeaderOffset,
         pageHighlightIndices,
-        HighlightPreset.BLUE_BOLD
+        TextHighlightPreset.BLUE_BOLD
     )
+    sheetWriter.applyCellFormatUpdates(pageSheetName, CellFormatPreset.HEADER, GridRangePreset.FIRST_N_ROWS, 1)
+    if (pageMissingTranslations.isNotEmpty()) {
+        sheetWriter.applyCellFormatUpdates(pageSheetName, CellFormatPreset.FG_RED, pageMissingTranslations)
+    }
+    sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
+    sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, pageSheetFormat.phrasePathLength)
+}
+
+fun highlightMissingTranslations(table: List<List<String>>, columnOffset: Int, headerHeight: Int, pathWidth: Int) : List<String> {
+    val coordinates = mutableListOf<String>()
+    table.forEachIndexed { rowIndex, row ->
+        val hasMissingTranslation = row.drop(columnOffset).any { cell -> cell.isEmpty() }
+
+        if (hasMissingTranslation) {
+            for (colIndex in 0 until pathWidth) {
+                coordinates += "${'A' + colIndex}${rowIndex + headerHeight + 1}"
+            }
+        }
+    }
+
+    return coordinates
 }
 
 /**

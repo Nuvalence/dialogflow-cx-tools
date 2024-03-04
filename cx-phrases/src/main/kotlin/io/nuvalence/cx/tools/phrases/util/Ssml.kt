@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.phrases
+package io.nuvalence.cx.tools.phrases.util
 
 import com.google.gson.JsonObject
 import com.typesafe.config.Config
