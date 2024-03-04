@@ -269,6 +269,13 @@ class AgentPhrasesExtractor(private val rootPath: String) {
                         val buttonEvent = richContentElement.asJsonObject["event"].asJsonObject["event"].asString
                         messages.add(Message(listOf(buttonText), channel, elementType, buttonEvent))
                     }
+                    "list" -> {
+                        val listTitle = richContentElement.asJsonObject["title"].asString
+                        val listSubtitle = richContentElement.asJsonObject["subtitle"]?.asString ?: ""
+                        val listEvent = richContentElement.asJsonObject["event"].asJsonObject["event"].asString
+                        val listTitles = listTitle.plus("\n".plus(listSubtitle))
+                        messages.add(Message(listOf(listTitles.trim()), channel, elementType, listEvent))
+                    }
                 }
             }
         }

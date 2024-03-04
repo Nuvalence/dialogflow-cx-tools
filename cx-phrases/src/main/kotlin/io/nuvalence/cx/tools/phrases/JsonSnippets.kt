@@ -179,6 +179,30 @@ fun languagePhrasesToJson(singleString: Boolean, phrases: Map<String, List<Messa
                      content.add("options", options)
                      content.addProperty("type", "chips")
                  }
+                 "list" -> {
+                     message.phrases?.forEach { listTitles ->
+                         val listTitlesSplit = listTitles.split("\n")
+                         val listTitle = listTitlesSplit[0]
+                         var listSubtitle: String? = null
+                         if (listTitlesSplit.size > 1) {
+                             listSubtitle = listTitlesSplit[1]
+                         }
+                         val listItemAttributes = messagePayloads.lastOrNull { messagePayload ->
+                             messagePayload.asJsonObject["type"].asString == "list" &&
+                                     messagePayload.asJsonObject["title"].asString == listTitle } ?.asJsonObject ?: JsonObject()
+                         listItemAttributes.remove("title")
+                         if (listSubtitle != null) {
+                             listItemAttributes.remove("subtitle")
+                         }
+                         listItemAttributes.remove("type")
+                         if (listSubtitle != null) {
+                             listItemAttributes.addProperty("subtitle", listSubtitle)
+                         }
+                         listItemAttributes.addProperty("title", listTitle)
+                         listItemAttributes.addProperty("type", "list")
+                         innerRichContent.add(listItemAttributes)
+                     }
+                 }
             }
             if (!content.isEmpty) {
                 innerRichContent.add(content)
