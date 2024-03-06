@@ -24,7 +24,7 @@ const val END_SAY = "</say-as>"
 /**
  * Read config file from which regex values will be read
  */
-val configFile = File("cx-phrases/config.conf")
+val configFile = File("./config.conf")
 val config: Config = ConfigFactory.parseString(configFile.readText().trimMargin())
 
 /**
