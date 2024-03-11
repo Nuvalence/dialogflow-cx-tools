@@ -98,8 +98,18 @@ class TranslationPhrases {
                         phraseSubPaths.add(subPath)
                         currentLanguageMessageSubPaths.add(subPath)
                         // Get or create the list for this path and add the new message to it.
-                        val list = newPathToMessage.getOrPut(PhrasePath(phrasePath)) { mutableListOf() }
-                        list.add(message.phrases?.joinToString("\n") ?: "")
+                        var list = newPathToMessage.getOrPut(PhrasePath(phrasePath)) { mutableListOf() }
+
+                        // create special case for list items on language selection page
+                        if (message.type == "list" && message.event == "set-lang") {
+                            val flattenedMessage = message.phrases?.joinToString("\n") ?: ""
+                            list.add(flattenedMessage)
+                            val flattenedList = list.joinToString("\n")
+                            list.clear()
+                            list.add(flattenedList)
+                        } else {
+                            list.add(message.phrases?.joinToString("\n") ?: "")
+                        }
                     }
 
                     val missingSubPaths = phraseSubPaths.minus(currentLanguageMessageSubPaths)
