@@ -40,10 +40,28 @@ cd cx-agent
 ```
 
 **Arguments**:
+* The word `generate`
 * Google Sheet ID - the string between `/d/` and `/edit#` from your Sheet URL: docs.google.com/spreadsheets/d/<mark>1vxyvOCGqh_382_ZpEWcI1rGLjzjJa4pRRXM64KjcTxU</mark>/edit#gid=1799424559
 * Your Dialogflow project ID (the numeric project id)
 * Directory where the agent and agent.zip should be created
 * URL where to find the `credentials.json` file granting access to the Google Sheet above
+
+# Running the Agent Zip/Restore Tool
+Main class: `io.nuvalence.cx.tools.cxagent.MainKt`
+
+```
+cd cx-agent
+../gradlew run --args="<arguments as described below>"
+```
+
+**Arguments**:
+* The word `zip-restore`
+* The path to a local agent directory to zip/compress
+* The path to the resulting zip file
+* (Optional) Project ID for GCP Project in which Dialogflow CX Agent is located to restore the zip file to
+* (Optional) Location in which the Dialogflow CX Agent is located (e.g. `global`)
+* (Optional) Agent ID for the Dialogflow CX Agent to restore the zip file to
+  * Note: if providing the optional parameters, you need to authenticate with GCP gcloud CLI. See `cx-agent/README.md` for more details
 
 # Running the Export / Import
 

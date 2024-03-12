@@ -1,7 +1,7 @@
-package io.nuvalence.cx.tools.cxagent
+package io.nuvalence.cx.tools.cxagent.generator
 
-import io.nuvalence.cx.tools.cxagent.model.*
-import io.nuvalence.cx.tools.cxagent.model.Smalltalk.Companion.smalltalkDisplayName
+import io.nuvalence.cx.tools.cxagent.generator.model.*
+import io.nuvalence.cx.tools.cxagent.generator.model.Smalltalk.Companion.smalltalkDisplayName
 import io.nuvalence.cx.tools.shared.SheetReader
 import java.net.URL
 

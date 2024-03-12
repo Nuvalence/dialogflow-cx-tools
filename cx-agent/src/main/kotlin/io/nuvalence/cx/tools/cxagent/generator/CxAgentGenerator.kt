@@ -1,8 +1,8 @@
-package io.nuvalence.cx.tools.cxagent
+package io.nuvalence.cx.tools.cxagent.generator
 
 import freemarker.template.Configuration
 import freemarker.template.TemplateExceptionHandler
-import io.nuvalence.cx.tools.cxagent.model.CxAgentModel
+import io.nuvalence.cx.tools.cxagent.generator.model.CxAgentModel
 import io.nuvalence.cx.tools.shared.zipDirectory
 import java.io.File
 import java.nio.file.Paths
