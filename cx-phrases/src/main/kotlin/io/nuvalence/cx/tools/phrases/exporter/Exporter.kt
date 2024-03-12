@@ -36,7 +36,7 @@ fun export(args: Array<String>) {
 
     val translationAgent = AgentPhrasesExtractor(agentPath).process()
     val sheetWriter = SheetWriter(url, spreadsheetId)
-
+/*
     // add intent training phrases to Training Phrases tab
     val intents = translationAgent.flattenIntents()
     val intentSheetFormat = AgentExportSheetFormat.TRAINING_PHRASES
@@ -127,7 +127,7 @@ fun export(args: Array<String>) {
     sheetWriter.applySheetPropertyUpdates(flowTransitionSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, flowTransitionSheetFormat.phrasePathLength)
 
     Thread.sleep(60000) // Sleep added here due to Google Sheets quota limits of 300 operations per minute
-
+*/
     // add normal page fulfillments to Fulfillments tab
     val pages = translationAgent.flattenPages()
     val pageSheetFormat = AgentExportSheetFormat.FULFILLMENTS
@@ -137,6 +137,7 @@ fun export(args: Array<String>) {
     val pageHeaderOffset = pageSheetFormat.getTotalOffset()
     val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
     val pageMissingTranslations = highlightMissingTranslations(pages, pageHeaderOffset, 1, pageSheetFormat.phrasePathLength)
+
     sheetWriter.deleteTab(pageSheetName)
     sheetWriter.addTab(pageSheetName)
     sheetWriter.addFormattedDataToTab(
@@ -154,6 +155,7 @@ fun export(args: Array<String>) {
     }
     sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
     sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, pageSheetFormat.phrasePathLength)
+
 }
 
 fun highlightMissingTranslations(table: List<List<String>>, columnOffset: Int, headerHeight: Int, pathWidth: Int) : List<String> {
@@ -305,11 +307,22 @@ fun getExclusionProcessedStringIndices(string: String, stringIndices: List<Pair<
             }
             if (exclusionNegations.last().second + 1 != it.second) exclusionIndices.add(exclusionNegations.last().second + 1 to it.second)
         } else {
+            if (string.startsWith("Please hold while I transfer you to an agent to speak about your")) {
+                println("No exclusion negations detected for ${string.substring(it.first, it.second+1).replace(" ", "<space>")}")
+            }
             exclusionIndices.add(it)
         }
 
         exclusionIndices
     }.flatten().sortedBy { it.first }
+
+    if (string.startsWith("Please hold while I transfer you to an agent to speak about your")) {
+        println(string)
+        println("Initial string list:")
+        println(stringIndices)
+        println(stringIndices.joinToString("\n") { string.substring(it.first, it.second+1) })
+        println("String exclusions list: $exclusions")
+    }
 
     return exclusions
 }
@@ -330,7 +343,7 @@ fun getHighlightExclusionIndices(string: String, functionCallsIndices: List<Pair
         var runningParameterStart = start
 
         val functionParametersIndices = mutableListOf<Pair<Int, Int>>()
-        for (i in start until end) {
+        for (i in start.. end) {
             val char = string[i]
             if (char == '\'' && !inDoubleQuotes) {
                 inSingleQuotes = !inSingleQuotes
@@ -355,18 +368,28 @@ fun getHighlightExclusionIndices(string: String, functionCallsIndices: List<Pair
                 continue
             }
 
-            if (char == ',' || (i == end - 1)) {
-                functionParametersIndices += runningParameterStart to i
+            if (char == ',' || i == end) {
+                functionParametersIndices += runningParameterStart to i-1
                 runningParameterStart = i+1
                 runningParameter = ""
             } else {
                 runningParameter += char
             }
         }
+        /*
+        if (string.startsWith("Please hold while I transfer you to an agent to speak about your")) {
+            println("Functions:")
+            println(functionCallsIndices.joinToString("\n") { string.substring(it.first, it.second+1)})
+            println("Parameters found:")
+            println(functionParametersIndices.joinToString("\n") { string.substring(it.first, it.second+1) })
+        }
+
+         */
+
 
         // classify each parameter type
         val parameterTypes = functionParametersIndices.map { indices ->
-            val functionParameter = string.substring(indices.first, indices.second).trim()
+            val functionParameter = string.substring(indices.first, indices.second+1).trim()
             when (functionParameter.startsWith("\"")) {
                 true -> ArgType.STRING
                 false -> {
@@ -391,6 +414,13 @@ fun getHighlightExclusionIndices(string: String, functionCallsIndices: List<Pair
         nestedFunctionExclusions + stringExclusions
     }.flatten().sortedBy { it.first }
 
+    /*
+    if (string.startsWith("Please hold while I transfer you to an agent to speak about your")) {
+        println("Function exclusions list: $exclusions")
+    }
+
+     */
+
     return exclusions
 }
 
@@ -410,13 +440,18 @@ fun highlightReferences(string: String) : List<Pair<Int, Int>>{
     val processedFunctionCallsIndices = if (functionCallsIndices.isNotEmpty()) {
         val highlightExclusions = getHighlightExclusionIndices(string, functionCallsIndices)
 
+        if (string.startsWith("Please hold while I transfer you to an agent to speak about your")) {
+            println("Final exclusions list: $highlightExclusions")
+            println("[${highlightExclusions.joinToString("|"){ string.substring(it.first, it.second+1) }}]")
+        }
+
         val newFunctionCallsIndices = mutableListOf<Pair<Int,Int>>()
         functionCallsIndices.forEach {
             val enclosedExclusions = highlightExclusions.filter { exclusion -> it.first <= exclusion.first && it.second >= exclusion.second }
             if (enclosedExclusions.isNotEmpty()) {
                 newFunctionCallsIndices.add(it.first to enclosedExclusions[0].first)
                 enclosedExclusions.dropLast(1).forEachIndexed { index, exclusion ->
-                    val newFirst = exclusion.second + 1
+                    val newFirst = exclusion.second
                     val newSecond = enclosedExclusions[index+1].first
                     if (newFirst != newSecond) newFunctionCallsIndices.add(newFirst to newSecond)
                 }
@@ -429,6 +464,10 @@ fun highlightReferences(string: String) : List<Pair<Int, Int>>{
             false -> newFunctionCallsIndices
         }
     } else functionCallsIndices
+
+    if (string.startsWith("Please hold while I transfer you to an agent to speak about your")) {
+        println("Final runs: $processedFunctionCallsIndices")
+    }
 
     // anything not inside a top-level function call
     val basicExpressionIndices = basicExpressions.filterNot { expression ->
