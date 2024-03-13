@@ -446,6 +446,14 @@ fun highlightReferences(string: String) : List<Pair<Int, Int>>{
     return basicExpressionIndices + processedFunctionCallsIndices
 }
 
+/**
+ * Highlights HTML tags within a given string.
+ * HTML tags are defined as starting with `<` and ending with `>`.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
 fun highlightHTMLTags(string: String) : List<Pair<Int, Int>> {
     val pattern = HighlightRegexes.HTML_TAG_PATTERN.pattern
     return pattern.findAll(string).map { it.range.first to it.range.last }.toList()

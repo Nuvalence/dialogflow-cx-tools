@@ -5,6 +5,11 @@ const val SYMBOL_PATTERN = "[\\p{L}\\p{N}]*[\\p{P}\\p{S}][\\p{L}\\p{N}\\p{P}\\p{
 const val UNDERSCORES_PATTERN = "[\\p{L}\\p{N}]*_+[\\p{L}\\p{N}\\p{P}\\p{S}]*"
 const val REGEX_PATTERN = "(?=[^\\s]*(\\\\|\\[|\\]))[^\\s]*"
 
+/**
+ * Enumerates regular expressions used to search for string fragments to highlight.
+ *
+ * @param pattern the regular expression associated with a given highlighting pattern
+ */
 enum class HighlightRegexes (val pattern: Regex) {
     REFERENCE_PATTERN(Regex("\\\$([A-Za-z]+[\\w-]*\\.)+[A-Za-z]+[\\w-]*")),
     HTML_TAG_PATTERN(Regex("<[^>]+>")),
