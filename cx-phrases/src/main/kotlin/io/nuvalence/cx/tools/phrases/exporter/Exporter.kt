@@ -257,7 +257,7 @@ private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, I
  * @param expressions a list of regex match results for expressions to additionally check for functions
  * @return the list of index ranges, including the contents of the function calls, where the given string should be highlighted
  */
-private fun getFunctionCallIndices(string: String, expressions: List<MatchResult>) : List<Pair<Int, Int>> {
+private fun getFunctionCallsIndices(string: String, expressions: List<MatchResult>) : List<Pair<Int, Int>> {
     val fullFunctions = expressions.fold(mutableListOf<Pair<Int, Int>>()) { acc, expression ->
         val functionPair = parseFunction(string, expression)
         if (functionPair != null) {
@@ -267,14 +267,151 @@ private fun getFunctionCallIndices(string: String, expressions: List<MatchResult
     }
 
     var lastFunctionEnd = 0
-    val filteredFunctions = fullFunctions.filter { indexPair ->
-        if (indexPair.first > lastFunctionEnd) {
+    val topLevelFunctions = fullFunctions.filter { indexPair ->
+        val isNewFunction = indexPair.first > lastFunctionEnd
+        if (isNewFunction) {
             lastFunctionEnd = indexPair.second
         }
-        indexPair.first <= lastFunctionEnd
+        isNewFunction
     }
 
-    return filteredFunctions
+    return topLevelFunctions
+}
+
+/**
+ * Recursively seeks highlight exclusions within a given string argument within a function.
+ * Exclusions will have their formatting removed, marking the necessity for translation.
+ * String arguments begin and end with `"`, and may contain references and functions therein that may need further processing.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @param stringIndices the list of index ranges corresponding to detected string arguments within a given function
+ * @return the list of index ranges where the given string arguments should not be highlighted
+ */
+fun getExclusionProcessedStringIndices(string: String, stringIndices: List<Pair<Int, Int>>) : List<Pair<Int, Int>> {
+    // for each fragment
+    val exclusions = stringIndices.map {
+        val pattern = Regex("\\\$(\\w*\\.)+[\\w-]+")
+        val rawExpressions = pattern.findAll(string, it.first).toList().filter { expression -> expression.range.first < it.second }
+        val (functionCallExpressions, basicExpressions) = rawExpressions.partition { expression -> expression.range.last < string.length-2 && string[expression.range.last+1] == '(' }
+        val functionCallsIndices = getFunctionCallsIndices(string, functionCallExpressions)
+        val functionHighlightExclusionIndices = getHighlightExclusionIndices(string, functionCallsIndices)
+
+        val basicExpressionIndices = basicExpressions.filterNot { expression ->
+            functionCallsIndices.any { (start, end) ->
+                expression.range.first in start..end
+            }
+        }.map { expression -> expression.range.first to expression.range.last }
+
+        val exclusionIndices = mutableListOf<Pair<Int, Int>>()
+        val exclusionNegations = basicExpressionIndices + functionHighlightExclusionIndices
+
+        if (exclusionNegations.isNotEmpty()) {
+            exclusionIndices.add(it.first to exclusionNegations[0].first - 1)
+            exclusionNegations.dropLast(1).forEachIndexed { index, exclusionNegation ->
+                val newFirst = exclusionNegation.second + 1
+                val newSecond = exclusionNegations[index+1].first
+                if (newFirst != newSecond) exclusionIndices.add(newFirst to newSecond)
+            }
+            if (exclusionNegations.last().second + 1 != it.second) exclusionIndices.add(exclusionNegations.last().second + 1 to it.second)
+        } else {
+            exclusionIndices.add(it)
+        }
+
+        exclusionIndices
+    }.flatten().sortedBy { it.first }
+
+    return exclusions
+}
+
+/**
+ * Recursively seeks highlight exclusions within a given function call string.
+ * Exclusions will have their formatting removed, marking the necessity for translation.
+ * Function calls start with $ and have its fragments delimited by ".", and are then followed by parentheses.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @param functionCallsIndices the list of index ranges corresponding to detected function calls within the given string
+ * @return the list of index ranges where the given string should not be highlighted
+ */
+fun getHighlightExclusionIndices(string: String, functionCallsIndices: List<Pair<Int, Int>>) : List<Pair<Int, Int>> {
+    // for each top level function call
+    // > identify functions
+    val functionNames = functionCallsIndices.map { string.substring(string.indexOf('$', it.first), string.indexOf('(', it.first)) }
+    // > recursively process each function
+    val exclusions = functionNames.zip(functionCallsIndices).map { (functionName, functionCallIndices) ->
+        // separate parameters by commas not enclosed in quotes or parentheses
+        val start = functionCallIndices.first + functionName.length + 1
+        val end = functionCallIndices.second
+        var level = 0
+        var inSingleQuotes = false
+        var inDoubleQuotes = false
+        var runningParameter = ""
+        var runningParameterStart = start
+
+        val functionParametersIndices = mutableListOf<Pair<Int, Int>>()
+        for (i in start.. end) {
+            val char = string[i]
+            if (char == '\'' && !inDoubleQuotes) {
+                inSingleQuotes = !inSingleQuotes
+            }
+            if (char == '"' && !inSingleQuotes) {
+                inDoubleQuotes = !inDoubleQuotes
+            }
+            if (char == '(') {
+                level += 1
+            }
+            if (char == ')') {
+                level -= 1
+            }
+
+            if (runningParameter.isEmpty() && char == ' ') {
+                runningParameterStart++
+                continue
+            }
+
+            if (inSingleQuotes || inDoubleQuotes || level > 0) {
+                runningParameter += char
+                continue
+            }
+
+            if (char == ',' || i == end) {
+                functionParametersIndices += runningParameterStart to i-1
+                runningParameterStart = i+1
+                runningParameter = ""
+            } else {
+                runningParameter += char
+            }
+        }
+
+        // classify each parameter type
+        val parameterTypes = functionParametersIndices.map { indices ->
+            val functionParameter = string.substring(indices.first, indices.second+1).trim()
+            when (functionParameter.startsWith("\"")) {
+                true -> ArgType.STRING
+                false -> {
+                    when (functionParameter.startsWith("$") && functionParameter.contains("(")) {
+                        true -> ArgType.FUNCTION
+                        false -> ArgType.OTHER
+                    }
+                }
+            }
+        }
+
+        val functionFunctionParameters = functionParametersIndices.filterIndexed { index, _ ->
+            parameterTypes[index] == ArgType.FUNCTION
+        }
+        val nestedFunctionExclusions = getHighlightExclusionIndices(string, functionFunctionParameters)
+
+        val argsExcluded = DFCXSystemFunctionParameterHighlightExclusion.from(functionName)?.argsExcluded
+        val stringExclusions = getExclusionProcessedStringIndices(string, functionParametersIndices.filterIndexed { index, _ ->
+            parameterTypes[index] == ArgType.STRING && argsExcluded != null && argsExcluded[index]
+        })
+
+        nestedFunctionExclusions + stringExclusions
+    }.flatten().sortedBy { it.first }
+
+    return exclusions
 }
 
 /**
@@ -289,15 +426,38 @@ fun highlightReferences(string: String) : List<Pair<Int, Int>>{
     val pattern = Regex("\\\$(\\w*\\.)+[\\w-]+")
     val rawExpressions = pattern.findAll(string).toList()
     val (functionCallExpressions, basicExpressions) = rawExpressions.partition { it.range.last < string.length-2 && string[it.range.last+1] == '(' }
-    val functionCallIndices = getFunctionCallIndices(string, functionCallExpressions)
+    val functionCallsIndices = getFunctionCallsIndices(string, functionCallExpressions)
+    val processedFunctionCallsIndices = if (functionCallsIndices.isNotEmpty()) {
+        val highlightExclusions = getHighlightExclusionIndices(string, functionCallsIndices)
 
+        val newFunctionCallsIndices = mutableListOf<Pair<Int,Int>>()
+        functionCallsIndices.forEach {
+            val enclosedExclusions = highlightExclusions.filter { exclusion -> it.first <= exclusion.first && it.second >= exclusion.second }
+            if (enclosedExclusions.isNotEmpty()) {
+                newFunctionCallsIndices.add(it.first to enclosedExclusions[0].first)
+                enclosedExclusions.dropLast(1).forEachIndexed { index, exclusion ->
+                    val newFirst = exclusion.second
+                    val newSecond = enclosedExclusions[index+1].first
+                    if (newFirst != newSecond) newFunctionCallsIndices.add(newFirst to newSecond)
+                }
+                if (enclosedExclusions.last().second != it.second) newFunctionCallsIndices.add(enclosedExclusions.last().second to it.second)
+            }
+        }
+
+        when(newFunctionCallsIndices.isEmpty()) {
+            true -> functionCallsIndices
+            false -> newFunctionCallsIndices
+        }
+    } else functionCallsIndices
+
+    // anything not inside a top-level function call
     val basicExpressionIndices = basicExpressions.filterNot { expression ->
-        functionCallIndices.any { (start, end) ->
+        functionCallsIndices.any { (start, end) ->
             expression.range.first in start..end
         }
     }.map { expression -> expression.range.first to expression.range.last }
 
-    return basicExpressionIndices + functionCallIndices
+    return basicExpressionIndices + processedFunctionCallsIndices
 }
 
 fun highlightForEntities(entities: List<List<String>>, translationAgent: TranslationAgent, offset: Int) : List<List<List<Pair<Int, Int>>>> {
