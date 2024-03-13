@@ -463,49 +463,27 @@ fun highlightForEntities(entities: List<List<String>>, translationAgent: Transla
     return entities.map { row ->
         val entity = translationAgent.getEntity(PhrasePath(listOf(row[0], row[1])))
         val type = entity?.messagesByLanguage?.values?.toList()?.get(0)?.get(0)?.type
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            // if the entity is configured as regex or a composite of other entities, highlight the whole string
-            if (type == "KIND_REGEXP" || type == "KIND_LIST") {
-                rowIndices.add(listOf(0 to row[i].length))
-            } else {
-                rowIndices.add(highlightFragmentsWithSymbols(row[i]))
-            }
+        row.drop(offset).map {
+            if (type == "KIND_REGEXP" || type == "KIND_LIST") listOf(0 to it.length)
+            else highlightFragmentsWithSymbols(it)
         }
-
-        rowIndices
     }
 }
 
 fun highlightForTransitions(transitions: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
     return transitions.map { row ->
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            rowIndices.add(highlightReferences(row[i]) + highlightHTMLTags(row[i]))
-        }
-
-        rowIndices
+        row.drop(offset).map {highlightReferences(it) + highlightHTMLTags(it) }
     }
 }
 
 fun highlightForFulfillments (fulfillments: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
     return fulfillments.map { row ->
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            rowIndices.add(highlightReferences(row[i]) + highlightHTMLTags(row[i]))
-        }
-
-        rowIndices
+        row.drop(offset).map {highlightReferences(it) + highlightHTMLTags(it) }
     }
 }
 
 fun highlightForTrainingPhrases (trainingPhrases: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
     return trainingPhrases.map { row ->
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            rowIndices.add(highlightAnnotatedFragments(row[i]))
-        }
-
-        rowIndices
+        row.drop(offset).map { highlightAnnotatedFragments((it)) }
     }
 }
