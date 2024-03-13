@@ -9,7 +9,6 @@ import io.nuvalence.cx.tools.shared.format.CellFormatPreset
 import io.nuvalence.cx.tools.shared.format.GridRangePreset
 import io.nuvalence.cx.tools.shared.format.SheetPropertyPreset
 import java.net.URL
-import javax.swing.text.Highlighter.Highlight
 
 const val PHRASE_COLUMN_WIDTH = 500
 
