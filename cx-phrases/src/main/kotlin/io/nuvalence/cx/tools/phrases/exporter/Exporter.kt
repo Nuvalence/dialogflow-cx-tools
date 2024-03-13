@@ -137,7 +137,6 @@ fun export(args: Array<String>) {
     val pageHeaderOffset = pageSheetFormat.getTotalOffset()
     val pageHighlightIndices = highlightForFulfillments(pages, pageHeaderOffset)
     val pageMissingTranslations = highlightMissingTranslations(pages, pageHeaderOffset, 1, pageSheetFormat.phrasePathLength)
-
     sheetWriter.deleteTab(pageSheetName)
     sheetWriter.addTab(pageSheetName)
     sheetWriter.addFormattedDataToTab(
@@ -155,7 +154,6 @@ fun export(args: Array<String>) {
     }
     sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_ROWS, 1)
     sheetWriter.applySheetPropertyUpdates(pageSheetName, SheetPropertyPreset.FREEZE_N_COLUMNS, pageSheetFormat.phrasePathLength)
-
 }
 
 fun highlightMissingTranslations(table: List<List<String>>, columnOffset: Int, headerHeight: Int, pathWidth: Int) : List<String> {
@@ -266,6 +264,16 @@ private fun getFunctionCallsIndices(string: String, expressions: List<MatchResul
     return topLevelFunctions
 }
 
+/**
+ * Recursively seeks highlight exclusions within a given string argument within a function.
+ * Exclusions will have their formatting removed, marking the necessity for translation.
+ * String arguments begin and end with `"`, and may contain references and functions therein that may need further processing.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @param stringIndices the list of index ranges corresponding to detected string arguments within a given function
+ * @return the list of index ranges where the given string arguments should not be highlighted
+ */
 fun getExclusionProcessedStringIndices(string: String, stringIndices: List<Pair<Int, Int>>) : List<Pair<Int, Int>> {
     // for each fragment
     val exclusions = stringIndices.map {
@@ -302,6 +310,16 @@ fun getExclusionProcessedStringIndices(string: String, stringIndices: List<Pair<
     return exclusions
 }
 
+/**
+ * Recursively seeks highlight exclusions within a given function call string.
+ * Exclusions will have their formatting removed, marking the necessity for translation.
+ * Function calls start with $ and have its fragments delimited by ".", and are then followed by parentheses.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @param functionCallsIndices the list of index ranges corresponding to detected function calls within the given string
+ * @return the list of index ranges where the given string should not be highlighted
+ */
 fun getHighlightExclusionIndices(string: String, functionCallsIndices: List<Pair<Int, Int>>) : List<Pair<Int, Int>> {
     // for each top level function call
     // > identify functions
