@@ -1,6 +1,5 @@
 package io.nuvalence.cx.tools.cxagent.compressor
 
-import com.google.api.gax.rpc.ApiException
 import com.google.cloud.dialogflow.cx.v3.AgentName
 import com.google.cloud.dialogflow.cx.v3.AgentsClient
 import com.google.cloud.dialogflow.cx.v3.RestoreAgentRequest
@@ -15,7 +14,11 @@ fun zipRestore(args: Array<String>) {
     } else if (args.size == 3 || args.size == 6) {
         val sourceAgentPath = args[1]
         val targetAgentPath = args[2]
-        zipDirectory(sourceAgentPath, targetAgentPath)
+        try {
+            zipDirectory(sourceAgentPath, targetAgentPath)
+        } catch (e: Exception) {
+            print("An error occurred while attempting to create a zip file with name $targetAgentPath from the folder $sourceAgentPath: $e")
+        }
         if (args.size == 6) {
             val projectId = args[3]
             val location = args[4]
@@ -41,7 +44,7 @@ fun restoreAgent(zipFile: String, projectId: String, location: String, agentId: 
 
         agentsClient.restoreAgentAsync(restoreAgentRequest).get()
 
-    } catch (e: ApiException) {
-        print("An error happened while restoring the agent: $e")
+    } catch (e: Exception) {
+        print("An error happened while attempting to restore the zip file named $zipFile to the agent with id $agentId in project $projectId at location $location: $e")
     }
 }
