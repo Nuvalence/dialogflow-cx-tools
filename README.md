@@ -2,10 +2,12 @@
 The Nuvalence Agent Essentials for CCAI are accelerators that automate mundane, 
 manual tasks related to creating and maintaining CCAI/Dialogflow agents:
 
-1. Generating an initial cut of an Agent capable of answering questions.
+1. Restoring the CCAI Agent from local files.
 2. Supporting translations and proper prosody for URLs, numbers, etc.
+3. Running CCAI Agent tests. 
+4. Generating an initial cut of an Agent capable of answering questions. (Deprecated)
 
-You can find detailed documentation under the `documentation` folder.
+You can find detailed documentation in each module of the agent.
 
 # Prerequisites
 * JDK 17
@@ -29,64 +31,33 @@ it to source control!
 
 Instructions [here.](https://developers.google.com/workspace/guides/configure-oauth-consent)
 
-# Running the Agent Generator
-Note that unless you are using a sheet that is already created, you will need to create your own Google Sheet.
+# CX-AGENT
+## Agent Zip-Restore
+Creates a zip file of the local CCAI JSON files and restores the specified CCAI Agent with that zip file.
 
-Main class: `io.nuvalence.cx.tools.cxagent.MainKt`
+For more information, see the [CX-AGENT README](./cx-agent/README.md)
 
-```
-cd cx-agent
-../gradlew run --args="<arguments as described below>"
-```
+## Agent Generator (deprecated)
+Generates agent files from a source Google Sheet with intents and fulfillments. This leverage data collection patterns 
+that are no longer suggested and is therefore *deprecated*.
 
-**Arguments**:
-* The word `generate`
-* Google Sheet ID - the string between `/d/` and `/edit#` from your Sheet URL: docs.google.com/spreadsheets/d/<mark>1vxyvOCGqh_382_ZpEWcI1rGLjzjJa4pRRXM64KjcTxU</mark>/edit#gid=1799424559
-* Your Dialogflow project ID (the numeric project id)
-* Directory where the agent and agent.zip should be created
-* URL where to find the `credentials.json` file granting access to the Google Sheet above
+For more information, see the [CX-AGENT README](./cx-agent/README.md)
 
-# Running the Agent Zip/Restore Tool
-Main class: `io.nuvalence.cx.tools.cxagent.MainKt`
+# CX-INTENTGEN
+This tool uses ChatGPT to create training phrases based on responses. It combines
+`cx-suggestions` and `cx-variations` to automatically generate intents based on
+a single question and answer.
 
-```
-cd cx-agent
-../gradlew run --args="<arguments as described below>"
-```
+For more information, see the [CX-INTENTGEN README](./cx-intentgen/README.md)
 
-**Arguments**:
-* The word `zip-restore`
-* The path to a local agent directory to zip/compress
-* The path to the resulting zip file
-* (Optional) Project ID for GCP Project in which Dialogflow CX Agent is located to restore the zip file to
-* (Optional) Location in which the Dialogflow CX Agent is located (e.g. `global`)
-* (Optional) Agent ID for the Dialogflow CX Agent to restore the zip file to
-  * Note: if providing the optional parameters, you need to authenticate with GCP gcloud CLI. See `cx-agent/README.md` for more details
+# CX-LARGE
+This is a simple utility to generate an agent with a large number of flows. Primarily used for testing Flow limits.
 
-# Running the Export / Import
+For more information, see the [CX-LARGE README](./cx-large/README.md)
 
-Main class: `io.nuvalence.cx.tools.phrases.MainKt`
+# CX-PHRASES
+## Running the Export / Import
 
-```
-cd cx-phrases
-../gradlew run --args="<arguments as described below>"
-```
-
-## Export
-**Arguments**:
-* The word `export`
-* Google Sheet ID (see above)
-* Path to where the exploded agent is (i.e. download agent.zip and unzip it)
-* URL where to find the `credentials.json` file granting access to the Google Sheet above
-
-## Import
-**Arguments**:
-* The word `import`
-* Google Sheet ID (see above)
-* Path to the source agent
-* Path to where the resulting agent should be created (**must be an empty directory**,
-we make no assumption whether we can go ahead and delete things...) 
-* URL where to find the `credentials.json` file granting access to the Google Sheet above
 
 # Running Tests
 Please see cx-test README.md for instructions.
