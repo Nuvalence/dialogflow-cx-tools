@@ -1,4 +1,4 @@
-package io.nuvalence.cx.tools.cxagent.model
+package io.nuvalence.cx.tools.cxagent.generator.model
 
 import java.util.UUID
 

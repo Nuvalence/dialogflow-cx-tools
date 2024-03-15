@@ -1,6 +1,6 @@
-package io.nuvalence.cx.tools.cxagent.model
+package io.nuvalence.cx.tools.cxagent.generator.model
 
-import io.nuvalence.cx.tools.cxagent.model.SmalltalkInstance.*
+import io.nuvalence.cx.tools.cxagent.generator.model.SmalltalkInstance.*
 import java.util.*
 
 /**
