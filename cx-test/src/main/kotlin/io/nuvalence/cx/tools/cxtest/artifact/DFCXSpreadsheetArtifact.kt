@@ -214,7 +214,9 @@ class DFCXSpreadsheetArtifact {
             )
         }
 
-        sheetWriter.batchUpdateSheets(requests)
+        if (requests.isNotEmpty()) {
+            sheetWriter.batchUpdateSheets(requests)
+        }
     }
 
     private fun initializeSheets(destinationSpreadsheetId: String) {
