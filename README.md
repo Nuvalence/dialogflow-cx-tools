@@ -1,3 +1,19 @@
+# Table of Contents
+1. [Agent Essentials for CCAI](#agent-essentials-for-ccai)
+2. [Prerequisites](#prerequisites)
+3. [Building](#building)
+4. [How to create the `credentials.json` file](#how-to-create-the-credentialsjson-file)
+5. [Spotlighted Tools](#spotlighted-tools)
+    - [CX-AGENT](#cx-agent)
+    - [CX-PHRASES](#cx-phrases)
+    - [CX-TEST](#cx-test)
+6. [Other Tools](#other-tools)
+    - [CX-TEST-SYNC](#cx-test-sync)
+    - [CX-INTENTGEN](#cx-intentgen)
+    - [CX-SUGGESTIONS](#cx-suggestions)
+    - [CX-VARIATIONS](#cx-variations)
+    - [CX-LARGE](#cx-large)
+
 # Agent Essentials for CCAI
 The Nuvalence Agent Essentials for CCAI are accelerators that automate mundane, 
 manual tasks related to creating and maintaining CCAI/Dialogflow agents:
@@ -31,41 +47,51 @@ it to source control!
 
 Instructions [here.](https://developers.google.com/workspace/guides/configure-oauth-consent)
 
-# CX-AGENT
-## Agent Zip-Restore
-Creates a zip file of the local CCAI JSON files and restores the specified CCAI Agent with that zip file.
+# Spotlighted Tools
+## CX-AGENT
+Can be used to create a zip file of the local CCAI Agent JSON files and restores the specified Agent with that zip file.
+
+This also includes a `deprecated` Agent Generator to generate Agent JSON files from a source Google Sheet.
 
 For more information, see the [CX-AGENT README](./cx-agent/README.md)
 
-## Agent Generator (deprecated)
-Generates agent files from a source Google Sheet with intents and fulfillments. This leverage data collection patterns 
-that are no longer suggested and is therefore *deprecated*.
+## CX-PHRASES
+Includes `export` and `import` functionality used to update agent fulfillments, including translations, and generate
+SSML for the fulfillments.
 
-For more information, see the [CX-AGENT README](./cx-agent/README.md)
+For more information, see the [CX-PHRASES README](./cx-phrases/README.md)
 
-# CX-INTENTGEN
+## CX-TEST
+Runs test cases and outputs the results to a Google Sheet.
+
+For more information, see the [CX-TEST README](./cx-test/README.md)
+
+# Other Tools
+## CX-TEST-SYNC
+Updates CCAI Agent Test Cases from a Google Sheet import. Used to update test metadata such as the test name, tags, and
+descriptions.
+
+For more information, see the [CX-TEST-SYNC README](./cx-test-sync/README.md)
+
+## CX-INTENTGEN
 This tool uses ChatGPT to create training phrases based on responses. It combines
 `cx-suggestions` and `cx-variations` to automatically generate intents based on
 a single question and answer.
 
 For more information, see the [CX-INTENTGEN README](./cx-intentgen/README.md)
 
-# CX-LARGE
+## CX-SUGGESTIONS
+This tool uses ChatGPT to create training phrases based on responses.
+
+For more information, see the [CX-SUGGESTIONS README](./cx-suggestions/README.md)
+
+## CX-VARIATIONS
+This tool uses ChatGPT to create variations of training phrases, so you can
+better train your agent.
+
+For more information, see the [CX-VARIATIONS README](./cx-variations/README.md)
+
+## CX-LARGE
 This is a simple utility to generate an agent with a large number of flows. Primarily used for testing Flow limits.
 
 For more information, see the [CX-LARGE README](./cx-large/README.md)
-
-# CX-PHRASES
-## Running the Export / Import
-
-
-# Running Tests
-Please see cx-test README.md for instructions.
-
-# Other Tools
-Please refer to the README.md files under `cx-large` and `cx-variations` for additional tools.
-
-# Contributors
-* https://github.com/aantenangeli
-* https://github.com/gteng-nuvalence
-* https://github.com/nuvalencenate
