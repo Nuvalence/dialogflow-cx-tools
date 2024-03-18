@@ -180,13 +180,8 @@ fun highlightMissingTranslations(table: List<List<String>>, columnOffset: Int, h
  * @return the list of index ranges where the given string should be highlighted
  */
 fun highlightAnnotatedFragments(string: String) : List<Pair<Int, Int>>{
-    val highlightIndices = mutableListOf<Pair<Int, Int>>()
-    val pattern = Regex("]\\s*\\([^)]*\\)|\\[")
-    pattern.findAll(string).forEach { matchResult ->
-        highlightIndices.add(matchResult.range.first to matchResult.range.last)
-    }
-
-    return highlightIndices
+    val pattern = HighlightRegexes.ANNOTATED_FRAGMENT_PATTERN.pattern
+    return pattern.findAll(string).map { it.range.first to it.range.last }.toList()
 }
 
 /**
@@ -197,17 +192,8 @@ fun highlightAnnotatedFragments(string: String) : List<Pair<Int, Int>>{
  * @return the list of index ranges where the given string should be highlighted
  */
 fun highlightFragmentsWithSymbols(string: String) : List<Pair<Int, Int>>{
-    val highlightIndices = mutableListOf<Pair<Int, Int>>()
-    val lookarounds = "(?<=^|\\s)(?![\\p{L}\\p{N}\\p{P}]+(?=\$|\\s))"
-    val symbolsPattern = "[\\p{L}\\p{N}]*[\\p{P}\\p{S}][\\p{L}\\p{N}\\p{P}\\p{S}]*"
-    val underscoresPattern = "[\\p{L}\\p{N}]*_+[\\p{L}\\p{N}\\p{P}\\p{S}]*"
-    val regexPattern = "(?=[^\\s]*(\\\\|\\[|\\]))[^\\s]*"
-    val pattern = Regex("$lookarounds$symbolsPattern|$underscoresPattern|$regexPattern")
-    pattern.findAll(string).forEach { matchResult ->
-        highlightIndices.add(matchResult.range.first to matchResult.range.last)
-    }
-
-    return highlightIndices
+    val pattern = HighlightRegexes.FRAGMENT_WITH_SYMBOL_PATTERN.pattern
+    return pattern.findAll(string).map { it.range.first to it.range.last }.toList()
 }
 
 private fun parseFunction(string: String, expression: MatchResult) : Pair<Int, Int>? {
@@ -291,7 +277,7 @@ private fun getFunctionCallsIndices(string: String, expressions: List<MatchResul
 fun getExclusionProcessedStringIndices(string: String, stringIndices: List<Pair<Int, Int>>) : List<Pair<Int, Int>> {
     // for each fragment
     val exclusions = stringIndices.map {
-        val pattern = Regex("\\\$(\\w*\\.)+[\\w-]+")
+        val pattern = HighlightRegexes.REFERENCE_PATTERN.pattern
         val rawExpressions = pattern.findAll(string, it.first).toList().filter { expression -> expression.range.first < it.second }
         val (functionCallExpressions, basicExpressions) = rawExpressions.partition { expression -> expression.range.last < string.length-2 && string[expression.range.last+1] == '(' }
         val functionCallsIndices = getFunctionCallsIndices(string, functionCallExpressions)
@@ -423,7 +409,7 @@ fun getHighlightExclusionIndices(string: String, functionCallsIndices: List<Pair
  * @return the list of index ranges where the given string should be highlighted
  */
 fun highlightReferences(string: String) : List<Pair<Int, Int>>{
-    val pattern = Regex("\\\$(\\w*\\.)+[\\w-]+")
+    val pattern = HighlightRegexes.REFERENCE_PATTERN.pattern
     val rawExpressions = pattern.findAll(string).toList()
     val (functionCallExpressions, basicExpressions) = rawExpressions.partition { it.range.last < string.length-2 && string[it.range.last+1] == '(' }
     val functionCallsIndices = getFunctionCallsIndices(string, functionCallExpressions)
@@ -460,53 +446,44 @@ fun highlightReferences(string: String) : List<Pair<Int, Int>>{
     return basicExpressionIndices + processedFunctionCallsIndices
 }
 
+/**
+ * Highlights HTML tags within a given string.
+ * HTML tags are defined as starting with `<` and ending with `>`.
+ * Used primarily for transition and page fulfillments.
+ *
+ * @param string the string to be processed
+ * @return the list of index ranges where the given string should be highlighted
+ */
+fun highlightHTMLTags(string: String) : List<Pair<Int, Int>> {
+    val pattern = HighlightRegexes.HTML_TAG_PATTERN.pattern
+    return pattern.findAll(string).map { it.range.first to it.range.last }.toList()
+}
+
 fun highlightForEntities(entities: List<List<String>>, translationAgent: TranslationAgent, offset: Int) : List<List<List<Pair<Int, Int>>>> {
     return entities.map { row ->
         val entity = translationAgent.getEntity(PhrasePath(listOf(row[0], row[1])))
         val type = entity?.messagesByLanguage?.values?.toList()?.get(0)?.get(0)?.type
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            // if the entity is configured as regex or a composite of other entities, highlight the whole string
-            if (type == "KIND_REGEXP" || type == "KIND_LIST") {
-                rowIndices.add(listOf(0 to row[i].length))
-            } else {
-                rowIndices.add(highlightFragmentsWithSymbols(row[i]))
-            }
+        row.drop(offset).map {
+            if (type == "KIND_REGEXP" || type == "KIND_LIST") listOf(0 to it.length)
+            else highlightFragmentsWithSymbols(it)
         }
-
-        rowIndices
     }
 }
 
 fun highlightForTransitions(transitions: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
     return transitions.map { row ->
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            rowIndices.add(highlightReferences(row[i]))
-        }
-
-        rowIndices
+        row.drop(offset).map {highlightReferences(it) + highlightHTMLTags(it) }
     }
 }
 
 fun highlightForFulfillments (fulfillments: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
     return fulfillments.map { row ->
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            rowIndices.add(highlightReferences(row[i]))
-        }
-
-        rowIndices
+        row.drop(offset).map {highlightReferences(it) + highlightHTMLTags(it) }
     }
 }
 
 fun highlightForTrainingPhrases (trainingPhrases: List<List<String>>, offset: Int) : List<List<List<Pair<Int, Int>>>> {
     return trainingPhrases.map { row ->
-        val rowIndices = mutableListOf<List<Pair<Int, Int>>>()
-        for (i in offset until row.size) {
-            rowIndices.add(highlightAnnotatedFragments(row[i]))
-        }
-
-        rowIndices
+        row.drop(offset).map { highlightAnnotatedFragments((it)) }
     }
 }
