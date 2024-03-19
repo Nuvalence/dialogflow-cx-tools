@@ -15,21 +15,8 @@ The restore functionality can zip a folder and restore that zip file to an exist
 
 ## Setup
 ### Authentication with Dialogflow CX API
-
-1. Login with the gcloud CLI to obtain credentials locally. Make sure the account you choose has access to your desired agent.
-```
-gcloud auth login
-```
-
-2. Set your project
-```
-gcloud config set project <project-name>
-```
-
-3. Set up application default credentials for use by local applications.
-```
-gcloud auth application-default login
-```
+To log in with the gcloud CLI, see our
+[Local Authentication documentation](../documentation/local-authentication.md).
 
 # Agent Restorer
 This function will zip together local Agent JSON files and, if credentials and an existing Agent ID is provided, will
@@ -44,15 +31,14 @@ From the root directory:
 ```
 
 ### Arguments
-
-| Argument # | Argument Description                                                                                   | Argument Required | Argument Example                       |
-|------------|--------------------------------------------------------------------------------------------------------|-------------------|----------------------------------------|
-| 1          | The specified function to run the zip and agent restore process. This should be `zip-restore`          | true              | `zip-restore`                          |
-| 2          | The full path to a local agent directory to zip/compress                                               | true              | `/Users/usr/source/agent`              |
-| 3          | The full path to the resulting zip file. This should have `.zip` at the end.                           | true              | `/Users/usr/source/agent/agent.zip`    |
+| Argument # | Argument Description                                                                                      | Argument Required | Argument Example                       |
+|------------|-----------------------------------------------------------------------------------------------------------|-------------------|----------------------------------------|
+| 1          | The specified function to run the zip and agent restore process. This should be `zip-restore`             | true              | `zip-restore`                          |
+| 2          | The full path to a local agent directory to zip/compress                                                  | true              | `/Users/usr/source/agent`              |
+| 3          | The full path to the resulting zip file. This should have `.zip` at the end.                              | true              | `/Users/usr/source/agent/agent.zip`    |
 | 4          | (Optional) Project ID for GCP Project in which Dialogflow CX Agent is located to restore the zip file to. | false             | `dol-uisim-ccai-dev-app`               |
-| 5          | (Optional) Location in which the Dialogflow CX Agent is located                                        | false             | `global`                               |
-| 6          | (Optional) Agent ID for the Dialogflow CX Agent to restore the zip file to.                            | false             | `ee332e8e-de2c-4d65-884f-405682eeaf3c` |
+| 5          | (Optional) Region in which the Dialogflow CX Agent is located                                             | false             | `global`                               |
+| 6          | (Optional) Agent ID for the Dialogflow CX Agent to restore the zip file to.                               | false             | `ee332e8e-de2c-4d65-884f-405682eeaf3c` |
 
 ### Example
 ```
@@ -79,13 +65,13 @@ Main class: `io.nuvalence.cx.tools.cxagent.MainKt`
 
 ### Arguments
 
-| Argument # | Argument Description                                                                       | Argument Required | Argument Example                                                                                             |
-|------------|--------------------------------------------------------------------------------------------|-------------------|--------------------------------------------------------------------------------------------------------------|
-| 1          | The specified function to run the zip and agent restore process. This should be `generate` | true              | `generate`                                                                                                   |
-| 2          | Google Sheet ID - the string between `/d/` and `/edit#` from your Sheet URL                | true              | docs.google.com/spreadsheets/d/<mark>1vxyvOCGqh_382_ZpEWcI1rGLjzjJa4pRRXM64KjcTxU</mark>/edit#gid=1799424559 |
-| 3          | Your Dialogflow Project number                                                             | true              | `919068341332`                                                                                               |
-| 4          | Directory where the agent and agent.zip should be created                                  | false             | `/Users/usr/source/agent`                                                                                    |
-| 5          | URL where to find the `credentials.json` file granting access to the Google Sheet above    | false             | `/Users/usr/source/agent/credentials.json`                                                                   |
+| Argument # | Argument Description                                                                                                                                                                            | Argument Required | Argument Example                                                                                             |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------|--------------------------------------------------------------------------------------------------------------|
+| 1          | The specified function to run the zip and agent restore process. This should be `generate`                                                                                                      | true              | `generate`                                                                                                   |
+| 2          | Google Sheet ID - the string between `/d/` and `/edit#` from your Sheet URL: <br> docs.google.com/spreadsheets/d/<mark>1vxyvOCGqh_382_ZpEWcI1rGLjzjJa4pRRXM64KjcTxU</mark>/edit#gid=1799424559  | true              | `1vxyvOCGqh_382_ZpEWcI1rGLjzjJa4pRRXM64KjcTxU` |
+| 3          | Your Dialogflow Project number                                                                                                                                                                  | true              | `919068341332`                                                                                               |
+| 4          | Directory where the agent and agent.zip should be created                                                                                                                                       | false             | `/Users/usr/source/agent`                                                                                    |
+| 5          | URL where to find the `credentials.json` file granting access to the Google Sheet above                                                                                                         | false             | `/Users/usr/source/agent/credentials.json`                                                                   |
 
 ### Example
 ```

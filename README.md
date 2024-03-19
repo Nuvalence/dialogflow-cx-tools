@@ -16,12 +16,11 @@
 
 # Agent Essentials for CCAI
 The Nuvalence Agent Essentials for CCAI are accelerators that automate mundane, 
-manual tasks related to creating and maintaining CCAI/Dialogflow agents:
+manual tasks related to creating and maintaining CCAI/Dialogflow agents including but not limited to:
 
-1. Restoring the CCAI Agent from local files.
-2. Supporting translations and proper prosody for URLs, numbers, etc.
-3. Running CCAI Agent tests. 
-4. Generating an initial cut of an Agent capable of answering questions. (Deprecated)
+1. [Restoring the CCAI Agent from local files](#cx-agent)
+2. [Supporting translations and proper prosody for URLs, numbers, etc.](#cx-phrases)
+3. [Running CCAI Agent tests](#cx-test)
 
 You can find detailed documentation in each module of the agent.
 
@@ -51,7 +50,7 @@ Instructions [here.](https://developers.google.com/workspace/guides/configure-oa
 ## CX-AGENT
 Can be used to create a zip file of the local CCAI Agent JSON files and restores the specified Agent with that zip file.
 
-This also includes a `deprecated` Agent Generator to generate Agent JSON files from a source Google Sheet.
+This also includes a deprecated Agent Generator to generate Agent JSON files from a source Google Sheet.
 
 For more information, see the [CX-AGENT README](./cx-agent/README.md)
 
