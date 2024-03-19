@@ -60,7 +60,7 @@ gcloud auth application-default login
 
 1. Create a file suffixed with `.properties`. Place it where desired and take note of the path.
 - For example, a file `default.properties` may be created in `cx-test-sync/src/main/resources/`.
-  - A properties template can be found in `cx-test-sync/src/main/resources/template.properties`.
+  - A properties template file can be found [here](./src/main/resources/template.properties).
 2. See [here](#properties) for a list of properties to include in the file.
 
 ## JAR Packaging
@@ -121,57 +121,13 @@ as agent.zip
 
 ## Properties
 
-The following are properties that can be specified in a properties file for use by the test suite. (See: [Properties File](#properties-file))
+The following are properties that can be specified in a properties file for use by the test suite. (See: [Properties File](#properties-file)).
+A properties template file can be found [here](./src/main/resources/template.properties).
 
-### Credentials URL
-
-URL referencing the desired credentials file for access to the Google Sheets API. This can be a local file, indicated by the file URL protocol (`file:///`).
-
-To obtain the necessary credentials, see [here](#google-sheets).
-
-- Usage: `credentialsUrl="<credentials URL>"`
-- Required: Yes
-
-### Agent Path
-
-A portion of the URL specifying the path to the desired agent under test. The agent path format is as follows:
-
-```
-projects/<project name>/locations/<location>/agents/<agent UUID>
-```
-
-- Usage: `agentPath="<agent path>"`, e.g. `agentPath="projects/project/locations/global/agents/00000000-0000-0000-0000-000000000000"`
-- Required: Yes
-
-### Spreadsheet ID
-
-The ID for your desired spreadsheet on Google Sheets. This can be derived from the URL as follows:
-
-```
-https://docs.google.com/spreadsheets/d/<spreadsheetId>
-```
-
-- Usage: `spreadsheetId="<spreadsheet ID>"`
-- Required: No UNLESS Include Tags includes `e2e` or `smoke`
-
-### Dialogflow CX Endpoint
-
-The service endpoint to use for Dialogflow CX sessions.
-
-This must correspond with the region specified in the agent path.  See [here](https://cloud.google.com/dialogflow/cx/docs/reference/rest/v3beta1-overview#service-endpoint) for a list of available endpoints. These will typically be suffixed with port 443.
-
-Defaults to us-east-1 if not specified.
-
-- Usage: `dfcxEndpoint="<endpoint URL>"`, e.g. `dfcxEndpoint="us-east1-dialogflow.googleapis.com:443"`
-- Required: No
-- Default if not supplied: `dialogflow.googleapis.com:443`
-
-### Export Agent Path
-
-The path to export agent before applying diffs
-
-Defaults to root folder of the module
-
-- Usage: `exportAgentPath="<provide absolute path>"`, e.g. `exportAgentPath="/Users/<USERNAME>/dol/dialogflow-cx-tools/cx-test-sync/src/main/resources/export/"`
-- Required: No
-- Default if not supplied: `/Users/<USERNAME>/dol/dialogflow-cx-tools/cx-test-sync/`
+| Property             | Description                                                                                                           | Usage                                                    | Required | Default                                                      |
+|----------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|----------|--------------------------------------------------------------|
+| Credentials URL      | URL referencing the desired credentials file for access to the Google Sheets API. This can be a local file, indicated by the file URL protocol (`file:///`). To obtain the necessary credentials, see [here](#google-sheets). | `credentialsUrl="<credentials URL>"`                     | Yes      | N/A                                                          |
+| Agent Path           | A portion of the URL specifying the path to the desired agent under test. The agent path format is as follows: `projects/<project name>/locations/<location>/agents/<agent UUID>`. | `agentPath="<agent path>"`                                | Yes      | N/A                                                          |
+| Spreadsheet ID       | The ID for your desired spreadsheet on Google Sheets. This can be derived from the URL as follows: `https://docs.google.com/spreadsheets/d/<spreadsheetId>`. | `spreadsheetId="<spreadsheet ID>"`                        | No       | N/A (Required if includeTags includes `e2e` or `smoke`)     |
+| Dialogflow CX Endpoint | The service endpoint to use for Dialogflow CX sessions. This must correspond with the region specified in the agent path.  See [here](https://cloud.google.com/dialogflow/cx/docs/reference/rest/v3beta1-overview#service-endpoint) for a list of available endpoints. These will typically be suffixed with port 443. | `dfcxEndpoint="<endpoint URL>"`, e.g. `dfcxEndpoint="us-east1-dialogflow.googleapis.com:443"` | No       | `dialogflow.googleapis.com:443`                            |
+| Export Agent Path    | The path to export agent before applying diffs. Defaults to root folder of the module.                                  | `exportAgentPath="<provide absolute path>"`, e.g. `exportAgentPath="/Users/<USERNAME>/dol/dialogflow-cx-tools/cx-test-sync/src/main/resources/export/"` | No       | `/Users/<USERNAME>/dol/dialogflow-cx-tools/cx-test-sync/`  |
