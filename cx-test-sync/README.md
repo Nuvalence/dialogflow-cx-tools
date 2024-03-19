@@ -1,6 +1,23 @@
 # CX-TEST-SYNC
+This test synchronization tool updates CCAI Agent Test Cases from a Google Sheet import. This tool can be used to update 
+test metadata such as the test name, tags, and descriptions. This first requires an output of the tests run from the 
+`cx-test` module. For more information on how to run the `cx-test` module, see the [cx-test readme](../cx-test/README.md).
 
-This is a test synchronization tool for use in tandem with cx-test for the UI CCAI project.
+Using the Google Sheet with the outputted test results from a `cx-test` run, the following attributes can be modified 
+and updated in the CX Agent using this module:
+- Test Case Name
+- Tags
+- Notes
+
+# Table of Contents
+- [CX-TEST-SYNC Overview](#cx-test-sync)
+- [Setup](#setup)
+    - [Authentication](#authentication)
+    - [Properties File](#properties-file)
+- [JAR Packaging](#jar-packaging)
+- [Test Execution](#test-execution)
+- [Export Agent](#export-agent)
+- [Properties](#properties)
 
 ## Setup
 
@@ -38,10 +55,6 @@ gcloud config set project <project-name>
 ```
 gcloud auth application-default login
 ```
-
-#### CI Authentication
-
-TBD
 
 ### Properties File
 
@@ -108,7 +121,7 @@ as agent.zip
 
 ## Properties
 
-The following are properties that can be specified in a properties file for use by the test suite. (See: [Properties File](#properties-file)
+The following are properties that can be specified in a properties file for use by the test suite. (See: [Properties File](#properties-file))
 
 ### Credentials URL
 
