@@ -5,7 +5,7 @@ Agent Essentials for CCAI
 
 This document describes two Nuvalence tools that support our CCAI initiative:
 
-* **Agent Generator**: converts a spreadsheet with FAQ-style intents and responses into an Agent ready to be uploaded. (Deprecated)
+* **Agent Generator (Deprecated)**: converts a spreadsheet with FAQ-style intents and responses into an Agent ready to be uploaded.
 * **Agent Translator**: with two subcomponents:
   * An exporter, which transfers all the Agent’s messages and training phrases to a Google Sheet. 
   * An importer, which combines (modified) messages and training phrases, as well as potentially new translations with the existing Agent, and generates a new Agent ready to be uploaded.

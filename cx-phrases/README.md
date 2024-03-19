@@ -8,6 +8,9 @@ expected Agent project structure consisting of JSON files.
 2. [Setup](#setup)
 3. [Agent Export](#agent-export)
     - [Running the Agent Export](#running-the-agent-export)
+    - [Agent Export Google Sheet Structure](#agent-export-google-sheet-structure)
+    - [Adding New Languages](#adding-new-languages)
+    - [Fulfillment Highlighting](#fulfillment-highlighting)
 4. [Agent Import](#agent-import)
     - [Running the Agent Import](#running-the-agent-import)
     - [SSML Processing](#ssml-processing)
@@ -54,6 +57,62 @@ From the root directory:
 /Users/usr/source/agent \
 file:///Users/usr/credentials/gcreds.json"
 ```
+
+### Agent Export Google Sheet Structure
+The export process creates four tabs on a given Google Sheet:
+
+1. Training Phrases: intent names and their associated training phrases.
+2. Entities: entity types and values and their synonyms.
+3. Transitions: messages associated with transitions.
+4. Fulfillments: messages associated with page fulfillments.
+
+
+#### Training Phrases
+This tab contains:
+* An **Intent Name** column, with the different intent names.
+* A column for each language:
+   *   The top cell contains the language code (e.g. en or es) for that column.
+   *   The remaining cells contain the training phrases for a given intent/language, one per line.
+
+#### Entities 
+This tab contains:
+* An **Entity Type** column, with the different entities
+* A **Value** column, with associated values to each entity
+* A column for each language, with the synonyms for the entity, one per line
+
+#### Transitions
+This tab contains:
+
+*   A **Flow Name** column, with the name of the flow to where the transition belongs.
+*   A **Page** column, with the name of the page to where the transition belongs.
+*   A **Transition Type** column, identifying the type of transition. For example, event when the transition is associated with an **event** like sys.no-input-default.
+*   A **Value** column, with the condition or name of the event triggering the transition, such as sys.no-input-default.
+*   A **Type** column, with the type of fulfillment associated to the transition, i.e. **message** or **button**.
+*   A **Channel** column, with the agent output channel specified, i.e. **audio** or **DF_MESSENGER** for a chatbot implementation.
+*   One column per language, as previously described, with the fulfillment message.
+
+#### Fulfillments
+This tab contains:
+
+*   A **Flow Name** column, identifying the name of the flow that contains the fulfillment.
+*   A **Page Name** column, with the name of the page within the flow that contains the fulfillment.
+*   A **Type** column, identifying the type of fulfillment. For example, **message** or **html**.
+*   A **Channel** column, with the agent output channel specified, i.e. **audio** or **DF_MESSENGER** for a chatbot implementation.
+*   One column per language, as previously described, with the fulfillment message.
+
+#### Adding New Languages
+Just add a new column to each of the tabs above, where the topmost cell contains the language code, and the other cells 
+the appropriate translations. The Import process will add the new language to the Agent.
+
+#### Fulfillment Highlighting
+Because this Agent Export process can be used as a source file for generating associated translations for each 
+fulfillment/training phrase, it is important to indicate what parts of the fulfillments/training phrases should **not**
+be translated. To accomplish this, text that is <b><span style="color: #0000cc;">highlighted blue and bolded</span></b> indicates that the text should **not** be
+translated.
+
+#### Missing Fulfillments
+Fulfillments or training phrases that are missing translations for existing language column headers will have its non-
+language specific cell values highlighted in red. 
 
 ## Agent Import
 The purpose of the Agent Import process is to rebuild the Agent's JSON files from an Agent that was previously exported
