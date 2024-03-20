@@ -60,9 +60,34 @@ fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessa
 }
 
 /**
+ * Asserts that the response string matches the expected string with dates removed.
+ *
+ * @param expected the expected string
+ * @param actual the actual response string
+ */
+fun isNoDateMatch(expected: String, actual: String) : Boolean {
+    val newActual = stripDates(actual)
+    val newExpected = stripDates(expected)
+
+    return newActual == newExpected
+}
+
+/**
+ * Strips dates from a string.
+ *
+ * @param input the input string
+ * @return the string with detected dates removed
+ */
+fun stripDates(input: String) : String {
+    val regex = Regex("\\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\s+\\d{1,2},\\s+\\d{4}|\\b\\d{1,2}/\\d{1,2}/\\d{4}")
+    return input.replace(regex, "")
+}
+
+/**
  * Strips SSML tags from a string.
  *
  * @param input the input string
+ * @return the string with SSML tags removed
  */
 fun stripSsml(input: String): String {
     return input.replace(Regex("<.*?>"), "")
