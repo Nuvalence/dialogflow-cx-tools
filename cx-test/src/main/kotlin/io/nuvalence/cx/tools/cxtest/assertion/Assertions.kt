@@ -5,6 +5,10 @@ import io.nuvalence.cx.tools.cxtest.util.Properties
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.junit.jupiter.api.Assertions
 
+val LANGUAGE_DATE_REGEX = mapOf(
+    "en" to Regex("\\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\s+\\d{1,2},\\s+\\d{4}|\\b\\d{1,2}/\\d{1,2}/\\d{4}")
+)
+
 enum class MatchingMode(val value: String) {
     NORMAL("normal") {
         override fun assertFuzzyMatchString(input: String, expected: String, actual: String, expectedRatio: Int) {
@@ -65,9 +69,9 @@ fun assertFuzzyMatch(input: String, expected: String, actual: List<ResponseMessa
  * @param expected the expected string
  * @param actual the actual response string
  */
-fun isNoDateMatch(expected: String, actual: String) : Boolean {
-    val newActual = stripDates(actual)
-    val newExpected = stripDates(expected)
+fun isNoDateMatch(expected: String, actual: String, languageCode: String) : Boolean {
+    val newActual = stripDates(actual, languageCode)
+    val newExpected = stripDates(expected, languageCode)
 
     return newActual == newExpected
 }
@@ -78,8 +82,8 @@ fun isNoDateMatch(expected: String, actual: String) : Boolean {
  * @param input the input string
  * @return the string with detected dates removed
  */
-fun stripDates(input: String) : String {
-    val regex = Regex("\\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\s+\\d{1,2},\\s+\\d{4}|\\b\\d{1,2}/\\d{1,2}/\\d{4}")
+fun stripDates(input: String, languageCode: String) : String {
+    val regex = LANGUAGE_DATE_REGEX[languageCode] ?: LANGUAGE_DATE_REGEX["en"]!!
     return input.replace(regex, "")
 }
 

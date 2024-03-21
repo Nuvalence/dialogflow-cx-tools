@@ -6,6 +6,7 @@ import io.nuvalence.cx.tools.cxtest.extension.DFCXTestBuilderExtension
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResultStep
 import io.nuvalence.cx.tools.cxtest.model.test.ResultLabel
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.extension.ExtendWith
@@ -65,7 +66,7 @@ class DFCXTestBuilderSpec {
             }
 
             if (turn.virtualAgentOutput.differencesList.any { diff -> diff.type == TestRunDifference.DiffType.UTTERANCE}) {
-                if (!isNoDateMatch(resultStep.expectedAgentOutput, resultStep.actualAgentOutput)) {
+                if (!(Properties.NO_DATE_MATCH && isNoDateMatch(resultStep.expectedAgentOutput, resultStep.actualAgentOutput, turn.userInput.input.languageCode))) {
                     resultStep.result = ResultLabel.FAIL
                 }
             }

@@ -6,7 +6,6 @@ import java.net.URL
 import javax.naming.ConfigurationException
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.companionObjectInstance
@@ -38,6 +37,7 @@ class Properties {
         var ORCHESTRATION_MODE: String by PropertyDelegate()
         var MATCHING_MODE: String by PropertyDelegate()
         var MATCHING_RATIO: Int by PropertyDelegate()
+        var NO_DATE_MATCH: Boolean by PropertyDelegate()
         var DFCX_TAG_FILTER: String by PropertyDelegate()
         var INCLUDE_TAGS: String by PropertyDelegate()
         var EXCLUDE_TAGS: String by PropertyDelegate()
@@ -117,17 +117,18 @@ class Properties {
 }
 
 enum class PropertiesDefinition(val value: String, val type: KClass<*>, val isRequired: (java.util.Properties) -> Boolean = { _ -> false }, val example: String, val default: String? = "") {
-    CREDENTIALS_URL("credentialsUrl", URL::class, { _ -> true }, "file:///path/to/creds/file.json"),
-    AGENT_PATH("agentPath", String::class, { _ -> true }, "projects/<projectName>/locations/<location>/agents/<agentId>"),
+    CREDENTIALS_URL("credentialsUrl", URL::class, { true }, "file:///path/to/creds/file.json"),
+    AGENT_PATH("agentPath", String::class, { true }, "projects/<projectName>/locations/<location>/agents/<agentId>"),
     SPREADSHEET_ID("spreadsheetId", String::class, isSpreadsheetIdRequired, "the final segment of the spreadsheet URL, e.g. \"asdf\" if your spreadsheet URL is https://docs.google.com/spreadsheets/d/asdf", ""),
-    DFCX_ENDPOINT("dfcxEndpoint", String::class, { _ -> false }, "(<region>-)dialogflow.googleapis.com:443", "dialogflow.googleapis.com:443"),
-    ORCHESTRATION_MODE("orchestrationMode", String::class, { _ -> false }, "[simple, comprehensive]", "simple"),
-    MATCHING_MODE("matchingMode", String::class, { _ -> false }, "[normal, adaptive]", "normal"),
-    MATCHING_RATIO("matchingRatio", Int::class, { _ -> false }, "Integer from 0-100", "80"),
-    DFCX_TAG_FILTER("dfcxTagFilter", String::class, { _ -> false }, "Comma-delimited list of DFCX test tags, e.g. \"#Tag1,#Tag2,#Tag3\", or \"ALL\"", "ALL"),
-    INCLUDE_TAGS("includeTags", String::class, { _ -> false }, "Pipe-delimited list of JUnit test spec tags, e.g. \"dfcx\", \"e2e|smoke\"", "dfcx"),
-    EXCLUDE_TAGS("excludeTags", String::class, { _ -> false }, "Pipe-delimited list of JUnit test spec tags, e.g. \"dfcx\", \"e2e|smoke\"", "e2e|smoke"),
-    TEST_PACKAGE("testPackage", String::class, { _ -> false }, "Desired package containing test specs, e.g. \"io.nuvalence.cx.tools.cxtest\"", "io.nuvalence.cx.tools.cxtest");
+    DFCX_ENDPOINT("dfcxEndpoint", String::class, { false }, "(<region>-)dialogflow.googleapis.com:443", "dialogflow.googleapis.com:443"),
+    ORCHESTRATION_MODE("orchestrationMode", String::class, { false }, "[simple, comprehensive]", "simple"),
+    MATCHING_MODE("matchingMode", String::class, { false }, "[normal, adaptive]", "normal"),
+    MATCHING_RATIO("matchingRatio", Int::class, { false }, "Integer from 0-100", "80"),
+    NO_DATE_MATCH("noDateMatch", Boolean::class, { false }, "[true, false]", "false"),
+    DFCX_TAG_FILTER("dfcxTagFilter", String::class, { false }, "Comma-delimited list of DFCX test tags, e.g. \"#Tag1,#Tag2,#Tag3\", or \"ALL\"", "ALL"),
+    INCLUDE_TAGS("includeTags", String::class, { false }, "Pipe-delimited list of JUnit test spec tags, e.g. \"dfcx\", \"e2e|smoke\"", "dfcx"),
+    EXCLUDE_TAGS("excludeTags", String::class, { false }, "Pipe-delimited list of JUnit test spec tags, e.g. \"dfcx\", \"e2e|smoke\"", "e2e|smoke"),
+    TEST_PACKAGE("testPackage", String::class, { false }, "Desired package containing test specs, e.g. \"io.nuvalence.cx.tools.cxtest\"", "io.nuvalence.cx.tools.cxtest");
 }
 
 val isSpreadsheetIdRequired : (java.util.Properties) -> Boolean = { properties ->
