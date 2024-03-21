@@ -107,8 +107,9 @@ the appropriate translations. The Import process will add the new language to th
 #### Fulfillment Highlighting
 Because this Agent Export process can be used as a source file for generating associated translations for each 
 fulfillment/training phrase, it is important to indicate what parts of the fulfillments/training phrases should **not**
-be translated. To accomplish this, text that is <b><span style="color: #0000cc;">highlighted blue and bolded</span></b> indicates that the text should **not** be
-translated.
+be translated, typically because the text is part of a Dialogflow CX System Function or Session Parameter. To accomplish 
+this, text that is <b><span style="color: #0000cc;">highlighted blue and bolded</span></b> indicates that the text 
+should **not** be translated.
 
 #### Missing Fulfillments
 Fulfillments or training phrases that are missing translations for existing language column headers will have its non-
@@ -199,6 +200,9 @@ verbatim. To overwrite these values, add custom values to the `config.conf` file
     ]
 }
 ```
+
+## Typical Flow for Updating the Agent via the Export/Import Processes
+1. 
 
 ## Running Tests
 If running tests through Junit/IntelliJ, you need to specify the working directory in the test's run configuration. The default is `$MODULE_WORKING_DIR`,
