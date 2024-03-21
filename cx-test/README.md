@@ -33,9 +33,9 @@ to run as well as any configuration for the test run. The different types of tes
 ### Smoke Tests
 [ADD SMOKE DETAILS HERE]
 
-### Dialogflow CX Test Cases
-These are tests built in the Dialogflow CX console. This module will leverage the DFCX APIs to invoke the tests built in
-DFCX. These tests can be filtered using tags, The result will output to a Google Sheet that can be leveraged as scripts 
+### Dialogflow CX Tests
+These are tests built in the Dialogflow CX Test Cases console. This module will leverage the DFCX APIs to invoke the tests built in
+DFCX. These tests can be filtered using tags. The result will output to a Google Sheet that can be leveraged as scripts 
 when manually testing the agent.
 
 ## Setup
