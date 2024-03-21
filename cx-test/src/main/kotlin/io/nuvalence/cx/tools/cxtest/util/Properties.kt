@@ -104,7 +104,7 @@ class Properties {
                         Byte::class -> baseProperty.toByte()
                         Double::class -> baseProperty.toDouble()
                         Float::class -> baseProperty.toFloat()
-                        Boolean::class -> baseProperty.toBoolean()
+                        Boolean::class -> baseProperty.toBooleanStrict()
                         Char::class -> baseProperty[0]
                         else -> propDef.type.constructors.find { it.parameters.size == 1 && it.parameters[0].type.classifier == String::class }
                             ?.call(baseProperty)
