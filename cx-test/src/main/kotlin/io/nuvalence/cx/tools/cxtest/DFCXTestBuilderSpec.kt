@@ -1,10 +1,12 @@
 package io.nuvalence.cx.tools.cxtest
 
 import com.google.cloud.dialogflow.cx.v3.*
+import io.nuvalence.cx.tools.cxtest.assertion.isNoDateMatch
 import io.nuvalence.cx.tools.cxtest.extension.DFCXTestBuilderExtension
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResult
 import io.nuvalence.cx.tools.cxtest.model.test.DFCXTestBuilderResultStep
 import io.nuvalence.cx.tools.cxtest.model.test.ResultLabel
+import io.nuvalence.cx.tools.cxtest.util.Properties
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.extension.ExtendWith
@@ -59,10 +61,14 @@ class DFCXTestBuilderSpec {
                 diffs = turn.virtualAgentOutput.differencesList
             )
 
-            if (turn.virtualAgentOutput.differencesList.any { diff ->
-                diff.type == TestRunDifference.DiffType.PAGE || diff.type == TestRunDifference.DiffType.UTTERANCE
-            }) {
+            if (turn.virtualAgentOutput.differencesList.any { diff -> diff.type == TestRunDifference.DiffType.PAGE }) {
                 resultStep.result = ResultLabel.FAIL
+            }
+
+            if (turn.virtualAgentOutput.differencesList.any { diff -> diff.type == TestRunDifference.DiffType.UTTERANCE}) {
+                if (!(Properties.NO_DATE_MATCH && isNoDateMatch(resultStep.expectedAgentOutput, resultStep.actualAgentOutput, turn.userInput.input.languageCode))) {
+                    resultStep.result = ResultLabel.FAIL
+                }
             }
 
             testBuilderResult.resultSteps.add(resultStep)

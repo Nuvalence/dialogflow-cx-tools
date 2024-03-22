@@ -105,6 +105,8 @@ java -jar cx-test-1.0.0-all.jar src/main/resources/default.properties
 
 The following are properties that can be specified in a properties file for use by the test suite. (See: [Properties File](#properties-file)
 
+Note that whether a property is "required" or not determines whether it needs to be specified in the properties file. A property may be specified but not populated, in which case it is treated as an empty string.
+
 ### Credentials URL
 
 URL referencing the desired credentials file for access to the Google Sheets API. This can be a local file, indicated by the file URL protocol (`file:///`).
@@ -166,6 +168,17 @@ Determines how agent response strings are matched.
 - Usage: `matchingMode=[normal, adaptive]`
 - Required: No
 - Default if not supplied: `normal`
+
+### No-Date Match
+
+Determines whether disparate agent fulfillments should be matched with (dynamic) dates removed. New date formats and language codes may be added in code as needed.
+
+- Options:
+  - True: Matches the agent response against the expected response with dates removed from both
+  - False: Matches the full agent response against the full expected response wholesale
+- Usage: `noDateMatch=[true, false]`
+- Required: No
+- Default if not supplied: `false`
 
 ### Orchestration Mode
 
