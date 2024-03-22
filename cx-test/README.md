@@ -116,6 +116,7 @@ java -jar cx-test-1.0.0-all.jar src/main/resources/default.properties
 
 The following are properties that can be specified in a properties file for use by the test suite. (See: [Properties File](#properties-file)).
 A properties template file can be found [here](./src/main/resources/template.properties).
+Note that whether a property is "required" or not determines whether it needs to be specified in the properties file. A property may be specified but not populated, in which case it is treated as an empty string.
 
 | Property             | Description                                                                                                                                                                                                                                                                                                                  | Usage                                                    | Required | Default                                |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|----------|----------------------------------------|
@@ -130,3 +131,15 @@ A properties template file can be found [here](./src/main/resources/template.pro
 | Exclude Tags         | Determines which tests should not be run, based on their tags. <ul><li>e2e: End-to-end tests</li><li>smoke: Smoke tests</li><li>dfcx: DFCX Test Builder tests</li></ul>                                                                                                                                                      | `excludeTags="e2e\|smoke\|dfcx"`                          | No       | `"e2e\|smoke"`                         |
 | DFCX Tag Filter      | Determines which tests should be run, based on the associated tags on the test. Used exclusively for the DFCX Test Builder Spec. <ul><li>`"ALL"`: runs all tests associated with the agent</li><li>`"#Filter1,#Filter2,..."`: runs all tests that include all tags contained within the comma-separated expression</li></ul> | `-dfcxTagFilter="#Filter1,#Filter2"`                      | No       | `"ALL"`                                |
 | Test Package         | Classpath for files containing test cases. This must be a fully qualified package name.                                                                                                                                                                                                                                      | `testPackage="package.name"`                              | No       | `io.nuvalence.cx.tools.cxtest`         |
+
+
+### Orchestration Mode
+
+Determines how to run tests generated from the spreadsheet.
+
+- Options:
+  - Simple: Takes only the first message from all user inputs in a given scenario
+  - Comprehensive: Tests every possible message for all user inputs at least once
+- Usage: `orchestrationMode=[simple, comprehensive]`
+- Required: No
+- Default if not supplied: `simple`
