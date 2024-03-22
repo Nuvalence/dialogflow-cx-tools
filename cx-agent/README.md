@@ -51,7 +51,7 @@ ee332e8e-de2c-4d65-884f-405682eeaf3c"
 ```
 
 # Agent Generator (Deprecated)
-Note the agent generator uses patterns that are no longer recommended. If starting a project from scratch, it is not
+Note the Agent Generator uses patterns that are no longer recommended. If starting a project from scratch, it is not
 recommended to use the Agent Generator as scaffolding.
 
 ## Running the Agent Generator

@@ -22,6 +22,7 @@ In addition, both tools convert the spreadsheet they use to an internal represen
 
 ### Agent Generator (Deprecated) ###
 
+The Agent Generator at this time can be considered deprecated as it creates agent flow patterns that are no longer recommended.
 The Generator creates an FAQ-style Agent that follows a design pattern that is easy to extend. The typical utilization is to leverage the Generator to create an initial cut of the Agent, and then use that as a starting point to implement more complex interactions/flows. We describe the structure of the generated Agent later, along with guidance on how to extend it and best practices.
 
 #### Input Spreadsheet Format ####
