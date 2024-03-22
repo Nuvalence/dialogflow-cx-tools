@@ -201,9 +201,6 @@ verbatim. To overwrite these values, add custom values to the `config.conf` file
 }
 ```
 
-## Typical Flow for Updating the Agent via the Export/Import Processes
-1. 
-
 ## Running Tests
 If running tests through Junit/IntelliJ, you need to specify the working directory in the test's run configuration. The default is `$MODULE_WORKING_DIR`,
 but using this will lead to an error when it can't find the `.conf` files required. Specify `$ProjectFileDir$` instead and it will run from the directory
