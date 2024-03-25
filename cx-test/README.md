@@ -13,9 +13,8 @@ information about updating test metadata, see our [cx-test-sync readme](../cx-te
 # Table of Contents
 1. [Introduction](#cx-test)
 2. [Test Suites](#test-suites)
-   - [End-to-End Tests](#end-to-end-tests)
-   - [Smoke Tests](#smoke-tests)
-   - [Dialogflow CX Test Cases](#dialogflow-cx-test-cases)
+   - [Dialogflow CX Test Cases (Preferred)](#dialogflow-cx-test-cases-preferred)
+   - [Spreadsheet Tests (Deprecated)](#spreadsheet-tests-deprecated)
 3. [Setup](#setup)
    - [Authentication](#authentication)
    - [Properties File](#properties-file)
@@ -27,16 +26,26 @@ information about updating test metadata, see our [cx-test-sync readme](../cx-te
 There are different types of tests that can be run using this module. The properties file dictates which types of tests 
 to run as well as any configuration for the test run. The different types of tests are as follows:
 
-### End-to-End Tests
-[ADD E2E DETAILS HERE]
+### Dialogflow CX Test Cases (Preferred)
+These are tests built in the Dialogflow CX Test Cases console. These can be configured to run with webhooks enabled to 
+test the integrations with the Dialogflow CX Agent or the webhook calls can be turned off and the responses stubbed in. 
+This module will leverage the DFCX APIs to invoke these tests built in DFCX. The tests can be filtered using tags. The 
+result will output to a Google Sheet that can be leveraged as scripts when manually testing the agent.
 
-### Smoke Tests
-[ADD SMOKE DETAILS HERE]
+### Spreadsheet Tests (Deprecated)
+These are tests defined in a specifically formatted spreadsheet containing different conversations comprised of multiple 
+turns. The test framework will parse these conversations from the spreadsheet, creating different dialogue permutations 
+as specified both in the spreadsheet and in runtime configuration, simulate the conversation against the Dialogflow CX 
+API for the agent in test, and assess the resulting responses. Leveraging the full capabilities of the built-in 
+Dialogflow CX Tests is preferred over these type
 
-### Dialogflow CX Tests
-These are tests built in the Dialogflow CX Test Cases console. This module will leverage the DFCX APIs to invoke the tests built in
-DFCX. These tests can be filtered using tags. The result will output to a Google Sheet that can be leveraged as scripts 
-when manually testing the agent.
+#### End-to-End Tests
+These tests are intended to be exhaustive in nature with regard to the features in test, and should be run against 
+agents connected to external services as needed.
+
+#### Smoke Tests
+These tests are intended for thinner slices of features with minimal or no external service interaction to ensure basic 
+agent functionality.
 
 ## Setup
 
